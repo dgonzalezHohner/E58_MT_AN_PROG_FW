@@ -27,13 +27,13 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: 6513F2461B8F476B68CA73906086047F
-- generatedChecksum: F81A00E640818EDFB9E79C9BD241AEF4
+- generatedChecksum: null
   logicalPath: ''
   name: main.c
   physicalPath: ../..
   security: NON_SECURE
   type: SOURCE
-  userChecksum: F81A00E640818EDFB9E79C9BD241AEF4
+  userChecksum: null
 - generatedChecksum: E9C010C35D4523B334B9161F11F0C4C0
   logicalPath: config/default/peripheral/clock
   name: plib_clock.c
@@ -41,13 +41,13 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: E9C010C35D4523B334B9161F11F0C4C0
-- generatedChecksum: CE1AA1D4E0ABDE6A12FCBA7F2C038B54
+- generatedChecksum: 7A8067F683B387DF9A602D8CD93360ED
   logicalPath: config/default/peripheral/dac
   name: plib_dac.c
   physicalPath: peripheral/dac
   security: NON_SECURE
   type: SOURCE
-  userChecksum: CE1AA1D4E0ABDE6A12FCBA7F2C038B54
+  userChecksum: 7A8067F683B387DF9A602D8CD93360ED
 - generatedChecksum: C3ECDED3D6301DB0DE622293ED615D21
   logicalPath: config/default/peripheral/evsys
   name: plib_evsys.c
@@ -440,13 +440,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: F6BBC59D0CA0AC244AEB44971AD6DF0B
-- generatedChecksum: B22B7EFC8689AFD8D18CCBA2348B4E5F
+- generatedChecksum: A37F3C04D45D74D63FCFC178D1CBBD35
   logicalPath: config/default/peripheral/port
   name: plib_port.h
   physicalPath: peripheral/port
   security: NON_SECURE
   type: HEADER
-  userChecksum: B22B7EFC8689AFD8D18CCBA2348B4E5F
+  userChecksum: A37F3C04D45D74D63FCFC178D1CBBD35
 - generatedChecksum: 7BE8D2DC4C674C3542390C9E75603EB6
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom0_spi_master.h

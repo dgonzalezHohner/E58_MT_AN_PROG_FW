@@ -103,6 +103,13 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: '48000000'}
+  - type: Boolean
+    attributes: {id: DAC_INTERRUPT_ENABLE_UPDATE}
+    children:
+    - type: Values
+      children:
+      - type: Dynamic
+        attributes: {id: core, value: 'true'}
   - type: KeyValueSet
     attributes: {id: DEVICE_BOD33_ACTION}
     children:
@@ -654,6 +661,20 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: 'true'}
+  - type: Boolean
+    attributes: {id: NVIC_25_0_ENABLE}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: 'false'}
+  - type: String
+    attributes: {id: NVIC_25_0_HANDLER}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: DAC_Handler}
   - type: Boolean
     attributes: {id: NVIC_9_0_ENABLE}
     children:
@@ -1243,12 +1264,26 @@ children:
       - type: Dynamic
         attributes: {id: core, value: '18'}
   - type: String
+    attributes: {id: PIN_1_DIR}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: ''}
+  - type: KeyValueSet
+    attributes: {id: PIN_1_DRVSTR}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: '0'}
+  - type: String
     attributes: {id: PIN_1_FUNCTION_NAME}
     children:
     - type: Values
       children:
       - type: User
-        attributes: {value: DAC_OUT}
+        attributes: {value: ''}
   - type: String
     attributes: {id: PIN_1_FUNCTION_TYPE}
     children:
@@ -1263,6 +1298,13 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: '0'}
+  - type: String
+    attributes: {id: PIN_1_INEN}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: ''}
   - type: String
     attributes: {id: PIN_1_MODE}
     children:
@@ -1291,6 +1333,13 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: '2'}
+  - type: String
+    attributes: {id: PIN_1_PULLEN}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: ''}
   - type: String
     attributes: {id: PIN_20_FUNCTION_NAME}
     children:
@@ -3215,15 +3264,9 @@ children:
   - type: Boolean
     attributes: {id: USE_SYSTICK_INTERRUPT}
     children:
-    - type: Attributes
-      children:
-      - type: Boolean
-        attributes: {id: readOnly}
-        children:
-        - {type: Value, value: 'false'}
     - type: Values
       children:
       - type: Dynamic
         attributes: {id: core, value: 'false'}
 - type: ElementPosition
-  attributes: {x: '501', y: '21', id: core}
+  attributes: {x: '503', y: '25', id: core}

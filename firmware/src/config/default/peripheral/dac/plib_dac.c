@@ -60,7 +60,7 @@
 void DAC_Initialize(void)
 {
     /* Set Reference Voltage */
-    DAC_REGS->DAC_CTRLB = (uint8_t)(DAC_CTRLB_REFSEL(0UL) | DAC_CTRLB_EOEN_Msk );
+    DAC_REGS->DAC_CTRLB = (uint8_t)(DAC_CTRLB_REFSEL(1UL) | DAC_CTRLB_EOEN_Msk );
 
     DAC_REGS->DAC_EVCTRL = 0U;
     
