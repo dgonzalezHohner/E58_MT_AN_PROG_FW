@@ -541,7 +541,7 @@ children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: 'false'}
+        attributes: {id: core, value: 'true'}
   - type: String
     attributes: {id: NVIC_-1_0_HANDLER}
     children:
@@ -555,7 +555,7 @@ children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: 'false'}
+        attributes: {id: core, value: 'true'}
   - type: Boolean
     attributes: {id: NVIC_-2_0_ENABLE}
     children:
@@ -1283,7 +1283,7 @@ children:
     - type: Values
       children:
       - type: User
-        attributes: {value: ''}
+        attributes: {value: DAC_OUT}
   - type: String
     attributes: {id: PIN_1_FUNCTION_TYPE}
     children:
@@ -3210,13 +3210,49 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: '48000000'}
+  - type: File
+    attributes: {id: SYSTICK_FILE_0}
+    children:
+    - type: Attributes
+      children:
+      - type: Boolean
+        attributes: {id: enabled}
+        children:
+        - {type: Value, value: 'true'}
+  - type: File
+    attributes: {id: SYSTICK_FILE_1}
+    children:
+    - type: Attributes
+      children:
+      - type: Boolean
+        attributes: {id: enabled}
+        children:
+        - {type: Value, value: 'true'}
+  - type: File
+    attributes: {id: SYSTICK_FILE_2}
+    children:
+    - type: Attributes
+      children:
+      - type: Boolean
+        attributes: {id: enabled}
+        children:
+        - {type: Value, value: 'true'}
+  - type: Menu
+    attributes: {id: SYSTICK_MENU_0}
+    children:
+    - type: Attributes
+      children:
+      - type: Boolean
+        attributes: {id: visible}
+        children:
+        - {type: Value, value: 'true'}
   - type: String
     attributes: {id: SYSTICK_PERIOD}
     children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: '0xBB80'}
+        attributes: {id: core, value: '0x75300'}
   - type: Float
     attributes: {id: SYSTICK_PERIOD_MS}
     children:
@@ -3226,27 +3262,31 @@ children:
         attributes: {id: max}
         children:
         - {type: Value, value: '349.5253'}
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: '10.0'}
   - type: Integer
     attributes: {id: SYSTICK_PERIOD_US}
     children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: '1000'}
+        attributes: {id: core, value: '10000'}
   - type: Boolean
     attributes: {id: SysTick_INTERRUPT_ENABLE}
     children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: 'false'}
+        attributes: {id: core, value: 'true'}
   - type: Boolean
     attributes: {id: SysTick_INTERRUPT_ENABLE_UPDATE}
     children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: 'true'}
+        attributes: {id: core, value: 'false'}
   - type: String
     attributes: {id: SysTick_INTERRUPT_HANDLER}
     children:
@@ -3260,7 +3300,7 @@ children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: 'false'}
+        attributes: {id: core, value: 'true'}
   - type: Boolean
     attributes: {id: USE_SYSTICK_INTERRUPT}
     children:
@@ -3268,5 +3308,23 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: 'false'}
+      - type: User
+        attributes: {value: 'true'}
+  - type: Boolean
+    attributes: {id: systickEnable}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: 'true'}
+  - type: File
+    attributes: {id: systickSystemInitFile}
+    children:
+    - type: Attributes
+      children:
+      - type: Boolean
+        attributes: {id: enabled}
+        children:
+        - {type: Value, value: 'true'}
 - type: ElementPosition
-  attributes: {x: '503', y: '25', id: core}
+  attributes: {x: '504', y: '25', id: core}

@@ -145,6 +145,7 @@ void SYS_Initialize ( void* data )
 
     SERCOM0_SPI_Initialize();
 
+	SYSTICK_TimerInitialize();
     DAC_Initialize();
 
 

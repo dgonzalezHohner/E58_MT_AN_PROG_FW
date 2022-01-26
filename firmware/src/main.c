@@ -26,8 +26,9 @@
 #include <stdbool.h>                    // Defines true
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
+#include "push_buttons.h"
 
-
+extern PBGroupType* pPushButtons;
 // *****************************************************************************
 // *****************************************************************************
 // Section: Main Entry Point
@@ -37,11 +38,14 @@ int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
-
+    
+    PBInit (&pPushButtons , NUMBER_PUSH_BUTTONS);
+    
     while ( true )
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
+        PushButtonsTask();
     }
 
     /* Execution should not come here during normal operation */

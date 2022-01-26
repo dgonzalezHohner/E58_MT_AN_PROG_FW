@@ -6,20 +6,20 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: E45D1648EFC10229D7BE94DB19221FF7
-- generatedChecksum: DBEE14F68B77C5207E7A857233634470
+- generatedChecksum: 0C9377C5A1083982B8F57D54247D59C7
   logicalPath: config/default
   name: initialization.c
   physicalPath: ''
   security: NON_SECURE
   type: SOURCE
-  userChecksum: DBEE14F68B77C5207E7A857233634470
-- generatedChecksum: 5B70149B27214B937119B9B2A75ACB67
+  userChecksum: 0C9377C5A1083982B8F57D54247D59C7
+- generatedChecksum: 8E852267F6250CEC1C72FD905F17ECBB
   logicalPath: config/default
   name: interrupts.c
   physicalPath: ''
   security: NON_SECURE
   type: SOURCE
-  userChecksum: 5B70149B27214B937119B9B2A75ACB67
+  userChecksum: 8E852267F6250CEC1C72FD905F17ECBB
 - generatedChecksum: 6513F2461B8F476B68CA73906086047F
   logicalPath: config/default
   name: libc_syscalls.c
@@ -104,6 +104,13 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: 553254639C5CA56AF0F187B88EB83EAE
+- generatedChecksum: 1E9DF10975AFBB917BEFC0D7E52966BC
+  logicalPath: config/default/peripheral/systick
+  name: plib_systick.c
+  physicalPath: peripheral/systick
+  security: NON_SECURE
+  type: SOURCE
+  userChecksum: 1E9DF10975AFBB917BEFC0D7E52966BC
 - generatedChecksum: 2645E564BD945DAED1424FD8D7B39330
   logicalPath: config/default
   name: startup_xc32.c
@@ -230,13 +237,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: D18FEF226C25337D3E738503FB22D04D
-- generatedChecksum: CD54EE17D9E1C4975C206FF2C26A090C
+- generatedChecksum: 1231BA558F20D9A69A17E5E6B2739042
   logicalPath: config/default
   name: definitions.h
   physicalPath: ''
   security: NON_SECURE
   type: HEADER
-  userChecksum: CD54EE17D9E1C4975C206FF2C26A090C
+  userChecksum: 1231BA558F20D9A69A17E5E6B2739042
 - generatedChecksum: 8CE9C8672D7A799B9D7A50798AE36614
   logicalPath: config/default
   name: device.h
@@ -335,13 +342,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: F5AC7C902B1C03A7B0A1C07FD77FE04E
-- generatedChecksum: DDBB6965CD83EB6D694E705C8E692496
+- generatedChecksum: 6FEF1AA34B06938ABD2D4F8F820FDE87
   logicalPath: config/default
   name: interrupts.h
   physicalPath: ''
   security: NON_SECURE
   type: HEADER
-  userChecksum: DDBB6965CD83EB6D694E705C8E692496
+  userChecksum: 6FEF1AA34B06938ABD2D4F8F820FDE87
 - generatedChecksum: 47E760D36E42A7B436306A9CB4E72A0E
   logicalPath: packs/CMSIS/CMSIS/Core/Include
   name: mpu_armv7.h
@@ -440,13 +447,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: F6BBC59D0CA0AC244AEB44971AD6DF0B
-- generatedChecksum: A37F3C04D45D74D63FCFC178D1CBBD35
+- generatedChecksum: B22B7EFC8689AFD8D18CCBA2348B4E5F
   logicalPath: config/default/peripheral/port
   name: plib_port.h
   physicalPath: peripheral/port
   security: NON_SECURE
   type: HEADER
-  userChecksum: A37F3C04D45D74D63FCFC178D1CBBD35
+  userChecksum: B22B7EFC8689AFD8D18CCBA2348B4E5F
 - generatedChecksum: 7BE8D2DC4C674C3542390C9E75603EB6
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom0_spi_master.h
@@ -496,6 +503,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: 6F9F9CBBFEDEC8784446F157BB625E1C
+- generatedChecksum: E42D61709454F049C02E69453DAE25BA
+  logicalPath: config/default/peripheral/systick
+  name: plib_systick.h
+  physicalPath: peripheral/systick
+  security: NON_SECURE
+  type: HEADER
+  userChecksum: E42D61709454F049C02E69453DAE25BA
 - generatedChecksum: CD4EA16174C4664F503C2EAE21E8119E
   logicalPath: packs/ATSAMD21E17L_DFP/component
   name: pm.h
