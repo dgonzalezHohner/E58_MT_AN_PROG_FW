@@ -34,13 +34,13 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: null
-- generatedChecksum: E9C010C35D4523B334B9161F11F0C4C0
+- generatedChecksum: FD7430241761E13B6ED1596F985DF5DA
   logicalPath: config/default/peripheral/clock
   name: plib_clock.c
   physicalPath: peripheral/clock
   security: NON_SECURE
   type: SOURCE
-  userChecksum: E9C010C35D4523B334B9161F11F0C4C0
+  userChecksum: FD7430241761E13B6ED1596F985DF5DA
 - generatedChecksum: 7A8067F683B387DF9A602D8CD93360ED
   logicalPath: config/default/peripheral/dac
   name: plib_dac.c
@@ -69,13 +69,13 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: 1C795C8A1D7CAEFA2C2D35E5634115F8
-- generatedChecksum: 013369221614ED43ABA451199B83F12A
+- generatedChecksum: 9E1C4D9BEDBBB00F004EE6EC38C08A5D
   logicalPath: config/default/peripheral/port
   name: plib_port.c
   physicalPath: peripheral/port
   security: NON_SECURE
   type: SOURCE
-  userChecksum: 013369221614ED43ABA451199B83F12A
+  userChecksum: 9E1C4D9BEDBBB00F004EE6EC38C08A5D
 - generatedChecksum: DD37A821FBB8A57DDA4B402F5B0FFD1B
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom0_spi_master.c
@@ -110,7 +110,14 @@ files:
   physicalPath: peripheral/systick
   security: NON_SECURE
   type: SOURCE
-  userChecksum: 1E9DF10975AFBB917BEFC0D7E52966BC
+  userChecksum: C2E9BEB7712B529560015430D280A66C
+- generatedChecksum: 9607CBC59CE2ADA8C14BAF024F7937C0
+  logicalPath: config/default/peripheral/wdt
+  name: plib_wdt.c
+  physicalPath: peripheral/wdt
+  security: NON_SECURE
+  type: SOURCE
+  userChecksum: 9607CBC59CE2ADA8C14BAF024F7937C0
 - generatedChecksum: 2645E564BD945DAED1424FD8D7B39330
   logicalPath: config/default
   name: startup_xc32.c
@@ -237,13 +244,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: D18FEF226C25337D3E738503FB22D04D
-- generatedChecksum: 1231BA558F20D9A69A17E5E6B2739042
+- generatedChecksum: 107F94D99DE97932F87BC77277FC4878
   logicalPath: config/default
   name: definitions.h
   physicalPath: ''
   security: NON_SECURE
   type: HEADER
-  userChecksum: 1231BA558F20D9A69A17E5E6B2739042
+  userChecksum: 107F94D99DE97932F87BC77277FC4878
 - generatedChecksum: 8CE9C8672D7A799B9D7A50798AE36614
   logicalPath: config/default
   name: device.h
@@ -447,13 +454,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: F6BBC59D0CA0AC244AEB44971AD6DF0B
-- generatedChecksum: B22B7EFC8689AFD8D18CCBA2348B4E5F
+- generatedChecksum: AF248B5F68F70DEB2FCB52FE51D738A9
   logicalPath: config/default/peripheral/port
   name: plib_port.h
   physicalPath: peripheral/port
   security: NON_SECURE
   type: HEADER
-  userChecksum: B22B7EFC8689AFD8D18CCBA2348B4E5F
+  userChecksum: AF248B5F68F70DEB2FCB52FE51D738A9
 - generatedChecksum: 7BE8D2DC4C674C3542390C9E75603EB6
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom0_spi_master.h
@@ -510,6 +517,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: E42D61709454F049C02E69453DAE25BA
+- generatedChecksum: AD5BC432377D1EFB5B464625F65873B0
+  logicalPath: config/default/peripheral/wdt
+  name: plib_wdt.h
+  physicalPath: peripheral/wdt
+  security: NON_SECURE
+  type: HEADER
+  userChecksum: AD5BC432377D1EFB5B464625F65873B0
 - generatedChecksum: CD4EA16174C4664F503C2EAE21E8119E
   logicalPath: packs/ATSAMD21E17L_DFP/component
   name: pm.h

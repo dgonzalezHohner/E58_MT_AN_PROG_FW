@@ -203,6 +203,24 @@
 #define UART_RX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 25U)) & 0x01U)
 #define UART_RX_PIN                  PORT_PIN_PA25
 
+/*** Macros for GPIO_PA30 pin ***/
+#define GPIO_PA30_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 30U))
+#define GPIO_PA30_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 30U))
+#define GPIO_PA30_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 30U))
+#define GPIO_PA30_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 30U))
+#define GPIO_PA30_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 30U))
+#define GPIO_PA30_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 30U)) & 0x01U)
+#define GPIO_PA30_PIN                  PORT_PIN_PA30
+
+/*** Macros for GPIO_PA31 pin ***/
+#define GPIO_PA31_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 31U))
+#define GPIO_PA31_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 31U))
+#define GPIO_PA31_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 31U))
+#define GPIO_PA31_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 31U))
+#define GPIO_PA31_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 31U))
+#define GPIO_PA31_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 31U)) & 0x01U)
+#define GPIO_PA31_PIN                  PORT_PIN_PA31
+
 /*** Macros for LED2_y pin ***/
 #define LED2_y_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 3U))
 #define LED2_y_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 3U))

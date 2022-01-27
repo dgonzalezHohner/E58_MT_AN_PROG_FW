@@ -38,11 +38,12 @@ int main ( void )
 {
     /* Initialize all modules */
     SYS_Initialize ( NULL );
-    
     PBInit (&pPushButtons , NUMBER_PUSH_BUTTONS);
     
+    WDT_Enable();
     while ( true )
     {
+        WDT_Clear();
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
         PushButtonsTask();

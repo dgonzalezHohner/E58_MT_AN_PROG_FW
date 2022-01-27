@@ -1,18 +1,21 @@
 /*******************************************************************************
-  System Definitions
+  Watch Dog Timer PLIB.
+
+  Company:
+    Microchip Technology Inc.
 
   File Name:
-    definitions.h
+    plib_wdt.h
 
   Summary:
-    project system definitions.
+    Interface definition of WDT PLIB.
 
   Description:
-    This file contains the system-wide prototypes and definitions for a project.
+    This file defines the interface for the WDT Plib.
+    It allows user to setup timeout duration and restart watch dog timer.
+*******************************************************************************/
 
- *******************************************************************************/
-
-//DOM-IGNORE-BEGIN
+// DOM-IGNORE-BEGIN
 /*******************************************************************************
 * Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
 *
@@ -34,111 +37,59 @@
 * FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
 * ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
- *******************************************************************************/
-//DOM-IGNORE-END
+*******************************************************************************/
+// DOM-IGNORE-END
 
-#ifndef DEFINITIONS_H
-#define DEFINITIONS_H
+#ifndef PLIB_WDT_H
+#define PLIB_WDT_H
 
 // *****************************************************************************
 // *****************************************************************************
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
+
 #include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
-#include "peripheral/sercom/usart/plib_sercom3_usart.h"
-#include "peripheral/nvmctrl/plib_nvmctrl.h"
-#include "peripheral/sercom/i2c_master/plib_sercom2_i2c_master.h"
-#include "peripheral/sercom/spi_master/plib_sercom1_spi_master.h"
-#include "peripheral/evsys/plib_evsys.h"
-#include "peripheral/sercom/spi_master/plib_sercom0_spi_master.h"
-#include "peripheral/port/plib_port.h"
-#include "peripheral/clock/plib_clock.h"
-#include "peripheral/nvic/plib_nvic.h"
-#include "peripheral/systick/plib_systick.h"
-#include "peripheral/wdt/plib_wdt.h"
-#include "peripheral/dac/plib_dac.h"
+#include <stddef.h>
+#include "device.h"
 
 // DOM-IGNORE-BEGIN
-#ifdef __cplusplus  // Provide C++ Compatibility
+#ifdef __cplusplus // Provide C++ Compatibility
 
-extern "C" {
+    extern "C" {
 
 #endif
 // DOM-IGNORE-END
 
-/* CPU clock frequency */
-#define CPU_CLOCK_FREQUENCY 48000000
-
 // *****************************************************************************
 // *****************************************************************************
-// Section: System Functions
+// Section: Data Types
 // *****************************************************************************
 // *****************************************************************************
 
+
 // *****************************************************************************
-/* System Initialization Function
+// *****************************************************************************
+// Section: Interface Routines
+// *****************************************************************************
+// *****************************************************************************
 
-  Function:
-    void SYS_Initialize( void *data )
+void WDT_Enable( void );
 
-  Summary:
-    Function that initializes all modules in the system.
+void WDT_Disable( void );
 
-  Description:
-    This function initializes all modules in the system, including any drivers,
-    services, middleware, and applications.
+void WDT_Clear( void );
 
-  Precondition:
-    None.
+void WDT_ClearWithSync( void );
 
-  Parameters:
-    data            - Pointer to the data structure containing any data
-                      necessary to initialize the module. This pointer may
-                      be null if no data is required and default initialization
-                      is to be used.
 
-  Returns:
-    None.
+// DOM-IGNORE-BEGIN
+#ifdef __cplusplus  // Provide C++ Compatibility
 
-  Example:
-    <code>
-    SYS_Initialize ( NULL );
-
-    while ( true )
-    {
-        SYS_Tasks ( );
     }
-    </code>
 
-  Remarks:
-    This function will only be called once, after system reset.
-*/
-
-void SYS_Initialize( void *data );
-
-/* Nullify SYS_Tasks() if only PLIBs are used. */
-#define     SYS_Tasks()
-
-// *****************************************************************************
-// *****************************************************************************
-// Section: extern declarations
-// *****************************************************************************
-// *****************************************************************************
-
-
-
-
-//DOM-IGNORE-BEGIN
-#ifdef __cplusplus
-}
 #endif
-//DOM-IGNORE-END
+// DOM-IGNORE-END
 
-#endif /* DEFINITIONS_H */
-/*******************************************************************************
- End of File
-*/
-
+#endif /* PLIB_WDT_H */

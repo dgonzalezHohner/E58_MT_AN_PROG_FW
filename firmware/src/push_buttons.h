@@ -27,7 +27,7 @@
 
 /* This section lists the other files that are included in this file.
  */
-#include "../../../E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/systick/plib_systick.h"
+
 /* TODO:  Include other files here if needed. */
 
 
