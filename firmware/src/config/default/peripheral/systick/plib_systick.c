@@ -41,6 +41,7 @@
 #include "device.h"
 #include "interrupts.h"
 #include "plib_systick.h"
+#include "push_buttons.h"
 
 static SYSTICK_OBJECT systick;
 
@@ -171,4 +172,5 @@ void SysTick_Handler(void)
        systick.callback(systick.context);
    }
    (void)sysCtrl;
+   PBDebTimerTask();
 }

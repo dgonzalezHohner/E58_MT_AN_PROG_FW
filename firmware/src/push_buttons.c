@@ -176,7 +176,44 @@ void PBFree (PBGroupType** pPBGroup)
 
 void PushButtonsTask()
 {
+    uint8_t i;
+    //Read Current Input value and store in push buttons data
+    PB1_CURRENT_VAL = PB1_Get();
+    PB2_CURRENT_VAL = PB1_Get();
+    SET1_CURRENT_VAL = PB1_Get();
+    SET2_CURRENT_VAL = PB1_Get();
     
+    for(i=0; i<NUMBER_PUSH_BUTTONS ; i++)
+    {
+        //if pin value is equal to debounce value
+        if(pPushButtons->pPBData[i].PBStatus.Bitfield.PinStat == pPushButtons->pPBData[i].PBStatus.Bitfield.DebStat)
+        {
+            //Stop Debouncing Timer
+            pPushButtons->pPBData[i].DebTimer = 0;
+        }
+        //if a pin value change is detected
+        else
+        {
+            //If debounce timer not started, start debounce timer
+            if(!pPushButtons->pPBData[i].DebTimer) pPushButtons->pPBData[i].DebTimer = DEB_TIMER_set;
+            //If debounce timer ended
+            else if (pPushButtons->pPBData[i].DebTimer == 1)
+            {
+                //set pin status as new debounce value
+                pPushButtons->pPBData[i].PBStatus.Bitfield.DebStat = pPushButtons->pPBData[i].PBStatus.Bitfield.PinStat;
+            }
+        }
+    }
+}
+
+void PBDebTimerTask()
+{
+    uint8_t i;
+    //Loop all debounce timers to update them
+    for(i=0; i<NUMBER_PUSH_BUTTONS ; i++)
+    {
+        if( pPushButtons->pPBData[i].DebTimer > 1)  pPushButtons->pPBData[i].DebTimer--;
+    }
 }
 /* *****************************************************************************
  End of File

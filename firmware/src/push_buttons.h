@@ -27,7 +27,7 @@
 
 /* This section lists the other files that are included in this file.
  */
-
+#include "../../../E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/systick/plib_systick.h"
 /* TODO:  Include other files here if needed. */
 
 
@@ -65,8 +65,9 @@ extern "C" {
       @Remarks
         Any additional remarks
      */
-    #define NUMBER_PUSH_BUTTONS 2
+    #define NUMBER_PUSH_BUTTONS 4       //2 push buttons + 2 cable inputs
     #define DEB_TIME_ms         50
+    #define DEB_TIMER_set       ((DEB_TIME_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US)+1)
 
 
     // *****************************************************************************
@@ -123,7 +124,15 @@ extern "C" {
         void (*pPBGroupInit)(struct __PBGroup* pPBData);
         void (*pPBGroupDeInit)(struct __PBGroup* pPBData);
     }PBGroupType;
-
+    
+    #define PB1_CURRENT_VAL pPushButtons->pPBData[0].PBStatus.Bitfield.PinStat
+    #define PB1_DEB_VAL pPushButtons->pPBData[0].PBStatus.Bitfield.DevStat
+    #define PB2_CURRENT_VAL pPushButtons->pPBData[1].PBStatus.Bitfield.PinStat
+    #define PB2_DEB_VAL pPushButtons->pPBData[1].PBStatus.Bitfield.DevStat
+    #define SET1_CURRENT_VAL pPushButtons->pPBData[2].PBStatus.Bitfield.PinStat
+    #define SET1_DEB_VAL pPushButtons->pPBData[2].PBStatus.Bitfield.DevStat
+    #define SET2_CURRENT_VAL pPushButtons->pPBData[3].PBStatus.Bitfield.PinStat
+    #define SET2_DEB_VAL pPushButtons->pPBData[3].PBStatus.Bitfield.DevStat
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -186,6 +195,7 @@ extern "C" {
     void PBInit (PBGroupType** pPBGroup, uint8_t length);
     void PBFree (PBGroupType** pPBGroup);
     void PushButtonsTask();
+    void PBDebTimerTask();
     /* Provide C++ Compatibility */
 #ifdef __cplusplus
 }
