@@ -130,9 +130,6 @@ void SYS_Initialize ( void* data )
 
     CLOCK_Initialize();
 
-
-
-
     SERCOM3_USART_Initialize();
 
     NVMCTRL_Initialize( );
@@ -146,12 +143,9 @@ void SYS_Initialize ( void* data )
     SERCOM0_SPI_Initialize();
 
 	SYSTICK_TimerInitialize();
+    
     DAC_Initialize();
-
-
-
-
-
+    
     NVIC_Initialize();
 
 }

@@ -767,6 +767,20 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: '8000000'}
+  - type: Boolean
+    attributes: {id: PAC_CLOCK_ENABLE}
+    children:
+    - type: Values
+      children:
+      - type: Dynamic
+        attributes: {id: core, value: 'false'}
+  - type: Boolean
+    attributes: {id: PAC_USE}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: 'false'}
   - type: Integer
     attributes: {id: PIN_10_GROUP}
     children:
@@ -3594,4 +3608,4 @@ children:
         children:
         - {type: Value, value: 'true'}
 - type: ElementPosition
-  attributes: {x: '504', y: '25', id: core}
+  attributes: {x: '502', y: '27', id: core}

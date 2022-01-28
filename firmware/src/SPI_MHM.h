@@ -15,8 +15,8 @@
  */
 /* ************************************************************************** */
 
-#ifndef _PUSH_BUTTONS_H    /* Guard against multiple inclusion */
-#define _PUSH_BUTTONS_H
+#ifndef _SPI_MHM    /* Guard against multiple inclusion */
+#define _SPI_MHM
 
 
 /* ************************************************************************** */
@@ -35,7 +35,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
     /* ************************************************************************** */
     /* ************************************************************************** */
@@ -65,9 +64,7 @@ extern "C" {
       @Remarks
         Any additional remarks
      */
-    #define NUMBER_PUSH_BUTTONS 4       //2 push buttons + 2 cable inputs
-    #define DEB_TIME_ms         50
-    #define DEB_TIMER_set       ((DEB_TIME_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US)+1)
+//#define EXAMPLE_CONSTANT 0
 
 
     // *****************************************************************************
@@ -102,37 +99,28 @@ extern "C" {
         Describe enumeration elements and structure and union members above each 
         element or member.
      */
-    typedef struct
-    {
-        /* Describe structure member. */
-        uint8_t DebTimer;
-        union _PBStatus
-        {
-            uint8_t Value;
-            struct _Bitfield
-            {
-                uint8_t PinStat :1;
-                uint8_t DebStat :1;
-            }Bitfield;
-        }PBStatus;
-    } PBType;
+//    typedef struct _example_struct_t {
+//        /* Describe structure member. */
+//        int some_number;
+//
+//        /* Describe structure member. */
+//        bool some_flag;
+//
+//    } example_struct_t;
 
-    typedef struct __PBGroup
-    {
-        uint8_t length;
-        PBType* pPBData;
-        void (*pPBGroupInit)(struct __PBGroup* pPBData);
-        void (*pPBGroupDeInit)(struct __PBGroup* pPBData);
-    }PBGroupType;
+typedef struct __SPI_IC_MHMType
+{
+	uint8_t 	length;
+	uint8_t		TxCnt;
+	uint8_t*	TxData;
+	uint8_t		RxCnt;
+	uint8_t*	RxData;
+	void (*pInitSPIData) (struct __SPI_IC_MHMType* IC_MHM_SPIData);
+	void (*pDeInitSPIData) (struct __SPI_IC_MHMType* IC_MHM_SPIData);
+}SPI_IC_MHMType;
 
-    #define PB1_CURRENT_VAL pPushButtons->pPBData[0].PBStatus.Bitfield.PinStat
-    #define PB1_DEB_VAL pPushButtons->pPBData[0].PBStatus.Bitfield.DevStat
-    #define PB2_CURRENT_VAL pPushButtons->pPBData[1].PBStatus.Bitfield.PinStat
-    #define PB2_DEB_VAL pPushButtons->pPBData[1].PBStatus.Bitfield.DevStat
-    #define SET1_CURRENT_VAL pPushButtons->pPBData[2].PBStatus.Bitfield.PinStat
-    #define SET1_DEB_VAL pPushButtons->pPBData[2].PBStatus.Bitfield.DevStat
-    #define SET2_CURRENT_VAL pPushButtons->pPBData[3].PBStatus.Bitfield.PinStat
-    #define SET2_DEB_VAL pPushButtons->pPBData[3].PBStatus.Bitfield.DevStat
+SPI_IC_MHMType* pSPI1Data;
+
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -187,21 +175,18 @@ extern "C" {
             return 3;
         }
      */
-
 //    int ExampleFunction(int param1, int param2);
+void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
+void DeInit_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
+void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData,uint8_t length);
+void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
 
-    void InitPushButtonData (PBGroupType* pPBGroup);
-    void DenitPushButtonData (PBGroupType* pPBGroup);
-    void PBInit (PBGroupType** pPBGroup, uint8_t length);
-    void PBFree (PBGroupType** pPBGroup);
-    void PushButtonsTask();
-    void PBDebTimerTask();
     /* Provide C++ Compatibility */
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _PUSH_BUTTONS_H */
+#endif /* _SPI_MHM */
 
 /* *****************************************************************************
  End of File

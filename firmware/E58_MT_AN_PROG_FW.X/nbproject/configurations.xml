@@ -141,6 +141,7 @@
         </logicalFolder>
       </logicalFolder>
       <itemPath>../src/push_buttons.h</itemPath>
+      <itemPath>../src/SPI_MHM.h</itemPath>
     </logicalFolder>
     <logicalFolder name="LinkerScript"
                    displayName="Linker Files"
@@ -206,6 +207,7 @@
       </logicalFolder>
       <itemPath>../src/main.c</itemPath>
       <itemPath>../src/push_buttons.c</itemPath>
+      <itemPath>../src/SPI_MHM.c</itemPath>
     </logicalFolder>
     <logicalFolder name="ExternalFiles"
                    displayName="Important Files"
