@@ -66,7 +66,6 @@ extern "C" {
      */
 //#define EXAMPLE_CONSTANT 0
 
-
     // *****************************************************************************
     // *****************************************************************************
     // Section: Data Types
@@ -110,17 +109,58 @@ extern "C" {
 
 typedef struct __SPI_IC_MHMType
 {
-	uint8_t 	length;
-	uint8_t		TxCnt;
+	uint8_t 	TxLength;
 	uint8_t*	TxData;
-	uint8_t		RxCnt;
+	uint8_t		RxLength;
 	uint8_t*	RxData;
 	void (*pInitSPIData) (struct __SPI_IC_MHMType* IC_MHM_SPIData);
 	void (*pDeInitSPIData) (struct __SPI_IC_MHMType* IC_MHM_SPIData);
 }SPI_IC_MHMType;
 
-SPI_IC_MHMType* pSPI1Data;
+SPI_IC_MHMType* pSPI0Data;
 
+typedef enum
+{
+    MHM_STARTUP_1 = (uint8_t)0,
+    MHM_STARTUP_2,
+    READ_POS_1,
+    READ_POS_2,
+    READ_STATUS_1,
+    READ_STATUS_2,
+    READ_REG_STAT_1,
+    READ_REG_STAT_2
+}IC_MHMfsmType;
+
+enum MHM_OPCODE
+{
+    ACTIVATE = (uint8_t)0xB0,
+    POS_READ = (uint8_t)0xA6,
+    REG_RD_CTD = (uint8_t)0x8A,
+    REG_WR_CTD = (uint8_t)0xCF,
+    READ_STATUS = (uint8_t)0x9C,
+    WR_INST = (uint8_t)0xD9,
+    REG_RD = (uint8_t)0x97,
+    REG_WR = (uint8_t)0xD2,
+    READ_REG_STAT = (uint8_t)0xAD
+};
+
+#define IC_MHM_STAT_VALID_Msk       (uint8_t)0x01   //Data Valid
+#define IC_MHM_STAT_BUSY_Msk        (uint8_t)0x02   //Slave Busy
+#define IC_MHM_STAT_FAIL_Msk        (uint8_t)0x04   //Data Request Failed
+#define IC_MHM_STAT_DISMISS_Msk     (uint8_t)0x08   //Illegal Address
+#define IC_MHM_STAT_ERROR_Msk       (uint8_t)0x80   //Invalid opcode
+                
+#define IC_MHM_0x70_ERR_CFG_Msk     (uint8_t)0x01
+#define IC_MHM_0x70_ERR_OFFS_Msk    (uint8_t)0x02
+#define IC_MHM_0x70_ERR_POS_Msk     (uint8_t)0x04
+#define IC_MHM_0x70_ERR_EXT_Msk     (uint8_t)0x08
+#define IC_MHM_0x70_ERR_AMIN_Msk    (uint8_t)0x10
+#define IC_MHM_0x70_ERR_AMAX_Msk    (uint8_t)0x20
+#define IC_MHM_0x70_ERR_MTI_Msk     (uint8_t)0x40
+#define IC_MHM_0x70_ERR_MT_Msk      (uint8_t)0x80
+
+#define IC_MHM_SPI_nERR_Msk         (uint8_t)0x80
+#define IC_MHM_SPI_nWARN_Msk        (uint8_t)0x40
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -178,7 +218,7 @@ SPI_IC_MHMType* pSPI1Data;
 //    int ExampleFunction(int param1, int param2);
 void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void DeInit_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
-void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData,uint8_t length);
+void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData, uint8_t TxLength, uint8_t RxLength);
 void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
 
     /* Provide C++ Compatibility */

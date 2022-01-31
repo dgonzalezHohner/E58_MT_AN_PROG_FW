@@ -179,9 +179,9 @@ void PushButtonsTask()
     uint8_t i;
     //Read Current Input value and store in push buttons data
     PB1_CURRENT_VAL = PB1_Get();
-    PB2_CURRENT_VAL = PB1_Get();
-    SET1_CURRENT_VAL = PB1_Get();
-    SET2_CURRENT_VAL = PB1_Get();
+    PB2_CURRENT_VAL = PB2_Get();
+    SET1_CURRENT_VAL = SET1_DIR_Get();
+    SET2_CURRENT_VAL = SET2_PRESET_Get();
     
     for(i=0; i<NUMBER_PUSH_BUTTONS ; i++)
     {

@@ -69,20 +69,20 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: 1C795C8A1D7CAEFA2C2D35E5634115F8
-- generatedChecksum: 9E1C4D9BEDBBB00F004EE6EC38C08A5D
+- generatedChecksum: 91DFDA044C7DD53239BF1A5A6CBE15A9
   logicalPath: config/default/peripheral/port
   name: plib_port.c
   physicalPath: peripheral/port
   security: NON_SECURE
   type: SOURCE
-  userChecksum: 9E1C4D9BEDBBB00F004EE6EC38C08A5D
-- generatedChecksum: DD37A821FBB8A57DDA4B402F5B0FFD1B
+  userChecksum: 91DFDA044C7DD53239BF1A5A6CBE15A9
+- generatedChecksum: 44C4EF7A49A33A284D52663D45CDFBEC
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom0_spi_master.c
   physicalPath: peripheral/sercom/spi_master
   security: NON_SECURE
   type: SOURCE
-  userChecksum: DD37A821FBB8A57DDA4B402F5B0FFD1B
+  userChecksum: 44C4EF7A49A33A284D52663D45CDFBEC
 - generatedChecksum: B8FF221A907864C446A703B0E57C0745
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom1_spi_master.c
@@ -454,13 +454,13 @@ files:
   security: NON_SECURE
   type: HEADER
   userChecksum: F6BBC59D0CA0AC244AEB44971AD6DF0B
-- generatedChecksum: AF248B5F68F70DEB2FCB52FE51D738A9
+- generatedChecksum: F9804A6409DBCF30FD5DDC2A51BB0D3E
   logicalPath: config/default/peripheral/port
   name: plib_port.h
   physicalPath: peripheral/port
   security: NON_SECURE
   type: HEADER
-  userChecksum: AF248B5F68F70DEB2FCB52FE51D738A9
+  userChecksum: F9804A6409DBCF30FD5DDC2A51BB0D3E
 - generatedChecksum: 7BE8D2DC4C674C3542390C9E75603EB6
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom0_spi_master.h

@@ -195,7 +195,7 @@ children:
     - type: Values
       children:
       - type: User
-        attributes: {value: 'true'}
+        attributes: {value: 'false'}
   - type: Boolean
     attributes: {id: SPI_RECIEVER_ENABLE}
     children:

@@ -101,6 +101,11 @@
 #define MOSI_MHM_PIN                  PORT_PIN_PA04
 
 /*** Macros for NCS_MHM pin ***/
+#define NCS_MHM_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 5U))
+#define NCS_MHM_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 5U))
+#define NCS_MHM_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 5U))
+#define NCS_MHM_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 5U))
+#define NCS_MHM_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 5U))
 #define NCS_MHM_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 5U)) & 0x01U)
 #define NCS_MHM_PIN                  PORT_PIN_PA05
 
