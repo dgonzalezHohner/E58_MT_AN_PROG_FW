@@ -67,7 +67,7 @@ extern "C" {
      */
     #define NUMBER_PUSH_BUTTONS 4       //2 push buttons + 2 cable inputs
     #define DEB_TIME_ms         50
-    #define DEB_TIMER_set       ((DEB_TIME_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US)+1)
+    #define DEB_TIMER_set       (((DEB_TIME_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
 
     // *****************************************************************************

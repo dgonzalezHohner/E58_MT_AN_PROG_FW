@@ -117,18 +117,24 @@ typedef struct __SPI_IC_MHMType
 	void (*pDeInitSPIData) (struct __SPI_IC_MHMType* IC_MHM_SPIData);
 }SPI_IC_MHMType;
 
-SPI_IC_MHMType* pSPI0Data;
-
 typedef enum
 {
     MHM_STARTUP_1 = (uint8_t)0,
     MHM_STARTUP_2,
+    MHM_STARTUP_3,
     READ_POS_1,
     READ_POS_2,
     READ_STATUS_1,
     READ_STATUS_2,
     READ_REG_STAT_1,
-    READ_REG_STAT_2
+    READ_REG_STAT_2,
+    PRESET_1,
+    PRESET_2,
+    PRESET_3,
+    PRESET_4,
+    PRESET_5,
+    PRESET_6,
+    PRESET_7
 }IC_MHMfsmType;
 
 enum MHM_OPCODE
@@ -142,6 +148,13 @@ enum MHM_OPCODE
     REG_RD = (uint8_t)0x97,
     REG_WR = (uint8_t)0xD2,
     READ_REG_STAT = (uint8_t)0xAD
+};
+
+enum SPI0_STATUS
+{
+    SPI0_BUSY = (uint8_t)0,
+    SPI0_CMD_SENDING,
+    SPI0_CMD_SENT
 };
 
 #define IC_MHM_STAT_VALID_Msk       (uint8_t)0x01   //Data Valid
@@ -161,6 +174,23 @@ enum MHM_OPCODE
 
 #define IC_MHM_SPI_nERR_Msk         (uint8_t)0x80
 #define IC_MHM_SPI_nWARN_Msk        (uint8_t)0x40
+
+#define IC_MHM_0x74_RESET_Msk       (uint8_t)0x01
+#define IC_MHM_0x74_PRESET_Msk      (uint8_t)0x02
+
+#define IC_MHM_0x75_FIO_0_Msk       (uint8_t)0x01
+#define IC_MHM_0x75_FIO_1_Msk       (uint8_t)0x02
+#define IC_MHM_0x75_FIO_2_Msk       (uint8_t)0x04
+#define IC_MHM_0x75_FIO_3_Msk       (uint8_t)0x08
+
+#define START_UP_T_ms               100
+#define START_UP_TIMER_SET          (((START_UP_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+#define PRESET_PULSE_T_ms           5
+#define PRESET_TIMER_SET            (((PRESET_PULSE_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+#define IC_MHM_POS_READ             IC_MHMCmd(POS_READ, NULL, 0, 7)         //Send POSITION READ opcode to IC-MHM
+#define IC_MHM_READ_STATUS          IC_MHMCmd(READ_STATUS, NULL, 0, 4)      //Send READ STATUS opcode to IC-MHM
+#define IC_MHM_READ_REG_STAT        IC_MHMCmd(READ_REG_STAT, NULL, 0, 2)    //Send READ REGISTER STATUS opcode to IC-MHM
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -220,7 +250,9 @@ void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void DeInit_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData, uint8_t TxLength, uint8_t RxLength);
 void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
-
+bool SPI0SendCMD(uint8_t Opcode, uint8_t TxLength, uint8_t RxLength);
+uint8_t SPI0SendCMD_(SPI_IC_MHMType* ptr);
+void IC_MHMTimerTask();
     /* Provide C++ Compatibility */
 #ifdef __cplusplus
 }

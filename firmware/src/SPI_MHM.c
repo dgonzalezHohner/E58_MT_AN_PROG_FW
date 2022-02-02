@@ -26,6 +26,7 @@
 
 #include "definitions.h"                // SYS function prototypes
 #include "SPI_MHM.h"
+#include <string.h>
 #include <stdlib.h>
 
 /* TODO:  Include other files here if needed. */
@@ -59,7 +60,9 @@
     Any additional remarks
  */
 //int global_data;
+SPI_IC_MHMType* pSPI0Data;
 IC_MHMfsmType IC_MHMfsm = READ_REG_STAT_1;
+uint8_t MHMTimer = 0;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -171,113 +174,246 @@ void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData)
     Refer to the example_file.h interface header for function usage details.
  */
 
+void IC_MHMTimerTask()
+{
+     if( MHMTimer > 1)  MHMTimer--;
+}
+
+bool SPI0SendCMD(uint8_t Opcode, uint8_t TxLength, uint8_t RxLength)
+{
+    IC_MHM_SPIBufferInit(&pSPI0Data, TxLength, RxLength);
+    pSPI0Data->TxData[0] = Opcode;
+    NCS_MHM_Clear();
+    if (SERCOM0_SPI_WriteRead (pSPI0Data->TxData, TxLength, pSPI0Data->RxData, RxLength)) return (bool)1;
+    else
+    {
+        NCS_MHM_Set();
+        IC_MCB_SPIBufferFree(&pSPI0Data);
+        return (bool)0;
+    }
+}
+
+uint8_t SPI0SendCMD_(SPI_IC_MHMType* ptr)
+{
+    static uint8_t SendCMDfsm = 0;
+    uint8_t SendResult = SPI0_BUSY;
+    
+    switch (SendCMDfsm)
+    {
+        case 0:
+            NCS_MHM_Clear();
+            if (SERCOM0_SPI_WriteRead (ptr->TxData, ptr->TxLength, ptr->RxData, ptr->RxLength) == true)
+            {
+                SendCMDfsm++;
+                SendResult = SPI0_CMD_SENDING;
+            }
+            else
+            {
+                NCS_MHM_Set();
+                SendResult = SPI0_BUSY;
+            }
+            break;
+        case 1:
+            if(SERCOM0_SPI_IsBusy()) SendResult = SPI0_BUSY;
+            else
+            {
+                SendResult = SPI0_CMD_SENT;
+                SendCMDfsm = 0;
+                NCS_MHM_Set();
+            }
+            break;
+    }
+    return SendResult;
+}
+
+uint8_t IC_MHMCmd(uint8_t Opcode, uint8_t* pData, uint8_t TxLength, uint8_t RxLength)
+{
+    if(!SERCOM0_SPI_IsBusy())
+    {
+        IC_MHM_SPIBufferInit(&pSPI0Data, TxLength+1, RxLength+1);
+        pSPI0Data->TxData[0] = Opcode;
+        if(TxLength & (pData != NULL)) memcpy(&pSPI0Data->TxData[1], pData, TxLength);
+        if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENDING)
+            return SPI0_CMD_SENDING;
+        else
+        {
+            IC_MCB_SPIBufferFree(&pSPI0Data);
+            return SPI0_BUSY;
+        }
+    }
+    else
+        return SPI0_BUSY;
+}
+
 void IC_MHM_Task()
 {
+    static uint8_t* pTxData = NULL;
+    static uint8_t* pRxData = NULL;
+    
     if(BISS_MASTER_Get())
     {
         NCS_MHM_Set();
         IC_MHMfsm = MHM_STARTUP_1;
     }
-    else if(!SERCOM0_SPI_IsBusy())
+    else
     {
         switch (IC_MHMfsm)
         {
-            //sends SPI POSITION READ command.
             case MHM_STARTUP_1:
-                IC_MHM_SPIBufferInit(&pSPI0Data, (uint8_t)1, (uint8_t)8);
-                pSPI0Data->TxData[0] = POS_READ;
-                NCS_MHM_Clear();
-                if(SERCOM0_SPI_WriteRead (pSPI0Data->TxData, (uint8_t)1, pSPI0Data->RxData, 8)) IC_MHMfsm = MHM_STARTUP_2;
-                else
+                MHMTimer = START_UP_T_ms;
+                IC_MHMfsm = MHM_STARTUP_2;
+                break;
+            //Try to send SPI POSITION READ command to IC-MHM
+            case MHM_STARTUP_2:
+                if(MHMTimer == (uint8_t)1)
                 {
-                    NCS_MHM_Set();
-                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                    if(IC_MHM_POS_READ == SPI0_CMD_SENDING) IC_MHMfsm = MHM_STARTUP_3;
                 }
                 break;
             //Checks if received opcode is POSTION READ and nERR and nWARN bits
             //During Start up, MISO is stuck high so No data will be received
-            case MHM_STARTUP_2:
-                NCS_MHM_Set();
-                //Check recived opcode, if not POSITION READ then repeat process.
-                if(pSPI0Data->RxData[0] !=  POS_READ) IC_MHMfsm = MHM_STARTUP_1;
-                //POSITION READ Opcode Received
-                else
+            case MHM_STARTUP_3:
+                //Wait for last SPI command is sent.
+                if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENT)
                 {
-                    //Check for any error bit or warning bit, repeat process to wait start up process end.
-                    //During Start Up, nWARN and nERR are reset. 
-                    if(pSPI0Data->RxData[6]) IC_MHMfsm = MHM_STARTUP_1;
-                    //if none error or warning bit active, start up complete.
-                    else IC_MHMfsm = READ_STATUS_1;
+                    //Check recived opcode, if not POSITION READ then repeat process.
+                    if(pSPI0Data->RxData[0] !=  POS_READ) IC_MHMfsm = MHM_STARTUP_1;
+                    //POSITION READ Opcode Received
+                    else
+                    {
+                        //Check for any error bit or warning bit, repeat process to wait start up process end.
+                        //During Start Up, nWARN and nERR are reset. 
+                        if(!pSPI0Data->RxData[7]) IC_MHMfsm = MHM_STARTUP_1;
+                        //if none error or warning bit active, start up complete.
+                        else IC_MHMfsm = READ_POS_1;
+                    }
+                    IC_MCB_SPIBufferFree(&pSPI0Data);
                 }
-                IC_MCB_SPIBufferFree(&pSPI0Data);
                 break;
 
             case READ_POS_1:
-                IC_MHM_SPIBufferInit(&pSPI0Data, (uint8_t)1, (uint8_t)8);
-                pSPI0Data->TxData[0] = POS_READ;
-                NCS_MHM_Clear();
-                if(SERCOM0_SPI_WriteRead (pSPI0Data->TxData, (uint8_t)1, pSPI0Data->RxData, 8)) IC_MHMfsm = READ_POS_2;
-                else
-                {
-                    NCS_MHM_Set();
-                    IC_MCB_SPIBufferFree(&pSPI0Data);
-                }
+                if(IC_MHM_POS_READ == SPI0_CMD_SENDING) IC_MHMfsm = READ_POS_2;
                 break;
                 
             case READ_POS_2:
-                NCS_MHM_Set();
-                //Check for nWARN bit
-                if(pSPI0Data->RxData[7] & IC_MHM_SPI_nWARN_Msk) 
+                //Wait for last SPI command is sent.
+                if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENT)
                 {
-                    //nWARN bit detectec, excessive rotor speed
-                }
-                //Check for nERR bit 
-                if(pSPI0Data->RxData[7] & IC_MHM_SPI_nERR_Msk) 
-                {
-                    //nERR bit detectec
-                    IC_MHMfsm = READ_STATUS_1;                        
-                }
-                //Read MT Position from pSPI0Data->RxData[1] to pSPI0Data->RxData[4]
-                //Read ST Position from pSPI0Data->RxData[5] to pSPI0Data->RxData[6]
-                IC_MCB_SPIBufferFree(&pSPI0Data);
-                break;
-                
-            case READ_STATUS_1:
-                IC_MHM_SPIBufferInit(&pSPI0Data, (uint8_t)1, (uint8_t)5);
-                pSPI0Data->TxData[0] = READ_STATUS;
-                NCS_MHM_Clear();
-                if(SERCOM0_SPI_WriteRead (pSPI0Data->TxData, (uint8_t)1, pSPI0Data->RxData, 5))IC_MHMfsm = READ_STATUS_2;
-                else
-                {
-                    NCS_MHM_Set();
+                    //Check for nERR bit 
+                    if(!(pSPI0Data->RxData[7] & IC_MHM_SPI_nERR_Msk)) 
+                    {
+                        //nERR bit detectec
+                        IC_MHMfsm = READ_STATUS_1;
+                    }
+                    else
+                    {
+                        //Check for nWARN bit
+                        if(!(pSPI0Data->RxData[7] & IC_MHM_SPI_nWARN_Msk))
+                        {
+                            //nWARN bit detectec, excessive rotor speed
+                        }
+                        //Read MT Position from pSPI0Data->RxData[1] to pSPI0Data->RxData[4]
+                        //Read ST Position from pSPI0Data->RxData[5] to pSPI0Data->RxData[6]
+                        IC_MHMfsm = READ_REG_STAT_1;
+                    }
                     IC_MCB_SPIBufferFree(&pSPI0Data);
                 }
                 break;
                 
+            case READ_STATUS_1:
+                if(IC_MHM_READ_STATUS == SPI0_CMD_SENDING) IC_MHMfsm = READ_STATUS_2;
+                break;
+                
             case READ_STATUS_2:
-                NCS_MHM_Set();
-                if(pSPI0Data->RxData[1])
+                //Wait for last SPI command is sent.
+                if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENT)
                 {
-                    //error detected
+                    //Check Status Register 1, address 0x70
+                    if(pSPI0Data->RxData[1])
+                    {
+                        //error detected
+                    }
+                    else IC_MHMfsm = READ_POS_1;
+                    IC_MCB_SPIBufferFree(&pSPI0Data);
                 }
-                else IC_MHMfsm = READ_POS_1;
-                IC_MCB_SPIBufferFree(&pSPI0Data);
                 break;
                 
             case READ_REG_STAT_1:
-                IC_MHM_SPIBufferInit(&pSPI0Data, (uint8_t)1, (uint8_t)3);
-                pSPI0Data->TxData[0] = READ_REG_STAT;
-                if(SERCOM0_SPI_WriteRead (pSPI0Data->TxData, (uint8_t)1, pSPI0Data->RxData, 3)) IC_MHMfsm = READ_REG_STAT_2;
+                if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) IC_MHMfsm = READ_REG_STAT_2;
                 break;
                 
             case READ_REG_STAT_2:
-                if(pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) IC_MHMfsm = READ_REG_STAT_1;
-                else IC_MHMfsm = READ_STATUS_1;
-                IC_MCB_SPIBufferFree(&pSPI0Data);
+                                //Wait for last SPI command is sent.
+                if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENT)
+                {
+                    if(pSPI0Data->RxData[1])
+                    {
+                        //Check every flag in REGISTER STATUS/DATA
+                    }
+                    IC_MHMfsm = READ_POS_1;
+                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                }
+                break;
+            case PRESET_1:
+                if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) IC_MHMfsm = PRESET_2;
+                break;
+                
+            case PRESET_2:
+                //Wait for last SPI command is sent.
+                if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENT)
+                {
+                    if(pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) IC_MHMfsm = PRESET_1;
+                    else IC_MHMfsm = PRESET_3;
+                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                }
+                break;
+            case PRESET_3:
+                pTxData = (uint8_t*)malloc(1 * sizeof(*pTxData));
+                pRxData = (uint8_t*)malloc(2 * sizeof(*pTxData));
+                *pTxData = 0x74;
+                //Read Status Registers to get output settings
+                if(IC_MHMCmd(REG_RD_CTD, pTxData, 1, 2) == SPI0_CMD_SENDING) IC_MHMfsm = PRESET_4;
+                else
+                {
+                    free(pTxData);
+                    pTxData = NULL;
+                    free(pRxData);
+                    pRxData = NULL;
+                }
+                break;
+                
+            case PRESET_4:
+                if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENT)
+                {
+                    memcpy(pRxData, &pSPI0Data->RxData[1],2);
+                    free(pTxData);
+                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                    IC_MHMfsm = PRESET_5;
+                    
+                }
+                break;
+            case PRESET_5:
+                if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) IC_MHMfsm = PRESET_6;
+                break;
+                
+            case PRESET_6:
+                //Wait for last SPI command is sent.
+                if(SPI0SendCMD_(pSPI0Data) == SPI0_CMD_SENT)
+                {
+                    if(pSPI0Data->RxData[1] & IC_MHM_STAT_FAIL_Msk)
+                    {
+                        free(pRxData);
+                        IC_MHMfsm = PRESET_1;
+                    }
+                    else if (pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) IC_MHMfsm = PRESET_5;
+                    else if (pSPI0Data->RxData[1] & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = PRESET_7;
+                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                }
+                break;
+            case PRESET_7:
                 break;
         }
     }
-
 }
 //void SPI1Task()
 //{

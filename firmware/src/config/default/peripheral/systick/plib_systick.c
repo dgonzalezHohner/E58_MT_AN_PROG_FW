@@ -42,6 +42,7 @@
 #include "interrupts.h"
 #include "plib_systick.h"
 #include "push_buttons.h"
+#include "SPI_MHM.h"
 
 static SYSTICK_OBJECT systick;
 
@@ -173,4 +174,5 @@ void SysTick_Handler(void)
    }
    (void)sysCtrl;
    PBDebTimerTask();
+   IC_MHMTimerTask();
 }

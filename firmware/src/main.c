@@ -27,8 +27,10 @@
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 #include "push_buttons.h"
+#include "SPI_MHM.h"
 
 extern PBGroupType* pPushButtons;
+extern uint8_t MHMTimer;
 // *****************************************************************************
 // *****************************************************************************
 // Section: Main Entry Point
@@ -40,6 +42,7 @@ int main ( void )
     SYS_Initialize ( NULL );
     PBInit (&pPushButtons , NUMBER_PUSH_BUTTONS);
     
+    MHMTimer = 0;
     WDT_Enable();
     while ( true )
     {
