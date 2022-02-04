@@ -122,19 +122,16 @@ typedef enum
     MHM_STARTUP_1 = (uint8_t)0,
     MHM_STARTUP_2,
     MHM_STARTUP_3,
+    MHM_STARTUP_4,
+    MHM_STARTUP_5,
+    MHM_STARTUP_6,
+    MHM_STARTUP_7,
     READ_POS_1,
     READ_POS_2,
     READ_STATUS_1,
     READ_STATUS_2,
     READ_REG_STAT_1,
-    READ_REG_STAT_2,
-    PRESET_1,
-    PRESET_2,
-    PRESET_3,
-    PRESET_4,
-    PRESET_5,
-    PRESET_6,
-    PRESET_7
+    READ_REG_STAT_2
 }IC_MHMfsmType;
 
 enum MHM_OPCODE
@@ -183,10 +180,14 @@ enum SPI0_STATUS
 #define IC_MHM_0x75_FIO_2_Msk       (uint8_t)0x04
 #define IC_MHM_0x75_FIO_3_Msk       (uint8_t)0x08
 
-#define START_UP_T_ms               100
+#define START_UP_T_ms               500
 #define START_UP_TIMER_SET          (((START_UP_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
-#define PRESET_PULSE_T_ms           5
-#define PRESET_TIMER_SET            (((PRESET_PULSE_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+#define READ_POS_T_ms               20
+#define READ_POS_TIMER_SET          (((READ_POS_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+#define PV_PRESET_PULSE_T_ms        20
+#define PV_PRESET_TIMER_SET         (((PV_PRESET_PULSE_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
 #define IC_MHM_POS_READ             IC_MHMCmd(POS_READ, NULL, 0, 7)         //Send POSITION READ opcode to IC-MHM
 #define IC_MHM_READ_STATUS          IC_MHMCmd(READ_STATUS, NULL, 0, 4)      //Send READ STATUS opcode to IC-MHM
@@ -250,8 +251,7 @@ void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void DeInit_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData, uint8_t TxLength, uint8_t RxLength);
 void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
-bool SPI0SendCMD(uint8_t Opcode, uint8_t TxLength, uint8_t RxLength);
-uint8_t SPI0SendCMD_(SPI_IC_MHMType* ptr);
+uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr);
 void IC_MHMTimerTask();
     /* Provide C++ Compatibility */
 #ifdef __cplusplus

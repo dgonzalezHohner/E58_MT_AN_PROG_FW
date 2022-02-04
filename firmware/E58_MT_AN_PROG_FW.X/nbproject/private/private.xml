@@ -3,19 +3,17 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/E58_MT_AN_PROG_FW.X/nbproject/Makefile-default.mk</file>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/packs/ATSAMD21E17L_DFP/component/port.h</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/systick/plib_systick.c</file>
+            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/packs/ATSAMD21E17L_DFP/component/sercom.h</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/SPI_MHM.h</file>
+            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.c</file>
+            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/main.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/push_buttons.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/definitions.h</file>
+            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/port/plib_port.h</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/SPI_MHM.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.h</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/push_buttons.h</file>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/packs/ATSAMD21E17L_DFP/component/sercom.h</file>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/sercom/spi_master/plib_sercom0_spi_master.c</file>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/main.c</file>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/port/plib_port.h</file>
         </group>
     </open-files>
 </project-private>
