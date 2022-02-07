@@ -61,8 +61,7 @@
  */
 //int global_data;
 SPI_IC_MHMType* pSPI0Data;
-IC_MHMfsmType IC_MHMfsm = READ_REG_STAT_1;
-uint8_t MHMTimer = 0, AuxTimer = 0;
+uint8_t MHMTimer = 0;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -177,7 +176,6 @@ void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData)
 void IC_MHMTimerTask()
 {
      if( MHMTimer > 1)  MHMTimer--;
-     if( AuxTimer > 1)  AuxTimer--;
 }
 
 uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr)
@@ -212,14 +210,15 @@ uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr)
     }
     return SendResult;
 }
-
+//TxLength does not include opcode
+//RxLength includes opcode
 uint8_t IC_MHMCmd(uint8_t Opcode, uint8_t* pData, uint8_t TxLength, uint8_t RxLength)
 {
     if(!SERCOM0_SPI_IsBusy())
     {
-        IC_MHM_SPIBufferInit(&pSPI0Data, TxLength+1, RxLength+1);
+        IC_MHM_SPIBufferInit(&pSPI0Data, TxLength+1, RxLength);
         pSPI0Data->TxData[0] = Opcode;
-        if(TxLength & (pData != NULL)) memcpy(&pSPI0Data->TxData[1], pData, TxLength);
+        if((TxLength) & (pData != NULL)) memcpy(&pSPI0Data->TxData[1], pData, TxLength);
         if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENDING)
             return SPI0_CMD_SENDING;
         else
@@ -232,18 +231,16 @@ uint8_t IC_MHMCmd(uint8_t Opcode, uint8_t* pData, uint8_t TxLength, uint8_t RxLe
         return SPI0_BUSY;
 }
 
-uint8_t IC_MHM_Preset_IC_PV()
+uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint8_t* pRxData, uint8_t RxLength)
 {
-    static uint8_t PresetPVfsm = 0;
+    static uint8_t RegAccessfsm = 0;
     uint8_t result = 0;
-    static uint8_t* pTxData = NULL;
-    static uint8_t* pRxData = NULL;
-    
-    switch (PresetPVfsm)
+        
+    switch (RegAccessfsm)
     {
         case 0:
             //Read Register Status
-            if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) PresetPVfsm = 1;
+            if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) RegAccessfsm = 1;
             break;
             
         case 1:
@@ -251,122 +248,56 @@ uint8_t IC_MHM_Preset_IC_PV()
             if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
             {
                 //Check if Register Status bit Busy is set
-                if(pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) PresetPVfsm = 0;
-                else PresetPVfsm = 2;
+                if(pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) RegAccessfsm = 0;
+                else RegAccessfsm = 2;
                 IC_MCB_SPIBufferFree(&pSPI0Data);
             }
             break;
             
         case 2:
-            pTxData = (uint8_t*)malloc(1 * sizeof(*pTxData));
-            pRxData = (uint8_t*)malloc(2 * sizeof(*pTxData));
-            *pTxData = 0x74;    //First instruction register address in IC-MHM
-            PresetPVfsm = 3;
+            if(IC_MHMCmd(Opcode, pTxData, TxLength, RxLength) == SPI0_CMD_SENDING) RegAccessfsm = 3;
             break;
             
         case 3:
-            //Read instruction registers 1 and 2 to get output settings
-            if(IC_MHMCmd(REG_RD_CTD, pTxData, 1, 2) == SPI0_CMD_SENDING) PresetPVfsm = 4;
+            //Wait for last SPI command is sent.
+            if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
+            {
+                if(RxLength) memcpy(pRxData, &pSPI0Data->RxData[0],RxLength);
+                RegAccessfsm = 4;
+                IC_MCB_SPIBufferFree(&pSPI0Data);
+            }
             break;
-            
+
         case 4:
-            //Wait for last SPI command is sent.
-            if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
-            {
-                //Copy Instruction Registers read to pointer pRxData
-                memcpy(pRxData, &pSPI0Data->RxData[1],2);
-                free(pTxData);
-                IC_MCB_SPIBufferFree(&pSPI0Data);
-                PresetPVfsm = 5;
-            }
-            break;
-        case 5:
             //Read Register Status
-            if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) PresetPVfsm = 6;
-            break;
-        case 6:
-            //Wait for last SPI command is sent.
-            if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
-            {
-                //Check if data requested failed, wrong read of instruction registers
-                if(pSPI0Data->RxData[1] & IC_MHM_STAT_FAIL_Msk)
-                {
-                    free(pRxData);
-                    PresetPVfsm = 0;
-                }
-                //Check if IC-MHM is busy at the moment
-                else if (pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) IC_MHMfsm = PresetPVfsm = 5;
-                //Check if last requested data is valid
-                else if (pSPI0Data->RxData[1] & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = PresetPVfsm = 7;
-                IC_MCB_SPIBufferFree(&pSPI0Data);
-            }
-            break;
-        case 7:
-            pTxData = (uint8_t*)malloc(2 * sizeof(*pTxData));
-            memcpy(pTxData,pRxData,2);
-            if(!AuxTimer) pTxData[1] |= IC_MHM_0x75_FIO_3_Msk; //Set FIO3 -> PV PRESET pin
-            else pTxData[1] &= ~(IC_MHM_0x75_FIO_3_Msk); //Clear FIO3 -> PV PRESET pin
-            free(pRxData);
-            PresetPVfsm = 8;
+            if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) RegAccessfsm = 5;
             break;
             
-        case 8:
-            if(IC_MHMCmd(WR_INST, pTxData, 2, 0) == SPI0_CMD_SENDING) PresetPVfsm = 9;
-            break;
-        
-        case 9:
+        case 5:
             //Wait for last SPI command is sent.
             if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
             {
-                PresetPVfsm = 10;
-                IC_MCB_SPIBufferFree(&pSPI0Data);
-            }
-            break;
-        case 10:
-            //Read Register Status
-            if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) PresetPVfsm = 11;
-            break;
-        case 11:
-            //Wait for last SPI command is sent.
-            if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
-            {
-                //Check if data requested failed, wrong read of instruction registers
-                if(pSPI0Data->RxData[1] & IC_MHM_STAT_FAIL_Msk) PresetPVfsm = 8;
-                //Check if IC-MHM is busy at the moment
-                else if (pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) IC_MHMfsm = PresetPVfsm = 10;
-                //Check if last requested data is valid
-                else if (pSPI0Data->RxData[1] & IC_MHM_STAT_VALID_Msk)
+                //Check if Register Status bit Busy is set
+                if(pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) RegAccessfsm = 4;
+                else
                 {
-                    if(!AuxTimer)
-                    {
-                        IC_MHMfsm = PresetPVfsm = 12;
-                        AuxTimer = PV_PRESET_TIMER_SET;
-                    }
-                    else if (AuxTimer == 1)
-                    {
-                        free(pTxData);
-                        IC_MHMfsm = PresetPVfsm = 0;
-                        result = 1;
-                    }
+                    RegAccessfsm = 0;
+                    result = pSPI0Data->RxData[1];
                 }
-                //Free SPI0 Buffer
                 IC_MCB_SPIBufferFree(&pSPI0Data);
-            }
-            break;
-        case 12:
-            if(AuxTimer == (uint8_t)1)
-            {
-                free(pTxData);
-                IC_MHMfsm = PresetPVfsm = 0;
             }
             break;
     }
     return result;
 }
+
 void IC_MHM_Task()
 {
+    static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
     static uint8_t PowerUp = 1;
     static uint8_t StartUpCnt = 0;
+    static uint8_t *pTxData, *pRxData;
+    uint8_t RegStat = 0;
     
     if(BISS_MASTER_Get())
     {
@@ -379,195 +310,192 @@ void IC_MHM_Task()
         {
             case MHM_STARTUP_1:
                 MHMTimer = START_UP_TIMER_SET;
+                pRxData = (uint8_t*)malloc(8 * sizeof(*pRxData));
+                pTxData = NULL;
                 IC_MHMfsm = MHM_STARTUP_2;
                 break;
             //Try to send SPI POSITION READ command to IC-MHM
             case MHM_STARTUP_2:
                 if(MHMTimer == (uint8_t)1)
                 {
-                    if(IC_MHM_POS_READ == SPI0_CMD_SENDING) IC_MHMfsm = MHM_STARTUP_3;
+                    if(IC_MHM_RegAcces(POS_READ_OPC, pTxData, 0, pRxData, 8*sizeof(*pRxData)) & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = MHM_STARTUP_3;
                 }
                 break;
             //Checks if received opcode is POSTION READ and nERR and nWARN bits
             //During Start up, MISO is stuck high so No data will be received
             case MHM_STARTUP_3:
-                //Wait for last SPI command is sent.
-                if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
+                //pRxData contains SPI Received data from IC-MHM
+                if(pRxData[0] !=  POS_READ_OPC)
                 {
-                    //Check recived opcode, if not POSITION READ opcode then repeat process.
-                    if(pSPI0Data->RxData[0] !=  POS_READ)
+                    if(PowerUp)
                     {
-                        if(PowerUp)
-                        {
-                            //To Do EEPROM LOAD FAIL
-                            PowerUp = 0;
-                        }
-                        MHMTimer = READ_POS_TIMER_SET;
-                        IC_MHMfsm = READ_POS_1;
+                        //To Do EEPROM LOAD FAIL
+                        PowerUp = 0;
                     }
-                    //POSITION READ Opcode Received
-                    else
+                    IC_MHMfsm = READ_POS_1;
+                }
+                else
+                {
+                    if(PowerUp)
                     {
-                        if(PowerUp)
+                        //To Do EERPOM LOAD SUCCEED
+                        PowerUp = 0;
+                    }
+                    //During Start Up, nWARN and nERR are reset. 
+                    if(!pRxData[7])
+                    {
+                        if(StartUpCnt < 2)
                         {
-                            //To Do EERPOM LOAD SUCCEED
-                            PowerUp = 0;
-                        }
-                        //Check for any error bit or warning bit
-                        //During Start Up, nWARN and nERR are reset. 
-                        if(!pSPI0Data->RxData[7])
-                        {
-                            if(StartUpCnt < 2)
-                            {
-                                StartUpCnt++;
-                                IC_MHMfsm = MHM_STARTUP_4;
-                            }
-                            else
-                            {
-                                //To Do START UP ERROR 
-                                MHMTimer = READ_POS_TIMER_SET;
-                                IC_MHMfsm = READ_POS_1;
-                            }
+                            StartUpCnt++;
+                            IC_MHMfsm = MHM_STARTUP_4;
                         }
                         else
                         {
-                            //To Do START UP SUCCEED
-                            MHMTimer = READ_POS_TIMER_SET;
+                            //To Do START UP ERROR 
                             IC_MHMfsm = READ_POS_1;
                         }
                     }
-                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                    else
+                    {
+                        //To Do START UP SUCCEED
+                        IC_MHMfsm = READ_POS_1;
+                    }
                 }
+                free(pRxData);
+                pRxData = NULL;
                 break;
                 
             case MHM_STARTUP_4:
-                if(IC_MHM_Preset_IC_PV()) IC_MHMfsm = MHM_STARTUP_5;
+                pRxData = malloc(sizeof(*pRxData)*4);
+                pTxData = malloc(sizeof(*pRxData)*1);
+                *pTxData = IC_MHM_PRES_RES_REG;
+                IC_MHMfsm = MHM_STARTUP_5;
                 break;
             case MHM_STARTUP_5:
-                
-                IC_MHMfsm = MHM_STARTUP_6;
+                if(IC_MHM_RegAcces(REG_RD_CTD_OPC, pTxData, sizeof(*pTxData)*1, pRxData, sizeof(*pRxData)*4) & IC_MHM_STAT_VALID_Msk)
+                {
+                    free(pTxData);
+                    pTxData = malloc(sizeof(*pTxData)*2);
+                    memcpy(pTxData, &pRxData[2], 2);
+                    free(pRxData);
+                    pRxData = NULL;
+                    pTxData[1] |= IC_MHM_0x75_FIO_3_Msk;
+                    IC_MHMfsm = MHM_STARTUP_6;
+                }
                 break;
 
             case MHM_STARTUP_6:
-                
-                IC_MHMfsm = MHM_STARTUP_7;
+                if(IC_MHM_RegAcces(WR_INST_OPC, pTxData, sizeof(*pTxData)*2, pRxData, 0) & IC_MHM_STAT_VALID_Msk)
+                {
+                    free(pTxData);
+                    pTxData = NULL;
+                    MHMTimer = PV_PRESET_TIMER_SET;
+                    IC_MHMfsm = MHM_STARTUP_7;
+                }
                 break;
                 
             case MHM_STARTUP_7:
-                IC_MHMfsm = MHM_STARTUP_1;
-                break;                
+                if(MHMTimer ==1)
+                {
+                    pRxData = malloc(sizeof(*pRxData)*4);
+                    pTxData = malloc(sizeof(*pRxData)*1);
+                    *pTxData = IC_MHM_PRES_RES_REG;
+                    IC_MHMfsm = MHM_STARTUP_8;
+                }
+                break;    
+                
+            case MHM_STARTUP_8:
+                if(IC_MHM_RegAcces(REG_RD_CTD_OPC, pTxData, sizeof(*pTxData)*1, pRxData, sizeof(*pRxData)*4) & IC_MHM_STAT_VALID_Msk)
+                {
+                    free(pTxData);
+                    pTxData = malloc(sizeof(*pTxData)*2);
+                    memcpy(pTxData, &pRxData[2], 2);
+                    free(pRxData);
+                    pRxData = NULL;
+                    pTxData[0] |= IC_MHM_0x74_RESET_Msk;
+                    pTxData[1] &= ~(IC_MHM_0x75_FIO_3_Msk);
+                    IC_MHMfsm = MHM_STARTUP_9;
+                }
+                break;
+                
+            case MHM_STARTUP_9:
+                if(IC_MHM_RegAcces(WR_INST_OPC, pTxData, sizeof(*pTxData)*2, pRxData, 0) & IC_MHM_STAT_VALID_Msk)
+                {
+                    free(pTxData);
+                    pTxData = NULL;
+                    IC_MHMfsm = MHM_STARTUP_1;
+                }
+                break;
 
             case READ_POS_1:
-                if(IC_MHM_POS_READ == SPI0_CMD_SENDING) IC_MHMfsm = READ_POS_2;
+                MHMTimer = READ_POS_TIMER_SET;
+                IC_MHMfsm = READ_POS_2;
                 break;
                 
             case READ_POS_2:
-                //Wait for last SPI command is sent.
-                if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
+                pRxData = (uint8_t*)malloc(8 * sizeof(*pRxData));
+                pTxData = NULL;
+                IC_MHMfsm = READ_POS_3;
+                break;
+            case READ_POS_3:
+                if(MHMTimer == (uint8_t)1)
                 {
-                    //Check for nERR bit 
-                    if(!(pSPI0Data->RxData[7] & IC_MHM_SPI_nERR_Msk)) 
+                    MHMTimer = READ_POS_TIMER_SET;
+                    IC_MHMfsm = READ_POS_4;
+                }
+                break;
+            case READ_POS_4:
+                RegStat = IC_MHM_RegAcces(POS_READ_OPC, pTxData, 0, pRxData, 8*sizeof(*pRxData));
+                if(RegStat & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_POS_5;
+                else if (RegStat & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk)) IC_MHMfsm = READ_POS_3;                
+                break;
+            case READ_POS_5:
+                if(!(pRxData[7] & IC_MHM_SPI_nERR_Msk)) 
+                {
+                    //nERR bit detectec
+                    free(pRxData);
+                    pRxData = NULL;
+                    IC_MHMfsm = READ_STATUS_1;
+                }
+                else
+                {
+                    //Check for nWARN bit
+                    if(!(pRxData[7] & IC_MHM_SPI_nWARN_Msk))
                     {
-                        //nERR bit detectec
-                        IC_MHMfsm = READ_STATUS_1;
+                        //nWARN bit detectec, excessive rotor speed
                     }
-                    else
-                    {
-                        //Check for nWARN bit
-                        if(!(pSPI0Data->RxData[7] & IC_MHM_SPI_nWARN_Msk))
-                        {
-                            //nWARN bit detectec, excessive rotor speed
-                        }
-                        //Read MT Position from pSPI0Data->RxData[1] to pSPI0Data->RxData[4]
-                        //Read ST Position from pSPI0Data->RxData[5] to pSPI0Data->RxData[6]
-                        IC_MHMfsm = READ_REG_STAT_1;
-                    }
-                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                    //Read MT Position from pRxData[1] to pRxData[4]
+                    //Read ST Position from pRxData[5] to pRxData[6]
+                    IC_MHMfsm = READ_POS_3;
                 }
                 break;
                 
             case READ_STATUS_1:
-                if(IC_MHM_READ_STATUS == SPI0_CMD_SENDING) IC_MHMfsm = READ_STATUS_2;
+                pRxData = (uint8_t*)malloc(3 * sizeof(*pRxData));
+                pTxData = NULL;
+                IC_MHMfsm = READ_STATUS_2;
                 break;
                 
             case READ_STATUS_2:
-                //Wait for last SPI command is sent.
-                if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
-                {
-                    //Check Status Register 1, address 0x70
-                    if(pSPI0Data->RxData[1])
-                    {
-                        //error detected
-                    }
-                    else IC_MHMfsm = READ_POS_1;
-                    IC_MCB_SPIBufferFree(&pSPI0Data);
-                }
+                RegStat = IC_MHM_RegAcces(READ_STATUS_OPC, pTxData, 0, pRxData, 3*sizeof(*pRxData));
+                if(RegStat & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_STATUS_3;
+                else if (RegStat & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk)) IC_MHMfsm = READ_STATUS_2;                
                 break;
                 
-            case READ_REG_STAT_1:
-                if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) IC_MHMfsm = READ_REG_STAT_2;
-                break;
-                
-            case READ_REG_STAT_2:
-                                //Wait for last SPI command is sent.
-                if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
+            case READ_STATUS_3:
+                //Check Status Register 1, address 0x70
+                if(pSPI0Data->RxData[1])
                 {
-                    if(pSPI0Data->RxData[1])
-                    {
-                        //Check every flag in REGISTER STATUS/DATA
-                    }
-                    IC_MHMfsm = READ_POS_1;
-                    IC_MCB_SPIBufferFree(&pSPI0Data);
+                    //error detected
                 }
+                else IC_MHMfsm = READ_POS_2;
+                free(pRxData);
+                pRxData = NULL;
                 break;
         }
     }
 }
-//void SPI1Task()
-//{
-//	switch (SPI1fsm)
-//	{
-//		case 0:
-//			if(pSPI1Data != NULL)
-//			{
-//                //Enable SERCOM0
-//                SERCOM0_REGS->SPIM.SERCOM_CTRLA |= SERCOM_SPIM_CTRLA_ENABLE_Msk ;
-//                /* Wait for synchronization */
-//                while((SERCOM0_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
-//                {
-//                    /* Do nothing */
-//                }
-//				//Enable SPI Reception Interupt
-//                SERCOM0_REGS->I2CM.SERCOM_INTENSET |= SERCOM_SPIM_INTENSET_RXC_Msk;
-//				//Enable SPI Data register Empty
-//                SERCOM0_REGS->SPIM.SERCOM_INTENSET |= SERCOM_SPIM_INTENSET_DRE_Msk;
-//				SPI1fsm++;
-//			}
-//		break;
-//
-//		case 1:
-//			if(pSPI1Data->RxCnt == pSPI1Data->length)
-//			{
-//               //Disable SERCOM0
-//                SERCOM0_REGS->SPIM.SERCOM_CTRLA &= ~(SERCOM_SPIM_CTRLA_ENABLE_Msk);
-//                /* Wait for synchronization */
-//                while((SERCOM0_REGS->SPIM.SERCOM_SYNCBUSY) != 0U)
-//                {
-//                    /* Do nothing */
-//                }
-//                //Disable SPI Reception Interupt
-//                SERCOM0_REGS->I2CM.SERCOM_INTENCLR |= SERCOM_SPIM_INTENSET_RXC_Msk;
-//				//Disable SPI Data register Empty
-//                SERCOM0_REGS->SPIM.SERCOM_INTENCLR |= SERCOM_SPIM_INTENSET_DRE_Msk;
-//				SPI1fsm++;
-//			}
-//		break;
-//
-//		case 2:
-//			if(pSPI1Data == NULL) SPI1fsm = 0;
-//		break;
-//	}
-//}
+
 
 
 /* *****************************************************************************

@@ -126,25 +126,29 @@ typedef enum
     MHM_STARTUP_5,
     MHM_STARTUP_6,
     MHM_STARTUP_7,
+    MHM_STARTUP_8,
+    MHM_STARTUP_9,
     READ_POS_1,
     READ_POS_2,
+    READ_POS_3,
+    READ_POS_4,
+    READ_POS_5,
     READ_STATUS_1,
     READ_STATUS_2,
-    READ_REG_STAT_1,
-    READ_REG_STAT_2
+    READ_STATUS_3
 }IC_MHMfsmType;
 
 enum MHM_OPCODE
 {
-    ACTIVATE = (uint8_t)0xB0,
-    POS_READ = (uint8_t)0xA6,
-    REG_RD_CTD = (uint8_t)0x8A,
-    REG_WR_CTD = (uint8_t)0xCF,
-    READ_STATUS = (uint8_t)0x9C,
-    WR_INST = (uint8_t)0xD9,
-    REG_RD = (uint8_t)0x97,
-    REG_WR = (uint8_t)0xD2,
-    READ_REG_STAT = (uint8_t)0xAD
+    ACTIVATE_OPC = (uint8_t)0xB0,
+    POS_READ_OPC = (uint8_t)0xA6,
+    REG_RD_CTD_OPC = (uint8_t)0x8A,
+    REG_WR_CTD_OPC = (uint8_t)0xCF,
+    READ_STATUS_OPC = (uint8_t)0x9C,
+    WR_INST_OPC = (uint8_t)0xD9,
+    REG_RD_OPC = (uint8_t)0x97,
+    REG_WR_OPC = (uint8_t)0xD2,
+    READ_REG_STAT_OPC = (uint8_t)0xAD
 };
 
 enum SPI0_STATUS
@@ -172,9 +176,11 @@ enum SPI0_STATUS
 #define IC_MHM_SPI_nERR_Msk         (uint8_t)0x80
 #define IC_MHM_SPI_nWARN_Msk        (uint8_t)0x40
 
+#define IC_MHM_PRES_RES_REG         (uint8_t)0x74
 #define IC_MHM_0x74_RESET_Msk       (uint8_t)0x01
 #define IC_MHM_0x74_PRESET_Msk      (uint8_t)0x02
 
+#define IC_MHM_FIO_REG_ADDR         (uint8_t)0x75
 #define IC_MHM_0x75_FIO_0_Msk       (uint8_t)0x01
 #define IC_MHM_0x75_FIO_1_Msk       (uint8_t)0x02
 #define IC_MHM_0x75_FIO_2_Msk       (uint8_t)0x04
@@ -189,9 +195,9 @@ enum SPI0_STATUS
 #define PV_PRESET_PULSE_T_ms        20
 #define PV_PRESET_TIMER_SET         (((PV_PRESET_PULSE_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
-#define IC_MHM_POS_READ             IC_MHMCmd(POS_READ, NULL, 0, 7)         //Send POSITION READ opcode to IC-MHM
-#define IC_MHM_READ_STATUS          IC_MHMCmd(READ_STATUS, NULL, 0, 4)      //Send READ STATUS opcode to IC-MHM
-#define IC_MHM_READ_REG_STAT        IC_MHMCmd(READ_REG_STAT, NULL, 0, 2)    //Send READ REGISTER STATUS opcode to IC-MHM
+#define IC_MHM_POS_READ             IC_MHMCmd(POS_READ_OPC, NULL, 0, 7)         //Send POSITION READ opcode to IC-MHM
+#define IC_MHM_READ_STATUS          IC_MHMCmd(READ_STATUS_OPC, NULL, 0, 4)      //Send READ STATUS opcode to IC-MHM
+#define IC_MHM_READ_REG_STAT        IC_MHMCmd(READ_REG_STAT_OPC, NULL, 0, 3)    //Send READ REGISTER STATUS opcode to IC-MHM
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
