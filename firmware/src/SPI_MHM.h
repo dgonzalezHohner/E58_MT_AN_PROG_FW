@@ -256,9 +256,12 @@ enum SPI0_STATUS
 void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void DeInit_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData, uint8_t TxLength, uint8_t RxLength);
-void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
-uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr);
+void IC_MHM_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
 void IC_MHMTimerTask();
+//uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr);
+//uint8_t IC_MHMCmd(uint8_t Opcode, uint8_t* pData, uint8_t TxLength, uint8_t RxLength);
+uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint8_t* pRxData, uint8_t RxLength);
+void IC_MHM_Task();
     /* Provide C++ Compatibility */
 #ifdef __cplusplus
 }

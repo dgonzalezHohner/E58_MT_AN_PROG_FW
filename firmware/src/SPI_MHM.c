@@ -143,7 +143,7 @@ void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData, uint8_t TxLength, ui
 	ptr->pInitSPIData (ptr);
 	*pIC_MHM_SPIData = ptr;
 }
-void IC_MCB_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData)
+void IC_MHM_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData)
 {
 	(*pIC_MHM_SPIData)->pDeInitSPIData (*pIC_MHM_SPIData);
 	free(*pIC_MHM_SPIData);
@@ -178,115 +178,66 @@ void IC_MHMTimerTask()
      if( MHMTimer > 1)  MHMTimer--;
 }
 
-uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr)
-{
-    static uint8_t SendCMDfsm = 0;
-    uint8_t SendResult = SPI0_BUSY;
-    
-    switch (SendCMDfsm)
-    {
-        case 0:
-            NCS_MHM_Clear();
-            if (SERCOM0_SPI_WriteRead (ptr->TxData, ptr->TxLength, ptr->RxData, ptr->RxLength) == true)
-            {
-                SendCMDfsm++;
-                SendResult = SPI0_CMD_SENDING;
-            }
-            else
-            {
-                NCS_MHM_Set();
-                SendResult = SPI0_BUSY;
-            }
-            break;
-        case 1:
-            if(SERCOM0_SPI_IsBusy()) SendResult = SPI0_BUSY;
-            else
-            {
-                SendResult = SPI0_CMD_SENT;
-                SendCMDfsm = 0;
-                NCS_MHM_Set();
-            }
-            break;
-    }
-    return SendResult;
-}
 //TxLength does not include opcode
 //RxLength includes opcode
-uint8_t IC_MHMCmd(uint8_t Opcode, uint8_t* pData, uint8_t TxLength, uint8_t RxLength)
-{
-    if(!SERCOM0_SPI_IsBusy())
-    {
-        IC_MHM_SPIBufferInit(&pSPI0Data, TxLength+1, RxLength);
-        pSPI0Data->TxData[0] = Opcode;
-        if((TxLength) & (pData != NULL)) memcpy(&pSPI0Data->TxData[1], pData, TxLength);
-        if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENDING)
-            return SPI0_CMD_SENDING;
-        else
-        {
-            IC_MCB_SPIBufferFree(&pSPI0Data);
-            return SPI0_BUSY;
-        }
-    }
-    else
-        return SPI0_BUSY;
-}
-
 uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint8_t* pRxData, uint8_t RxLength)
 {
+    static SPI_IC_MHMType* pSPIMHM = NULL;
     static uint8_t RegAccessfsm = 0;
     uint8_t result = 0;
-        
-    switch (RegAccessfsm)
-    {
-        case 0:
-            //Read Register Status
-            if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) RegAccessfsm = 1;
-            break;
-            
-        case 1:
-            //Wait for last SPI command is sent.
-            if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
-            {
-                //Check if Register Status bit Busy is set
-                if(pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) RegAccessfsm = 0;
-                else RegAccessfsm = 2;
-                IC_MCB_SPIBufferFree(&pSPI0Data);
-            }
-            break;
-            
-        case 2:
-            if(IC_MHMCmd(Opcode, pTxData, TxLength, RxLength) == SPI0_CMD_SENDING) RegAccessfsm = 3;
-            break;
-            
-        case 3:
-            //Wait for last SPI command is sent.
-            if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
-            {
-                if(RxLength) memcpy(pRxData, &pSPI0Data->RxData[0],RxLength);
-                RegAccessfsm = 4;
-                IC_MCB_SPIBufferFree(&pSPI0Data);
-            }
-            break;
 
-        case 4:
-            //Read Register Status
-            if(IC_MHM_READ_REG_STAT == SPI0_CMD_SENDING) RegAccessfsm = 5;
-            break;
-            
-        case 5:
-            //Wait for last SPI command is sent.
-            if(SPI0SendCMD(pSPI0Data) == SPI0_CMD_SENT)
-            {
-                //Check if Register Status bit Busy is set
-                if(pSPI0Data->RxData[1] & IC_MHM_STAT_BUSY_Msk) RegAccessfsm = 4;
+    if(!SERCOM0_SPI_IsBusy())
+    {
+        switch (RegAccessfsm)
+        {
+            case 0:
+            case 4:
+                //Read Register Status
+                IC_MHM_SPIBufferInit(&pSPIMHM, 1, 3);
+                pSPIMHM->TxData[0] = READ_REG_STAT_OPC;
+                NCS_MHM_Clear();
+                SERCOM0_SPI_WriteRead (pSPIMHM->TxData, pSPIMHM->TxLength, pSPIMHM->RxData, pSPIMHM->RxLength);
+                RegAccessfsm = (RegAccessfsm == 0) ? 1 : 5;
+                break;
+
+            case 1:
+            case 5:
+                NCS_MHM_Set();
+                if(RegAccessfsm == 1)
+                {
+                    //Check if Register Status bit Busy is set
+                    if(pSPIMHM->RxData[1] & IC_MHM_STAT_BUSY_Msk) RegAccessfsm = 0;
+                    else RegAccessfsm = 2;
+                }
                 else
                 {
-                    RegAccessfsm = 0;
-                    result = pSPI0Data->RxData[1];
+                    //Check if Register Status bit Busy is set
+                    if(pSPIMHM->RxData[1] & IC_MHM_STAT_BUSY_Msk) RegAccessfsm = 4;
+                    else
+                    {
+                        RegAccessfsm = 0;
+                        result = pSPIMHM->RxData[1];
+                    }
                 }
-                IC_MCB_SPIBufferFree(&pSPI0Data);
-            }
-            break;
+                IC_MHM_SPIBufferFree(&pSPIMHM);
+                break;
+
+            case 2:
+                IC_MHM_SPIBufferInit(&pSPIMHM, TxLength+1, RxLength);
+                pSPIMHM->TxData[0] = Opcode;
+                if((TxLength) & (pTxData != NULL)) memcpy(&pSPIMHM->TxData[1], pTxData, TxLength);
+                NCS_MHM_Clear();
+                SERCOM0_SPI_WriteRead (pSPIMHM->TxData, pSPIMHM->TxLength, pSPIMHM->RxData, pSPIMHM->RxLength);
+                RegAccessfsm = 3;
+                break;
+
+            case 3:
+                NCS_MHM_Set();
+                if(pSPIMHM->RxLength) memcpy(pRxData, pSPIMHM->RxData,RxLength);
+                RegAccessfsm = 4;
+                IC_MHM_SPIBufferFree(&pSPI0Data);
+                break;
+        }
     }
     return result;
 }
