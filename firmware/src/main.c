@@ -50,6 +50,9 @@ int main ( void )
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
         PushButtonsTask();
+        IC_MHM_Task();
+        
+        IC_MHM_RegAccesTask();
     }
 
     /* Execution should not come here during normal operation */

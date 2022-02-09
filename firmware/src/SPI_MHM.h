@@ -264,13 +264,16 @@ enum SPI0_STATUS
         }
      */
 //    int ExampleFunction(int param1, int param2);
+bool IsMHMAccessFree();
 void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void DeInit_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData);
 void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData, uint8_t TxLength, uint8_t RxLength);
 void IC_MHM_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
+void InitMHMRegAccData(IC_MHM_REG_ACCType* MHMRegAccData);
+void DeInitMHMRegAccData(IC_MHM_REG_ACCType* MHMRegAccData);
+void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, uint8_t TxLength, uint8_t RxLength);
+void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData);
 void IC_MHMTimerTask();
-//uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr);
-//uint8_t IC_MHMCmd(uint8_t Opcode, uint8_t* pData, uint8_t TxLength, uint8_t RxLength);
 void IC_MHM_RegAccesTask();
 void IC_MHM_Task();
     /* Provide C++ Compatibility */

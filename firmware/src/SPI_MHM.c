@@ -60,6 +60,7 @@
     Any additional remarks
  */
 //int global_data;
+bool IC_MHMAccessFree = 0;
 static IC_MHM_REG_ACCType* pMHMRegAccData = NULL;
 uint8_t MHMTimer = 0;
 /* ************************************************************************** */
@@ -120,6 +121,11 @@ uint8_t MHMTimer = 0;
 //static int ExampleLocalFunction(int param1, int param2) {
 //    return 0;
 //}
+bool IsMHMAccessFree()
+{
+    return IC_MHMAccessFree;
+}
+
 void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData)
 {
 	IC_MHM_SPIData->TxData = (uint8_t*)malloc(IC_MHM_SPIData->TxLength * sizeof(*(IC_MHM_SPIData->TxData)));
@@ -286,6 +292,7 @@ void IC_MHM_Task()
         switch (IC_MHMfsm)
         {
             case MHM_STARTUP_1:
+                IC_MHMAccessFree = 0;
                 MHMTimer = START_UP_TIMER_SET;
                 IC_MHMfsm = MHM_STARTUP_2;
                 break;
@@ -397,6 +404,7 @@ void IC_MHM_Task()
                 break;
 
             case READ_POS_1:
+                IC_MHMAccessFree = 1;
                 MHMTimer = READ_POS_TIMER_SET;
                 IC_MHMfsm = READ_POS_2;
                 break;
@@ -405,14 +413,19 @@ void IC_MHM_Task()
                 if(MHMTimer == (uint8_t)1)
                 {
                     MHMTimer = READ_POS_TIMER_SET;
-                    MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, 8);
-                    IC_MHMfsm = READ_POS_3;
+                    if(IC_MHMAccessFree)
+                    {
+                        IC_MHMAccessFree = 0;
+                        MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, 8);
+                        IC_MHMfsm = READ_POS_3;
+                    }
                 }
                 break;
             case READ_POS_3:
                 if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_POS_4;
                 else if(pMHMRegAccData->Result & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
                 {
+                    IC_MHMAccessFree = 1;
                     MHMRegAccBufferFree(&pMHMRegAccData);
                     IC_MHMfsm = READ_POS_2;                
                 }
@@ -432,6 +445,7 @@ void IC_MHM_Task()
                     }
                     //Read MT Position from pRxData[1] to pRxData[4]
                     //Read ST Position from pRxData[5] to pRxData[6]
+                    IC_MHMAccessFree = 1;
                     IC_MHMfsm = READ_POS_2;
                 }
                 MHMRegAccBufferFree(&pMHMRegAccData);
@@ -453,7 +467,11 @@ void IC_MHM_Task()
                 {
                     //error detected
                 }
-                else IC_MHMfsm = READ_POS_2;
+                else 
+                {
+                    IC_MHMAccessFree = 1;
+                    IC_MHMfsm = READ_POS_2;
+                }
                 MHMRegAccBufferFree(&pMHMRegAccData);
                 break;
         }
