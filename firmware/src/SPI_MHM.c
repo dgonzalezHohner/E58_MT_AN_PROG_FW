@@ -126,6 +126,15 @@ bool IsMHMAccessFree()
     return IC_MHMAccessFree;
 }
 
+void SetMHMAccessFree()
+{
+    IC_MHMAccessFree = (bool)1;
+}
+
+void SetMHMAccessDenied()
+{
+    IC_MHMAccessFree = (bool)0;
+}
 void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData)
 {
 	IC_MHM_SPIData->TxData = (uint8_t*)malloc(IC_MHM_SPIData->TxLength * sizeof(*(IC_MHM_SPIData->TxData)));
@@ -221,8 +230,13 @@ void IC_MHM_RegAccesTask()
 {
     static SPI_IC_MHMType* pSPIMHM = NULL;
     static uint8_t RegAccessfsm = 0;
-
-    if(!SERCOM0_SPI_IsBusy() && pMHMRegAccData != NULL)
+    
+    if(BISS_MASTER_Get())
+    {
+        RegAccessfsm = 0;
+        NCS_MHM_Set();
+    }
+    else if(!SERCOM0_SPI_IsBusy() && pMHMRegAccData != NULL)
     {
         switch (RegAccessfsm)
         {
@@ -284,8 +298,9 @@ void IC_MHM_Task()
     
     if(BISS_MASTER_Get())
     {
-        NCS_MHM_Set();
         IC_MHMfsm = MHM_STARTUP_1;
+        IC_MHMAccessFree = 0;
+        if(pMHMRegAccData != NULL) MHMRegAccBufferFree(&pMHMRegAccData);
     }
     else
     {
@@ -421,6 +436,7 @@ void IC_MHM_Task()
                     }
                 }
                 break;
+                
             case READ_POS_3:
                 if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_POS_4;
                 else if(pMHMRegAccData->Result & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
