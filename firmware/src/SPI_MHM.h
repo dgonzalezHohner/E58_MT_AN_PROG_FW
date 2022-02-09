@@ -117,6 +117,18 @@ typedef struct __SPI_IC_MHMType
 	void (*pDeInitSPIData) (struct __SPI_IC_MHMType* IC_MHM_SPIData);
 }SPI_IC_MHMType;
 
+typedef struct __IC_MHM_REG_ACCType
+{
+	uint8_t     Opcode;
+    uint8_t 	TxLength;
+	uint8_t*	TxData;
+	uint8_t		RxLength;
+	uint8_t*	RxData;
+    uint8_t     Result;
+	void (*pInitMHMRegAccData) (struct __IC_MHM_REG_ACCType* MHMRegAccData);
+	void (*pDeInitMHMRegAccData) (struct __IC_MHM_REG_ACCType* MHMRegAccData);
+}IC_MHM_REG_ACCType;
+
 typedef enum
 {
     MHM_STARTUP_1 = (uint8_t)0,
@@ -132,7 +144,6 @@ typedef enum
     READ_POS_2,
     READ_POS_3,
     READ_POS_4,
-    READ_POS_5,
     READ_STATUS_1,
     READ_STATUS_2,
     READ_STATUS_3
@@ -260,7 +271,7 @@ void IC_MHM_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData);
 void IC_MHMTimerTask();
 //uint8_t SPI0SendCMD(SPI_IC_MHMType* ptr);
 //uint8_t IC_MHMCmd(uint8_t Opcode, uint8_t* pData, uint8_t TxLength, uint8_t RxLength);
-uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint8_t* pRxData, uint8_t RxLength);
+void IC_MHM_RegAccesTask();
 void IC_MHM_Task();
     /* Provide C++ Compatibility */
 #ifdef __cplusplus

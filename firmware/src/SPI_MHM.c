@@ -60,7 +60,7 @@
     Any additional remarks
  */
 //int global_data;
-SPI_IC_MHMType* pSPI0Data;
+static IC_MHM_REG_ACCType* pMHMRegAccData = NULL;
 uint8_t MHMTimer = 0;
 /* ************************************************************************** */
 /* ************************************************************************** */
@@ -150,6 +150,37 @@ void IC_MHM_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData)
 	(*pIC_MHM_SPIData) = NULL;
 }
 
+void InitMHMRegAccData(IC_MHM_REG_ACCType* MHMRegAccData)
+{
+	MHMRegAccData->TxData = (uint8_t*)malloc(MHMRegAccData->TxLength * sizeof(*(MHMRegAccData->TxData)));
+	MHMRegAccData->RxData = (uint8_t*)malloc(MHMRegAccData->RxLength * sizeof(*(MHMRegAccData->RxData)));
+}
+
+void DeInitMHMRegAccData(IC_MHM_REG_ACCType* MHMRegAccData)
+{
+	free(MHMRegAccData->TxData);
+	free(MHMRegAccData->RxData);
+}
+
+void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, uint8_t TxLength, uint8_t RxLength)
+{
+	IC_MHM_REG_ACCType* ptr = malloc(sizeof(IC_MHM_REG_ACCType));
+
+    ptr->Result = (uint8_t)0;
+	ptr->TxLength = TxLength;
+    ptr->RxLength = RxLength;
+	ptr->pInitMHMRegAccData = InitMHMRegAccData;
+	ptr->pDeInitMHMRegAccData = DeInitMHMRegAccData;
+	ptr->pInitMHMRegAccData (ptr);
+    *(ptr->TxData) = Opcode;
+	*pMHMRegAccData = ptr;
+}
+void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData)
+{
+	(*pMHMRegAccData)->pDeInitMHMRegAccData (*pMHMRegAccData);
+	free(*pMHMRegAccData);
+	(*pMHMRegAccData) = NULL;
+}
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Interface Functions                                               */
@@ -180,13 +211,13 @@ void IC_MHMTimerTask()
 
 //TxLength does not include opcode
 //RxLength includes opcode
-uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint8_t* pRxData, uint8_t RxLength)
+//uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint8_t* pRxData, uint8_t RxLength)
+void IC_MHM_RegAccesTask()
 {
     static SPI_IC_MHMType* pSPIMHM = NULL;
     static uint8_t RegAccessfsm = 0;
-    uint8_t result = 0;
 
-    if(!SERCOM0_SPI_IsBusy())
+    if(!SERCOM0_SPI_IsBusy() && pMHMRegAccData != NULL)
     {
         switch (RegAccessfsm)
         {
@@ -216,16 +247,15 @@ uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint
                     else
                     {
                         RegAccessfsm = 0;
-                        result = pSPIMHM->RxData[1];
+                        pMHMRegAccData->Result = pSPIMHM->RxData[1];
                     }
                 }
                 IC_MHM_SPIBufferFree(&pSPIMHM);
                 break;
 
             case 2:
-                IC_MHM_SPIBufferInit(&pSPIMHM, TxLength+1, RxLength);
-                pSPIMHM->TxData[0] = Opcode;
-                if((TxLength) & (pTxData != NULL)) memcpy(&pSPIMHM->TxData[1], pTxData, TxLength);
+                IC_MHM_SPIBufferInit(&pSPIMHM, pMHMRegAccData->TxLength, pMHMRegAccData->RxLength);
+                memcpy(pSPIMHM->TxData, pMHMRegAccData->TxData, pSPIMHM->TxLength);
                 NCS_MHM_Clear();
                 SERCOM0_SPI_WriteRead (pSPIMHM->TxData, pSPIMHM->TxLength, pSPIMHM->RxData, pSPIMHM->RxLength);
                 RegAccessfsm = 3;
@@ -233,13 +263,12 @@ uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint
 
             case 3:
                 NCS_MHM_Set();
-                if(pSPIMHM->RxLength) memcpy(pRxData, pSPIMHM->RxData,RxLength);
+                if(pSPIMHM->RxLength) memcpy(pMHMRegAccData->RxData, pSPIMHM->RxData, pSPIMHM->RxLength);
                 RegAccessfsm = 4;
-                IC_MHM_SPIBufferFree(&pSPI0Data);
+                IC_MHM_SPIBufferFree(&pSPIMHM);
                 break;
         }
     }
-    return result;
 }
 
 void IC_MHM_Task()
@@ -247,8 +276,8 @@ void IC_MHM_Task()
     static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
     static uint8_t PowerUp = 1;
     static uint8_t StartUpCnt = 0;
-    static uint8_t *pTxData, *pRxData;
-    uint8_t RegStat = 0;
+//    static uint8_t *pTxData, *pRxData;
+
     
     if(BISS_MASTER_Get())
     {
@@ -261,119 +290,111 @@ void IC_MHM_Task()
         {
             case MHM_STARTUP_1:
                 MHMTimer = START_UP_TIMER_SET;
-                pRxData = (uint8_t*)malloc(8 * sizeof(*pRxData));
-                pTxData = NULL;
                 IC_MHMfsm = MHM_STARTUP_2;
                 break;
             //Try to send SPI POSITION READ command to IC-MHM
             case MHM_STARTUP_2:
                 if(MHMTimer == (uint8_t)1)
                 {
-                    if(IC_MHM_RegAcces(POS_READ_OPC, pTxData, 0, pRxData, 8*sizeof(*pRxData)) & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = MHM_STARTUP_3;
+                    MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, 8);
+                    IC_MHMfsm = MHM_STARTUP_3;
                 }
                 break;
             //Checks if received opcode is POSTION READ and nERR and nWARN bits
             //During Start up, MISO is stuck high so No data will be received
             case MHM_STARTUP_3:
-                //pRxData contains SPI Received data from IC-MHM
-                if(pRxData[0] !=  POS_READ_OPC)
+                if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk)
                 {
-                    if(PowerUp)
+                    //RxData contains SPI Received data from IC-MHM
+                    if(pMHMRegAccData->RxData[0] !=  POS_READ_OPC)
                     {
-                        //To Do EEPROM LOAD FAIL
-                        PowerUp = 0;
-                    }
-                    IC_MHMfsm = READ_POS_1;
-                }
-                else
-                {
-                    if(PowerUp)
-                    {
-                        //To Do EERPOM LOAD SUCCEED
-                        PowerUp = 0;
-                    }
-                    //During Start Up, nWARN and nERR are reset. 
-                    if(!pRxData[7])
-                    {
-                        if(StartUpCnt < 2)
+                        if(PowerUp)
                         {
-                            StartUpCnt++;
-                            IC_MHMfsm = MHM_STARTUP_4;
+                            //To Do EEPROM LOAD FAIL
+                            PowerUp = 0;
                         }
-                        else
-                        {
-                            //To Do START UP ERROR 
-                            IC_MHMfsm = READ_POS_1;
-                        }
+                        IC_MHMfsm = READ_POS_1;
                     }
                     else
                     {
-                        //To Do START UP SUCCEED
-                        IC_MHMfsm = READ_POS_1;
+                        if(PowerUp)
+                        {
+                            //To Do EERPOM LOAD SUCCEED
+                            PowerUp = 0;
+                        }
+                        //During Start Up, nWARN and nERR are reset. 
+                        if(!(pMHMRegAccData->RxData[7]))
+                        {
+                            if(StartUpCnt < 2)
+                            {
+                                StartUpCnt++;
+                                IC_MHMfsm = MHM_STARTUP_4;
+                            }
+                            else
+                            {
+                                //To Do START UP ERROR 
+                                IC_MHMfsm = READ_POS_1;
+                            }
+                        }
+                        else
+                        {
+                            //To Do START UP SUCCEED
+                            IC_MHMfsm = READ_POS_1;
+                        }
                     }
                 }
-                free(pRxData);
-                pRxData = NULL;
+                MHMRegAccBufferFree(&pMHMRegAccData);
                 break;
                 
             case MHM_STARTUP_4:
-                pRxData = malloc(sizeof(*pRxData)*4);
-                pTxData = malloc(sizeof(*pRxData)*1);
-                *pTxData = IC_MHM_PRES_RES_REG;
-                IC_MHMfsm = MHM_STARTUP_5;
+            case MHM_STARTUP_7:
+                if(( (MHMTimer == 1) && (IC_MHMfsm == MHM_STARTUP_7) ) || (IC_MHMfsm == MHM_STARTUP_4))
+                {
+                    MHMRegAccBufferInit(&pMHMRegAccData, REG_RD_CTD_OPC, 2, 4);
+                    pMHMRegAccData->TxData[1] = IC_MHM_PRES_RES_REG;
+                    if(IC_MHMfsm == MHM_STARTUP_4) IC_MHMfsm = MHM_STARTUP_5;
+                    else IC_MHMfsm = MHM_STARTUP_8;
+                }
                 break;
             case MHM_STARTUP_5:
-                if(IC_MHM_RegAcces(REG_RD_CTD_OPC, pTxData, sizeof(*pTxData)*1, pRxData, sizeof(*pRxData)*4) & IC_MHM_STAT_VALID_Msk)
+            case MHM_STARTUP_8:
+                if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk)
                 {
-                    free(pTxData);
-                    pTxData = malloc(sizeof(*pTxData)*2);
-                    memcpy(pTxData, &pRxData[2], 2);
-                    free(pRxData);
-                    pRxData = NULL;
-                    pTxData[1] |= IC_MHM_0x75_FIO_3_Msk;
-                    IC_MHMfsm = MHM_STARTUP_6;
+                    free(pMHMRegAccData->TxData);
+                    pMHMRegAccData->TxLength = 3;
+                    pMHMRegAccData->TxData = (uint8_t*)malloc(sizeof(*(pMHMRegAccData->TxData)) * pMHMRegAccData->TxLength);
+                    pMHMRegAccData->TxData[0] = WR_INST_OPC;
+                    memcpy(&pMHMRegAccData->TxData[1], &pMHMRegAccData->RxData[2], 2);
+                    if(IC_MHMfsm == MHM_STARTUP_5)
+                    {
+                        pMHMRegAccData->TxData[2] |= IC_MHM_0x75_FIO_3_Msk;
+                        IC_MHMfsm = MHM_STARTUP_6;
+                    }
+                    else
+                    {
+                        pMHMRegAccData->TxData[1] |= IC_MHM_0x74_RESET_Msk;
+                        pMHMRegAccData->TxData[2] &= ~(IC_MHM_0x75_FIO_3_Msk);
+                        IC_MHMfsm = MHM_STARTUP_9;
+                    }
+                    free(pMHMRegAccData->RxData);
+                    pMHMRegAccData->RxLength = 0;
+                    pMHMRegAccData->RxData = NULL;
                 }
                 break;
 
             case MHM_STARTUP_6:
-                if(IC_MHM_RegAcces(WR_INST_OPC, pTxData, sizeof(*pTxData)*2, pRxData, 0) & IC_MHM_STAT_VALID_Msk)
+                if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk)
                 {
-                    free(pTxData);
-                    pTxData = NULL;
+                    MHMRegAccBufferFree(&pMHMRegAccData);
                     MHMTimer = PV_PRESET_TIMER_SET;
                     IC_MHMfsm = MHM_STARTUP_7;
                 }
                 break;
-                
-            case MHM_STARTUP_7:
-                if(MHMTimer ==1)
-                {
-                    pRxData = malloc(sizeof(*pRxData)*4);
-                    pTxData = malloc(sizeof(*pRxData)*1);
-                    *pTxData = IC_MHM_PRES_RES_REG;
-                    IC_MHMfsm = MHM_STARTUP_8;
-                }
-                break;    
-                
-            case MHM_STARTUP_8:
-                if(IC_MHM_RegAcces(REG_RD_CTD_OPC, pTxData, sizeof(*pTxData)*1, pRxData, sizeof(*pRxData)*4) & IC_MHM_STAT_VALID_Msk)
-                {
-                    free(pTxData);
-                    pTxData = malloc(sizeof(*pTxData)*2);
-                    memcpy(pTxData, &pRxData[2], 2);
-                    free(pRxData);
-                    pRxData = NULL;
-                    pTxData[0] |= IC_MHM_0x74_RESET_Msk;
-                    pTxData[1] &= ~(IC_MHM_0x75_FIO_3_Msk);
-                    IC_MHMfsm = MHM_STARTUP_9;
-                }
-                break;
-                
+
             case MHM_STARTUP_9:
-                if(IC_MHM_RegAcces(WR_INST_OPC, pTxData, sizeof(*pTxData)*2, pRxData, 0) & IC_MHM_STAT_VALID_Msk)
+                if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk)
                 {
-                    free(pTxData);
-                    pTxData = NULL;
+                    MHMRegAccBufferFree(&pMHMRegAccData);
                     IC_MHMfsm = MHM_STARTUP_1;
                 }
                 break;
@@ -384,64 +405,59 @@ void IC_MHM_Task()
                 break;
                 
             case READ_POS_2:
-                pRxData = (uint8_t*)malloc(8 * sizeof(*pRxData));
-                pTxData = NULL;
-                IC_MHMfsm = READ_POS_3;
-                break;
-            case READ_POS_3:
                 if(MHMTimer == (uint8_t)1)
                 {
                     MHMTimer = READ_POS_TIMER_SET;
-                    IC_MHMfsm = READ_POS_4;
+                    MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, 8);
+                    IC_MHMfsm = READ_POS_3;
+                }
+                break;
+            case READ_POS_3:
+                if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_POS_4;
+                else if(pMHMRegAccData->Result & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+                {
+                    MHMRegAccBufferFree(&pMHMRegAccData);
+                    IC_MHMfsm = READ_POS_2;                
                 }
                 break;
             case READ_POS_4:
-                RegStat = IC_MHM_RegAcces(POS_READ_OPC, pTxData, 0, pRxData, 8*sizeof(*pRxData));
-                if(RegStat & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_POS_5;
-                else if (RegStat & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk)) IC_MHMfsm = READ_POS_3;                
-                break;
-            case READ_POS_5:
-                if(!(pRxData[7] & IC_MHM_SPI_nERR_Msk)) 
+                if(!(pMHMRegAccData->RxData[7] & IC_MHM_SPI_nERR_Msk)) 
                 {
                     //nERR bit detectec
-                    free(pRxData);
-                    pRxData = NULL;
                     IC_MHMfsm = READ_STATUS_1;
                 }
                 else
                 {
                     //Check for nWARN bit
-                    if(!(pRxData[7] & IC_MHM_SPI_nWARN_Msk))
+                    if(!(pMHMRegAccData->RxData[7] & IC_MHM_SPI_nWARN_Msk))
                     {
                         //nWARN bit detectec, excessive rotor speed
                     }
                     //Read MT Position from pRxData[1] to pRxData[4]
                     //Read ST Position from pRxData[5] to pRxData[6]
-                    IC_MHMfsm = READ_POS_3;
+                    IC_MHMfsm = READ_POS_2;
                 }
+                MHMRegAccBufferFree(&pMHMRegAccData);
                 break;
                 
             case READ_STATUS_1:
-                pRxData = (uint8_t*)malloc(3 * sizeof(*pRxData));
-                pTxData = NULL;
+                MHMRegAccBufferInit(&pMHMRegAccData, READ_STATUS_OPC, 1, 3);
                 IC_MHMfsm = READ_STATUS_2;
                 break;
                 
             case READ_STATUS_2:
-                RegStat = IC_MHM_RegAcces(READ_STATUS_OPC, pTxData, 0, pRxData, 3*sizeof(*pRxData));
-                if(RegStat & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_STATUS_3;
-                else if (RegStat & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk)) IC_MHMfsm = READ_STATUS_2;                
+                if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = READ_STATUS_3;
+                else if (pMHMRegAccData->Result & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk)) IC_MHMfsm = READ_STATUS_2;                
                 break;
                 
             case READ_STATUS_3:
                 //Check Status Register 1, address 0x70
-                if(pSPI0Data->RxData[1])
+                if(pMHMRegAccData->RxData[1])
                 {
                     //error detected
                 }
                 else IC_MHMfsm = READ_POS_2;
-                free(pRxData);
-                pRxData = NULL;
+                MHMRegAccBufferFree(&pMHMRegAccData);
                 break;
         }
     }
