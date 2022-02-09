@@ -119,7 +119,7 @@ typedef struct __SPI_IC_MHMType
 
 typedef struct __IC_MHM_REG_ACCType
 {
-	uint8_t     Opcode;
+    uint8_t     Opcode;
     uint8_t 	TxLength;
 	uint8_t*	TxData;
 	uint8_t		RxLength;

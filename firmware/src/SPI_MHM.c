@@ -143,6 +143,7 @@ void IC_MHM_SPIBufferInit(SPI_IC_MHMType** pIC_MHM_SPIData, uint8_t TxLength, ui
 	ptr->pInitSPIData (ptr);
 	*pIC_MHM_SPIData = ptr;
 }
+
 void IC_MHM_SPIBufferFree(SPI_IC_MHMType** pIC_MHM_SPIData)
 {
 	(*pIC_MHM_SPIData)->pDeInitSPIData (*pIC_MHM_SPIData);
@@ -175,6 +176,7 @@ void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, ui
     *(ptr->TxData) = Opcode;
 	*pMHMRegAccData = ptr;
 }
+
 void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData)
 {
 	(*pMHMRegAccData)->pDeInitMHMRegAccData (*pMHMRegAccData);
@@ -209,9 +211,6 @@ void IC_MHMTimerTask()
      if( MHMTimer > 1)  MHMTimer--;
 }
 
-//TxLength does not include opcode
-//RxLength includes opcode
-//uint8_t IC_MHM_RegAcces(uint8_t Opcode, uint8_t* pTxData, uint8_t TxLength, uint8_t* pRxData, uint8_t RxLength)
 void IC_MHM_RegAccesTask()
 {
     static SPI_IC_MHMType* pSPIMHM = NULL;
@@ -276,8 +275,6 @@ void IC_MHM_Task()
     static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
     static uint8_t PowerUp = 1;
     static uint8_t StartUpCnt = 0;
-//    static uint8_t *pTxData, *pRxData;
-
     
     if(BISS_MASTER_Get())
     {
