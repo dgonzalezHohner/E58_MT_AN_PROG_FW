@@ -83,13 +83,13 @@ files:
   security: NON_SECURE
   type: SOURCE
   userChecksum: 44C4EF7A49A33A284D52663D45CDFBEC
-- generatedChecksum: B8FF221A907864C446A703B0E57C0745
+- generatedChecksum: 3CB4B9A14B090949BF5D4DA5FF48310D
   logicalPath: config/default/peripheral/sercom/spi_master
   name: plib_sercom1_spi_master.c
   physicalPath: peripheral/sercom/spi_master
   security: NON_SECURE
   type: SOURCE
-  userChecksum: B8FF221A907864C446A703B0E57C0745
+  userChecksum: 3CB4B9A14B090949BF5D4DA5FF48310D
 - generatedChecksum: 6E880FD6CC70AAC96157E3A15C4E2127
   logicalPath: config/default/peripheral/sercom/i2c_master
   name: plib_sercom2_i2c_master.c
@@ -110,7 +110,7 @@ files:
   physicalPath: peripheral/systick
   security: NON_SECURE
   type: SOURCE
-  userChecksum: C2E9BEB7712B529560015430D280A66C
+  userChecksum: AE7605E1A661F7C0BB1497A56DD99CC2
 - generatedChecksum: 9607CBC59CE2ADA8C14BAF024F7937C0
   logicalPath: config/default/peripheral/wdt
   name: plib_wdt.c

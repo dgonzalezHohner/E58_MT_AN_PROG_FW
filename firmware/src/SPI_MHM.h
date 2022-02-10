@@ -106,7 +106,6 @@ extern "C" {
 //        bool some_flag;
 //
 //    } example_struct_t;
-
 typedef struct __SPI_IC_MHMType
 {
 	uint8_t 	TxLength;

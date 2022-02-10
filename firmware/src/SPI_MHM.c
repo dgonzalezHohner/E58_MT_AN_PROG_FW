@@ -63,6 +63,8 @@
 bool IC_MHMAccessFree = 0;
 static IC_MHM_REG_ACCType* pMHMRegAccData = NULL;
 uint8_t MHMTimer = 0;
+static uint8_t ExtDACData[3] = {0,0,0};
+static uint8_t* pExtDACData = NULL;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -494,8 +496,40 @@ void IC_MHM_Task()
     }
 }
 
+uint8_t* ExtDACWrite (uint8_t Command, uint8_t Data)
+{
+    ExtDACData[0] = Command;
+    //Value is little endian, take MSB
+    ExtDACData[1] = (*(((uint8_t*)(&Data))+1));
+    //Value is little endian, take LSB
+    ExtDACData[2] = (*((uint8_t*)(&Data)));
+    //initializes pointer to external DAC Data
+    pExtDACData = ExtDACData;
+    return pExtDACData;
+}
 
-
+void ExtDACTask ()
+{
+    static uint8_t ExtDACTaskfsm = 0;
+    
+    //Chekc whether SPI1 is not busy and pointer to External DAC is initialized
+    if(!SERCOM1_SPI_IsBusy() && pExtDACData != NULL)
+    {
+        switch (ExtDACTaskfsm)
+        {
+            case 0:
+                //If SPI1 Write is possible then go to next step
+                if(SERCOM1_SPI_Write(pExtDACData, sizeof(ExtDACData))) ExtDACTaskfsm++;
+                break;
+                
+            case 1:
+                //Uninitializes pointer to External DAC Data
+                pExtDACData = NULL;
+                ExtDACTaskfsm = 0;
+                break;
+        }
+    }
+}
 /* *****************************************************************************
  End of File
  */
