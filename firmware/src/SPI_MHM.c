@@ -60,9 +60,13 @@
     Any additional remarks
  */
 //int global_data;
+
+//IC-MHM variables and pointers.
 bool IC_MHMAccessFree = 0;
 static IC_MHM_REG_ACCType* pMHMRegAccData = NULL;
 uint8_t MHMTimer = 0;
+
+//Externla DAC variables and pointers.
 static uint8_t ExtDACData[3] = {0,0,0};
 static uint8_t* pExtDACData = NULL;
 /* ************************************************************************** */
@@ -529,6 +533,25 @@ void ExtDACTask ()
                 break;
         }
     }
+}
+
+uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length)
+{
+    uint8_t i=0,ucDataStream=0,ucCRC=StartVal;
+
+    for (i=0;i<Length;i++)
+    {
+        ucDataStream = pData[i];
+        for (i=0;i<8;i++)
+        {
+            if ((ucCRC & 0x80) != (ucDataStream & 0x80))
+                ucCRC = (ucCRC<<1) ^ CRCPoly ;
+            else
+            ucCRC = (ucCRC<<1);
+            ucDataStream = ucDataStream<<1 ;
+        }
+    }
+    return ucCRC;
 }
 /* *****************************************************************************
  End of File

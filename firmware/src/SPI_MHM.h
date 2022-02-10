@@ -205,9 +205,11 @@ enum SPI0_STATUS
 #define PV_PRESET_PULSE_T_ms        20
 #define PV_PRESET_TIMER_SET         (((PV_PRESET_PULSE_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
-#define IC_MHM_POS_READ             IC_MHMCmd(POS_READ_OPC, NULL, 0, 7)         //Send POSITION READ opcode to IC-MHM
-#define IC_MHM_READ_STATUS          IC_MHMCmd(READ_STATUS_OPC, NULL, 0, 4)      //Send READ STATUS opcode to IC-MHM
-#define IC_MHM_READ_REG_STAT        IC_MHMCmd(READ_REG_STAT_OPC, NULL, 0, 3)    //Send READ REGISTER STATUS opcode to IC-MHM
+//CRC defines for IC-PV and IC-MHM
+#define IC_PV_CRC_POLY              ((uint16_t)0x012F)
+#define IC_PV_CRC_START_VALUE       ((uint8_t)0)
+#define IC_MHM_CRC_POLY             ((uint16_t)0x011D)
+#define IC_MHM_CRC_START_VALUE      ((uint8_t)2)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
