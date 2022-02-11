@@ -210,6 +210,51 @@ enum SPI0_STATUS
 #define IC_PV_CRC_START_VALUE       ((uint8_t)0)
 #define IC_MHM_CRC_POLY             ((uint16_t)0x011D)
 #define IC_MHM_CRC_START_VALUE      ((uint8_t)2)
+
+//I2C defines for IC-PV
+#define EEPROM_I2C_ADDR             ((uint8_t)0xA0)
+#define IC_PV_CFG_ADDR              ((uint8_t)0x00)
+#define IC_PV_CFG_LENGTH            ((uint8_t)5)
+#define IC_PV_CNT_ADDR              ((uint8_t)0x05)
+#define IC_PV_CNT_LENGTH            ((uint8_t)6)
+
+//I2C defines for IC-MHM
+#define IC_MHM_CFG_ADDR             ((uint8_t)0x10)
+#define IC_MHM_CFG_LENGTH           ((uint8_t)13)
+#define IC_MHM_OFFS_ADDR            ((uint8_t)0x1D)
+#define IC_MHM_OFFS_LENGTH          ((uint8_t)7)
+
+//EEPROM defines
+#define WR_PAGE_SIZE_BYTES          ((uint8_t)16)
+#define EEPROM_SIZE_16KBITS         ((uint8_t)16)
+//#define EEPROM_SIZE_8KBITS          ((uint8_t)8)
+//#define EEPROM_SIZE_4KBITS          ((uint8_t)4)
+//#define EEPROM_SIZE_2KBITS          ((uint8_t)2)
+#ifdef EEPROM_SIZE_16KBITS
+    #define EEPROM_SIZE_BYTES           ((uint16_t)(1024/8)* EEPROM_SIZE_16KBITS)
+#endif
+#ifdef EEPROM_SIZE_8KBITS
+    #define EEPROM_SIZE_BYTES           ((uint16_t)(1024/8)* EEPROM_SIZE_8KBITS)
+#endif
+#ifdef EEPROM_SIZE_4KBITS
+    #define EEPROM_SIZE_BYTES           ((uint16_t)(1024/8)* EEPROM_SIZE_4KBITS)
+#endif
+#ifdef EEPROM_SIZE_2KBITS
+    #define EEPROM_SIZE_BYTES           ((uint16_t)(1024/8)* EEPROM_SIZE_2KBITS)
+#endif
+
+typedef struct __ExtEEpromDataType
+{
+    uint8_t SlaveAddr;  //LSB contains R/nW operation
+    uint16_t MemoryAddr;
+    uint16_t TxLength;
+    uint8_t* TxData;
+    uint16_t RxLength;
+    uint8_t* RxData;
+    uint8_t Result;
+    void (*pInitExtEEpromData) (struct __ExtEEpromDataType* pExtEEpromData);
+	void (*pDeInitExtEEpromData) (struct __ExtEEpromDataType* pExtEEpromData);
+}ExtEEpromDataType;
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -277,6 +322,11 @@ void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData);
 void IC_MHMTimerTask();
 void IC_MHM_RegAccesTask();
 void IC_MHM_Task();
+
+void InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
+void DeInitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
+void ExtEEpromDataBufferInit(ExtEEpromDataType** pExtEEpromData, uint8_t SlaveAddr, uint8_t TxLength, uint8_t RxLength);
+void ExtEEpromDataBufferFree(ExtEEpromDataType** pExtEEpromData);
     /* Provide C++ Compatibility */
 #ifdef __cplusplus
 }

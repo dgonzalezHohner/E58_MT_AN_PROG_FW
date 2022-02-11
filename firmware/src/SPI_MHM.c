@@ -69,6 +69,9 @@ uint8_t MHMTimer = 0;
 //Externla DAC variables and pointers.
 static uint8_t ExtDACData[3] = {0,0,0};
 static uint8_t* pExtDACData = NULL;
+
+//External EEPROM variables and pointers
+static ExtEEpromDataType* pExtEEpromData = NULL;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -141,6 +144,7 @@ void SetMHMAccessDenied()
 {
     IC_MHMAccessFree = (bool)0;
 }
+
 void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData)
 {
 	IC_MHM_SPIData->TxData = (uint8_t*)malloc(IC_MHM_SPIData->TxLength * sizeof(*(IC_MHM_SPIData->TxData)));
@@ -552,6 +556,86 @@ uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Len
         }
     }
     return ucCRC;
+}
+
+//External EEprom management functions
+void InitExtEEpromData(ExtEEpromDataType* pExtEEpromData)
+{
+	pExtEEpromData->TxData = (uint8_t*)malloc(pExtEEpromData->TxLength * sizeof(*(pExtEEpromData->TxData)));
+	pExtEEpromData->RxData = (uint8_t*)malloc(pExtEEpromData->RxLength * sizeof(*(pExtEEpromData->RxData)));
+}
+
+void DeInitExtEEpromData(ExtEEpromDataType* pExtEEpromData)
+{
+	free(pExtEEpromData->TxData);
+	free(pExtEEpromData->RxData);
+}
+
+void ExtEEpromDataBufferInit(ExtEEpromDataType** pExtEEpromData, uint8_t SlaveAddr, uint8_t TxLength, uint8_t RxLength)
+{
+	ExtEEpromDataType* ptr = malloc(sizeof(ExtEEpromDataType));
+
+	ptr->SlaveAddr = SlaveAddr;
+    ptr->TxLength = TxLength;
+    ptr->RxLength = RxLength;
+	ptr->Result = 0;
+    ptr->MemoryAddr = 0;
+    ptr->pInitExtEEpromData = InitExtEEpromData;
+	ptr->pDeInitExtEEpromData = DeInitExtEEpromData;
+	ptr->pInitExtEEpromData (ptr);
+	*pExtEEpromData = ptr;
+}
+
+void ExtEEpromDataBufferFree(ExtEEpromDataType** pExtEEpromData)
+{
+	(*pExtEEpromData)->pDeInitExtEEpromData (*pExtEEpromData);
+	free(*pExtEEpromData);
+	(*pExtEEpromData) = NULL;
+}
+
+void ExtEEpromTask()
+{
+    static uint8_t ExtEEpromfsm = 0;
+    
+    if(!SERCOM2_I2C_IsBusy() && pExtEEpromData != NULL)
+    {
+        switch (ExtEEpromfsm)
+        {
+            case 0:
+                ExtEEpromfsm = ((pExtEEpromData->SlaveAddr & 0x01) == I2C_TRANSFER_READ) ? 1 : 3;
+                break;
+            
+            case 1:
+                //Read
+                //Check memory size limit.
+                if((pExtEEpromData->MemoryAddr >= EEPROM_SIZE_BYTES) || ((pExtEEpromData->MemoryAddr + pExtEEpromData->RxLength) > EEPROM_SIZE_BYTES))
+                {
+                    //Try to read more bytes than EEPROM_SIZE_BYTES, stop process
+                    ExtEEpromfsm = 0;
+                    pExtEEpromData->Result = 0x01;
+                }
+                else
+                {
+                    if (SERCOM2_I2C_Write((((pExtEEpromData->MemoryAddr >> 7) & 0x0E) | pExtEEpromData->SlaveAddr) >> 1, (uint8_t*)(&pExtEEpromData->SlaveAddr), 1))
+                        ExtEEpromfsm = 2;
+                }
+                break;
+                
+            case 2:
+                if (SERCOM2_I2C_Read((((pExtEEpromData->MemoryAddr >> 7) & 0x0E) | pExtEEpromData->SlaveAddr) >> 1, pExtEEpromData->RxData, pExtEEpromData->RxLength))
+                {
+                    ExtEEpromfsm = 0;
+                    pExtEEpromData->Result = 0x02;
+                }
+                break;
+                
+            case 3:
+                //Write
+                
+                break;
+        }
+    }
+    
 }
 /* *****************************************************************************
  End of File
