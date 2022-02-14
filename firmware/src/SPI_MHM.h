@@ -249,12 +249,18 @@ typedef struct __ExtEEpromDataType
     uint16_t MemoryAddr;
     uint16_t TxLength;
     uint8_t* TxData;
+    uint16_t TxCnt;
+    uint8_t NextPgAddr;
+    uint8_t NextPgGap;
     uint16_t RxLength;
     uint8_t* RxData;
     uint8_t Result;
     void (*pInitExtEEpromData) (struct __ExtEEpromDataType* pExtEEpromData);
 	void (*pDeInitExtEEpromData) (struct __ExtEEpromDataType* pExtEEpromData);
 }ExtEEpromDataType;
+
+#define EXT_EEPROM_TWR_ms           20
+#define EXT_EEPROM_TWR_SET         (((EXT_EEPROM_TWR_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions

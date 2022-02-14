@@ -72,6 +72,7 @@ static uint8_t* pExtDACData = NULL;
 
 //External EEPROM variables and pointers
 static ExtEEpromDataType* pExtEEpromData = NULL;
+uint8_t ExtEEpromTimer = 0;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -234,6 +235,7 @@ void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData)
 void IC_MHMTimerTask()
 {
      if( MHMTimer > 1)  MHMTimer--;
+     if( ExtEEpromTimer > 1) ExtEEpromTimer--;
 }
 
 void IC_MHM_RegAccesTask()
@@ -580,6 +582,9 @@ void ExtEEpromDataBufferInit(ExtEEpromDataType** pExtEEpromData, uint8_t SlaveAd
     ptr->RxLength = RxLength;
 	ptr->Result = 0;
     ptr->MemoryAddr = 0;
+    ptr->NextPgAddr = 0;
+    ptr->NextPgGap = 0;
+    ptr->TxCnt = 0;
     ptr->pInitExtEEpromData = InitExtEEpromData;
 	ptr->pDeInitExtEEpromData = DeInitExtEEpromData;
 	ptr->pInitExtEEpromData (ptr);
@@ -596,6 +601,7 @@ void ExtEEpromDataBufferFree(ExtEEpromDataType** pExtEEpromData)
 void ExtEEpromTask()
 {
     static uint8_t ExtEEpromfsm = 0;
+    static uint8_t* pData = NULL;
     
     if(!SERCOM2_I2C_IsBusy() && pExtEEpromData != NULL)
     {
@@ -616,7 +622,7 @@ void ExtEEpromTask()
                 }
                 else
                 {
-                    if (SERCOM2_I2C_Write((((pExtEEpromData->MemoryAddr >> 7) & 0x0E) | pExtEEpromData->SlaveAddr) >> 1, (uint8_t*)(&pExtEEpromData->SlaveAddr), 1))
+                    if (SERCOM2_I2C_Write((((pExtEEpromData->MemoryAddr >> 7) & 0x0E) | pExtEEpromData->SlaveAddr) >> 1, (uint8_t*)(&pExtEEpromData->MemoryAddr), 1))
                         ExtEEpromfsm = 2;
                 }
                 break;
@@ -631,7 +637,69 @@ void ExtEEpromTask()
                 
             case 3:
                 //Write
-                
+                //Check memory size limit.
+                if((pExtEEpromData->MemoryAddr >= EEPROM_SIZE_BYTES) || ((pExtEEpromData->MemoryAddr + pExtEEpromData->TxLength) > EEPROM_SIZE_BYTES))
+                {
+                    //Try to write more bytes than EEPROM_SIZE_BYTES, stop process
+                    ExtEEpromfsm = 0;
+                    pExtEEpromData->Result = 0x01;
+                }
+                else if (pExtEEpromData->TxLength > pExtEEpromData->TxCnt)
+                {
+                    //Check current page overflow
+                    pExtEEpromData->NextPgAddr = ((((pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt)/WR_PAGE_SIZE_BYTES)+1)*WR_PAGE_SIZE_BYTES);
+                    if((pExtEEpromData->MemoryAddr + pExtEEpromData->TxLength) >= pExtEEpromData->NextPgAddr)
+                    {
+                        pExtEEpromData->NextPgGap = pExtEEpromData->NextPgAddr - (pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
+                        pData = (uint8_t*)malloc(sizeof(*pData) * (pExtEEpromData->NextPgGap + 1));
+                        pData[0] = (uint8_t)(pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
+                        memcpy(&pData[1], &pExtEEpromData->TxData[pExtEEpromData->TxCnt], pExtEEpromData->NextPgGap);
+                        if (SERCOM2_I2C_Write(((((pExtEEpromData->MemoryAddr+pExtEEpromData->TxCnt)>>7)&0x0E)|pExtEEpromData->SlaveAddr)>>1, pData, (pExtEEpromData->NextPgGap + 1)))
+                        {
+                            pExtEEpromData->TxCnt += pExtEEpromData->NextPgGap;
+                            ExtEEpromTimer = EXT_EEPROM_TWR_SET;
+                            ExtEEpromfsm = 4;
+                        }
+                        else
+                        {
+                            free(pData);
+                            pData= NULL;
+                        }
+                    }
+                    //no page overflow
+                    else
+                    {
+                        pExtEEpromData->NextPgGap = 0;
+                        pData = (uint8_t*)malloc(sizeof(*pData) * (pExtEEpromData->TxLength - pExtEEpromData->TxCnt + 1));
+                        pData[0] = (uint8_t)(pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
+                        memcpy(&pData[1], &pExtEEpromData->TxData[pExtEEpromData->TxCnt], pExtEEpromData->TxLength - pExtEEpromData->TxCnt);
+                        if (SERCOM2_I2C_Write(((((pExtEEpromData->MemoryAddr+pExtEEpromData->TxCnt)>>7)&0x0E)|pExtEEpromData->SlaveAddr)>>1, pData, pExtEEpromData->TxLength-pExtEEpromData->RxLength+1))
+                        {
+                            pExtEEpromData->TxCnt += (pExtEEpromData->TxLength-pExtEEpromData->TxCnt);
+                            ExtEEpromTimer = EXT_EEPROM_TWR_SET;
+                            ExtEEpromfsm = 4;
+                        }
+                        else
+                        {
+                            free(pData);
+                            pData= NULL;
+                        }
+                    }
+                }
+                else
+                {
+                    ExtEEpromfsm = 0;
+                    pExtEEpromData->Result = 0x02;
+                }
+                break;
+
+            case 4:
+                if(ExtEEpromTimer == (uint8_t)1)
+                {
+                    free(pData);
+                    pData= NULL;
+                    ExtEEpromfsm = 3;
+                }
                 break;
         }
     }
