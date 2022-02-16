@@ -25,10 +25,9 @@
  */
 
 #include "definitions.h"                // SYS function prototypes
-#include "SPI_MHM.h"
 #include <string.h>
 #include <stdlib.h>
-
+#include "SPI_MHM.h"
 /* TODO:  Include other files here if needed. */
 
 
@@ -64,7 +63,6 @@
 //IC-MHM variables and pointers.
 bool IC_MHMAccessFree = 0;
 static IC_MHM_REG_ACCType* pMHMRegAccData = NULL;
-uint8_t MHMTimer = 0;
 
 //Externla DAC variables and pointers.
 static uint8_t ExtDACData[3] = {0,0,0};
@@ -72,7 +70,9 @@ static uint8_t* pExtDACData = NULL;
 
 //External EEPROM variables and pointers
 static ExtEEpromDataType* pExtEEpromData = NULL;
-uint8_t ExtEEpromTimer = 0;
+volatile uint8_t ExtEEpromTimer = 0;
+
+static uint8_t IC_MHMfuncfsm = 0;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -232,7 +232,7 @@ void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData)
     Refer to the example_file.h interface header for function usage details.
  */
 
-void IC_MHMTimerTask()
+void TimerTask()
 {
      if( MHMTimer > 1)  MHMTimer--;
      if( ExtEEpromTimer > 1) ExtEEpromTimer--;
@@ -245,7 +245,7 @@ void IC_MHM_RegAccesTask()
     
     if(BISS_MASTER_Get())
     {
-        RegAccessfsm = 0;
+        RegAccessfsm = 6;
         NCS_MHM_Set();
     }
     else if(!SERCOM0_SPI_IsBusy() && pMHMRegAccData != NULL)
@@ -297,6 +297,11 @@ void IC_MHM_RegAccesTask()
                 if(pSPIMHM->RxLength) memcpy(pMHMRegAccData->RxData, pSPIMHM->RxData, pSPIMHM->RxLength);
                 RegAccessfsm = 4;
                 IC_MHM_SPIBufferFree(&pSPIMHM);
+                break;
+                
+            case 6:
+                if(pSPIMHM != NULL) IC_MHM_SPIBufferFree(&pSPIMHM);
+                RegAccessfsm = 0;
                 break;
         }
     }

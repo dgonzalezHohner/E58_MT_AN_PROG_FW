@@ -24,8 +24,9 @@
 /* This section lists the other files that are included in this file.
  */
 #include "definitions.h"                // SYS function prototypes
-#include "push_buttons.h"
 #include <stdlib.h>
+#include "push_buttons.h"
+#include "SPI_MHM.h"
 /* TODO:  Include other files here if needed. */
 
 
@@ -59,7 +60,8 @@
 
 
 //int global_data;
-PBGroupType* pPushButtons;
+volatile uint16_t ScaleCfgTimer = 0;
+volatile uint16_t DefCfgTimer = 0;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -177,6 +179,8 @@ void PBFree (PBGroupType** pPBGroup)
 void PushButtonsTask()
 {
     uint8_t i;
+    static PBfsmType  PBfsm = WAIT_PB_CT;
+    
     //Read Current Input value and store in push buttons data
     PB1_CURRENT_VAL = PB1_Get();
     PB2_CURRENT_VAL = PB2_Get();
@@ -204,6 +208,193 @@ void PushButtonsTask()
             }
         }
     }
+    if(EncoderCfg.Scalability)
+    {
+        switch (PBfsm)
+        {
+            case WAIT_PB_CT:
+                //set led configuration none
+                //Check both PBs are pressed, start timers
+                if(CommonVars.Scaling == NO_SCALE)
+                {
+                    if(!PB1_DEB_VAL && !PB2_DEB_VAL)
+                    {
+                        ScaleCfgTimer = PB_SCALE_CFG_T_set;
+                        DefCfgTimer = PB_DEF_CFG_T_set;
+                        CommonVars.Scaling = PB_SCALE;
+                        PBfsm = BOTH_PBS_ON;
+                    }
+                    //
+                    else if (SET1_DEB_VAL && SET2_DEB_VAL)
+                    {
+                        PBfsm = BOTH_CTS_ON; //CT Scaling
+                    }
+                    //
+                    else
+                    {
+                        ScaleCfgTimer = 0;
+                        DefCfgTimer = 0;
+                    }
+                }
+                break;
+
+            case BOTH_PBS_ON:
+                //set both leds solid
+                //Check if Scale configuration timer not end
+                if(ScaleCfgTimer != 1)
+                {
+                    //Check if any PB is released
+                    if(PB1_DEB_VAL || PB2_DEB_VAL)
+                    {
+                        CommonVars.Scaling = NO_SCALE;
+                        PBfsm = WAIT_PB_CT;
+                    }
+                }
+                //Scale configuration timer end
+                else
+                {
+                    //Check if both PBs are released
+                    if(PB1_DEB_VAL && PB2_DEB_VAL) PBfsm = BOTH_PBS_OFF;
+                    //Check if restore default config timer end
+                    else if(!PB1_DEB_VAL && !PB2_DEB_VAL && (DefCfgTimer == 1)) PBfsm = RESTORE_DEF;
+                }
+                break;
+
+            case BOTH_PBS_OFF:
+                //Both leds blinking
+                if(!PB1_DEB_VAL)
+                {
+                    ScaleCfgTimer = PB_SET_CFG_T_set;
+                    PBfsm = PB1_ON_FIRST;
+                }
+                else if(!PB2_DEB_VAL)
+                {
+                    ScaleCfgTimer = PB_SET_CFG_T_set;
+                    PBfsm = PB2_ON_FIRST;
+                }
+                break;
+
+            case PB1_ON_FIRST:
+            case PB2_ON_FIRST:
+                //both leds blinking
+                //Before timer end
+                if(ScaleCfgTimer != 1)
+                {
+                    //Check abort conditiion
+                    if(!PB1_DEB_VAL && !PB2_DEB_VAL)
+                    {
+                        CommonVars.Scaling = NO_SCALE;
+                        PBfsm = WAIT_PB_CT;
+                    }
+                    else
+                    {
+                        //Check PB1 pressed first and released or PB2 pressed first and released
+                        if(((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL) || ((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL)) PBfsm = BOTH_PBS_OFF;
+                    }
+                }
+                else
+                {
+                    if((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL)
+                    {
+                        //To Do, Get current position as lowest output
+                        PBfsm = PB1_OFF_FIRST;
+                    }
+                    else if((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL)
+                    {
+                        //To Do, Get current position as highest output
+                        PBfsm = PB2_OFF_FIRST;
+                    }
+                }
+                break;
+
+            case PB1_OFF_FIRST:
+            case PB2_OFF_FIRST:
+                if(PBfsm == PB1_OFF_FIRST)
+                {
+                    //Green led solid, Yellow led blink
+                    if(!PB2_DEB_VAL)
+                    {
+                        ScaleCfgTimer = PB_SET_CFG_T_set;
+                        PBfsm = PB2_ON_LAST;
+                    }
+                }
+                else
+                {
+                    //Green led blink, Yellow led solid
+                    if(!PB1_DEB_VAL)
+                    {
+                        ScaleCfgTimer = PB_SET_CFG_T_set;
+                        PBfsm = PB1_ON_LAST;
+                    }
+                }
+                break;
+
+            case PB2_ON_LAST:
+            case PB1_ON_LAST:
+                if(PBfsm == PB2_ON_LAST)
+                {
+                    //Green led solid, Yellow led blink
+                    if(ScaleCfgTimer != 1)
+                    {
+                        if(PB2_DEB_VAL) PBfsm = PB1_OFF_FIRST;
+                    }
+                    else
+                    {
+                        if(PB2_DEB_VAL)
+                        {
+                            //To Do, Get current position as highest position
+                            //To Do, Apply user scaling if possible or default scaling
+                            ScaleCfgTimer = PB_SET_CFG_T_set;
+                            PBfsm = PB2_OFF_LAST;
+                        }
+                    }
+                }
+                else
+                {
+                    //Green led blink, Yellow solid
+                    if(ScaleCfgTimer != 1)
+                    {
+                        if(PB1_DEB_VAL) PBfsm = PB2_OFF_FIRST;
+                    }
+                    else
+                    {
+                        if(PB1_DEB_VAL)
+                        {
+                            //To Do, Get current position as lowest position
+                            //To Do, Apply user scaling if possible or default scaling
+                            ScaleCfgTimer = PB_SET_CFG_T_set;
+                            PBfsm = PB1_OFF_LAST;
+                        }
+                    }
+                }
+                break;
+
+            case PB2_OFF_LAST:
+            case PB1_OFF_LAST:
+                //both leds solid
+                if(ScaleCfgTimer == 1) 
+                {
+                    CommonVars.Scaling = NO_SCALE;
+                    PBfsm = WAIT_PB_CT;
+                }
+                break;
+
+            case BOTH_CTS_ON:
+
+                break;
+
+            case RESTORE_DEF:
+
+                break;
+        }
+    }
+    //Encoder no scalable, use SET1 as DIR input and SET2 as preset
+    else
+    {
+        CommonVars.Scaling = PB_SCALE;
+        PBfsm = BOTH_PBS_ON;
+        
+    }
 }
 
 void PBDebTimerTask()
@@ -214,6 +405,8 @@ void PBDebTimerTask()
     {
         if( pPushButtons->pPBData[i].DebTimer > 1)  pPushButtons->pPBData[i].DebTimer--;
     }
+    if(ScaleCfgTimer > 1) ScaleCfgTimer--;
+    if(DefCfgTimer > 1) DefCfgTimer--;
 }
 /* *****************************************************************************
  End of File

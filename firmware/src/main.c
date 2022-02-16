@@ -29,8 +29,6 @@
 #include "push_buttons.h"
 #include "SPI_MHM.h"
 
-extern PBGroupType* pPushButtons;
-extern uint8_t MHMTimer;
 // *****************************************************************************
 // *****************************************************************************
 // Section: Main Entry Point

@@ -174,5 +174,5 @@ void SysTick_Handler(void)
    }
    (void)sysCtrl;
    PBDebTimerTask();
-   IC_MHMTimerTask();
+   TimerTask();
 }

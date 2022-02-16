@@ -106,6 +106,43 @@ extern "C" {
 //        bool some_flag;
 //
 //    } example_struct_t;
+typedef enum
+{
+    NO_SCALE = (uint8_t)0,
+    PB_SCALE,
+    CT_SCALE,
+    UART_SCALE
+}ScaleModeType;
+
+typedef struct
+{
+    ScaleModeType Scaling;
+}CommonVarsType;
+
+CommonVarsType CommonVars;
+
+typedef enum
+{
+    NO_SCALABLE = (uint8_t)0,
+    SCALABLE
+}ScalabilityType;
+
+typedef enum
+{
+    CCW = (uint8_t)0,
+    CW
+}CSenseType;
+
+typedef struct
+{
+    ScalabilityType Scalability;
+    CSenseType CodeSense;
+}EncoderCfgType;
+
+EncoderCfgType EncoderCfg;
+
+volatile uint8_t MHMTimer;
+
 typedef struct __SPI_IC_MHMType
 {
 	uint8_t 	TxLength;
@@ -325,7 +362,7 @@ void InitMHMRegAccData(IC_MHM_REG_ACCType* MHMRegAccData);
 void DeInitMHMRegAccData(IC_MHM_REG_ACCType* MHMRegAccData);
 void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, uint8_t TxLength, uint8_t RxLength);
 void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData);
-void IC_MHMTimerTask();
+void TimerTask();
 void IC_MHM_RegAccesTask();
 void IC_MHM_Task();
 

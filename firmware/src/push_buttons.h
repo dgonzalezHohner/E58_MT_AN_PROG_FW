@@ -69,7 +69,14 @@ extern "C" {
     #define DEB_TIME_ms         50
     #define DEB_TIMER_set       (((DEB_TIME_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
+    #define PB_SCALE_CFG_T_ms   15000
+    #define PB_SCALE_CFG_T_set  (((PB_SCALE_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
+    #define PB_DEF_CFG_T_ms     30000
+    #define PB_DEF_CFG_T_set    (((PB_DEF_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+    #define PB_SET_CFG_T_ms     2000
+    #define PB_SET_CFG_T_set    (((PB_SET_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Data Types
@@ -102,6 +109,24 @@ extern "C" {
         Describe enumeration elements and structure and union members above each 
         element or member.
      */
+    typedef enum
+    {
+        WAIT_PB_CT = (uint8_t)0,
+        BOTH_PBS_ON,
+        BOTH_PBS_OFF,
+        PB1_ON_FIRST,
+        PB1_OFF_FIRST,
+        PB2_ON_LAST,
+        PB2_OFF_LAST,
+        PB2_ON_FIRST,
+        PB2_OFF_FIRST,
+        PB1_ON_LAST,
+        PB1_OFF_LAST,
+        
+        BOTH_CTS_ON,
+        RESTORE_DEF
+    }PBfsmType;
+    
     typedef struct
     {
         /* Describe structure member. */
@@ -124,15 +149,17 @@ extern "C" {
         void (*pPBGroupInit)(struct __PBGroup* pPBData);
         void (*pPBGroupDeInit)(struct __PBGroup* pPBData);
     }PBGroupType;
+    
+    PBGroupType* pPushButtons;
 
     #define PB1_CURRENT_VAL pPushButtons->pPBData[0].PBStatus.Bitfield.PinStat
-    #define PB1_DEB_VAL pPushButtons->pPBData[0].PBStatus.Bitfield.DevStat
+    #define PB1_DEB_VAL pPushButtons->pPBData[0].PBStatus.Bitfield.DebStat
     #define PB2_CURRENT_VAL pPushButtons->pPBData[1].PBStatus.Bitfield.PinStat
-    #define PB2_DEB_VAL pPushButtons->pPBData[1].PBStatus.Bitfield.DevStat
+    #define PB2_DEB_VAL pPushButtons->pPBData[1].PBStatus.Bitfield.DebStat
     #define SET1_CURRENT_VAL pPushButtons->pPBData[2].PBStatus.Bitfield.PinStat
-    #define SET1_DEB_VAL pPushButtons->pPBData[2].PBStatus.Bitfield.DevStat
+    #define SET1_DEB_VAL pPushButtons->pPBData[2].PBStatus.Bitfield.DebStat
     #define SET2_CURRENT_VAL pPushButtons->pPBData[3].PBStatus.Bitfield.PinStat
-    #define SET2_DEB_VAL pPushButtons->pPBData[3].PBStatus.Bitfield.DevStat
+    #define SET2_DEB_VAL pPushButtons->pPBData[3].PBStatus.Bitfield.DebStat
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
