@@ -73,6 +73,7 @@ static ExtEEpromDataType* pExtEEpromData = NULL;
 volatile uint8_t ExtEEpromTimer = 0;
 
 static uint8_t IC_MHMfuncfsm = 0;
+static uint8_t RegAccessfsm = 0;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -241,7 +242,6 @@ void TimerTask()
 void IC_MHM_RegAccesTask()
 {
     static SPI_IC_MHMType* pSPIMHM = NULL;
-    static uint8_t RegAccessfsm = 0;
     
     if(BISS_MASTER_Get())
     {
