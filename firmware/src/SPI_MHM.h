@@ -179,10 +179,8 @@ typedef enum
     READ_POS_1,
     READ_POS_2,
     READ_POS_3,
-    READ_POS_4,
     READ_STATUS_1,
-    READ_STATUS_2,
-    READ_STATUS_3
+    READ_STATUS_2
 }IC_MHMfsmType;
 
 enum MHM_OPCODE
@@ -364,6 +362,24 @@ void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, ui
 void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData);
 void TimerTask();
 void IC_MHM_RegAccesTask();
+
+bool IC_MHM_ActvSt(uint8_t Data);
+uint8_t IC_MHM_ActvEnd();
+bool IC_MHM_RdPosSt();
+uint8_t IC_MHM_RdPosEnd(uint8_t* Data);
+bool IC_MHM_RdStatusSt();
+uint8_t IC_MHM_RdStatusEnd(uint8_t* Data);
+bool IC_MHM_RegRdCtdSt(uint8_t Address, uint8_t Length);
+uint8_t IC_MHM_RegRdCtdEnd(uint8_t* Data);
+bool IC_MHM_RegWrCtdSt(uint8_t Address, uint8_t* Data, uint8_t Length);
+uint8_t IC_MHM_RegWrCtdEnd();
+bool IC_MHM_WrInstrSt(uint8_t* Data, uint8_t Length);
+uint8_t IC_MHM_WrInstrEnd();
+bool IC_MHM_RegWrSt(uint8_t Address, uint8_t Data);
+uint8_t IC_MHM_RegWrEnd();
+bool IC_MHM_RegRdSt(uint8_t Address);
+uint8_t IC_MHM_RegRdEnd(uint8_t* Data);
+
 void IC_MHM_Task();
 
 void InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
