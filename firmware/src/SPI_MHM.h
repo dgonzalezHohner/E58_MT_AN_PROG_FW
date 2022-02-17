@@ -142,6 +142,7 @@ typedef struct
 EncoderCfgType EncoderCfg;
 
 volatile uint8_t MHMTimer;
+volatile uint8_t MHMProcTimer;
 
 typedef struct __SPI_IC_MHMType
 {
@@ -172,15 +173,10 @@ typedef enum
     MHM_STARTUP_3,
     MHM_STARTUP_4,
     MHM_STARTUP_5,
-    MHM_STARTUP_6,
-    MHM_STARTUP_7,
-    MHM_STARTUP_8,
-    MHM_STARTUP_9,
     READ_POS_1,
     READ_POS_2,
     READ_POS_3,
-    READ_STATUS_1,
-    READ_STATUS_2
+    READ_STATUS_1
 }IC_MHMfsmType;
 
 enum MHM_OPCODE
@@ -361,25 +357,21 @@ void DeInitMHMRegAccData(IC_MHM_REG_ACCType* MHMRegAccData);
 void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, uint8_t TxLength, uint8_t RxLength);
 void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData);
 void TimerTask();
+
 void IC_MHM_RegAccesTask();
 
-bool IC_MHM_ActvSt(uint8_t Data);
-uint8_t IC_MHM_ActvEnd();
-bool IC_MHM_RdPosSt();
-uint8_t IC_MHM_RdPosEnd(uint8_t* Data);
-bool IC_MHM_RdStatusSt();
-uint8_t IC_MHM_RdStatusEnd(uint8_t* Data);
-bool IC_MHM_RegRdCtdSt(uint8_t Address, uint8_t Length);
-uint8_t IC_MHM_RegRdCtdEnd(uint8_t* Data);
-bool IC_MHM_RegWrCtdSt(uint8_t Address, uint8_t* Data, uint8_t Length);
-uint8_t IC_MHM_RegWrCtdEnd();
-bool IC_MHM_WrInstrSt(uint8_t* Data, uint8_t Length);
-uint8_t IC_MHM_WrInstrEnd();
-bool IC_MHM_RegWrSt(uint8_t Address, uint8_t Data);
-uint8_t IC_MHM_RegWrEnd();
-bool IC_MHM_RegRdSt(uint8_t Address);
-uint8_t IC_MHM_RegRdEnd(uint8_t* Data);
-
+uint8_t IC_MHM_Activate(uint8_t Data);
+uint8_t IC_MHM_RdPos(uint8_t* Data);
+uint8_t IC_MHM_RdStatus(uint8_t* Data);
+uint8_t IC_MHM_RegRdCtd(uint8_t Address, uint8_t* Data, uint8_t Length);
+uint8_t IC_MHM_RegWrCtd(uint8_t Address, uint8_t* Data, uint8_t Length);
+uint8_t IC_MHM_WrInstr(uint8_t* Data, uint8_t Length);
+uint8_t IC_MHM_RegWr(uint8_t Address, uint8_t Data);
+uint8_t IC_MHM_RegRd(uint8_t Address, uint8_t* Data);
+uint8_t IC_MHM_SetFIO(uint8_t Data);
+uint8_t IC_MHM_ClrFIO(uint8_t Data);
+uint8_t IC_MHM_PresetPV();
+        
 void IC_MHM_Task();
 
 void InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
