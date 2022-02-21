@@ -574,7 +574,6 @@ uint8_t IC_MHM_PresetPV()
     return TempResult;
 }
 
-
 void IC_MHM_Task()
 {
     static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
@@ -926,6 +925,78 @@ void ExtEEpromTask()
         }
     }
     
+}
+
+uint8_t IntEEpromWrite(uint8_t* Data, uint32_t Address, uint16_t length)
+{
+    static uint32_t* ptr;
+    static uint8_t IntEEpromWrfsm = 0;
+    static uint8_t PageCnt = 0;
+    static uint8_t ByteCnt = 0;
+    static uint32_t RowStartAddr = 0;
+    static uint32_t NextRowAddr = 0;
+    static uint32_t BytesToWr = 0;
+    uint8_t result = 0;
+    
+    if(!NVMCTRL_IsBusy())
+    {
+        switch (IntEEpromWrfsm)
+        {
+            case 0:
+                //Check memory size limit
+                if ((Address>=(NVMCTRL_RWWEEPROM_START_ADDRESS+NVMCTRL_RWWEEPROM_SIZE))||((Address+length)>(NVMCTRL_RWWEEPROM_START_ADDRESS + NVMCTRL_RWWEEPROM_SIZE)))
+                {
+
+                    ByteCnt = 0;
+                    result = 1;
+
+                }
+                else if(length>ByteCnt)
+                {
+                    //Check page size limit
+                    RowStartAddr = ((Address+ByteCnt)/NVMCTRL_RWWEEPROM_ROWSIZE)*NVMCTRL_RWWEEPROM_ROWSIZE;
+                    NextRowAddr = RowStartAddr + NVMCTRL_RWWEEPROM_ROWSIZE;
+                    //Check row overflow
+                    if(((Address+ByteCnt)+(length-ByteCnt))>=NextRowAddr)
+                        BytesToWr = NextRowAddr-(Address+ByteCnt);
+                    //no row overflow
+                    else
+                        BytesToWr = (length-ByteCnt);
+                    //Allocate 256 bytes corresponding to RWWEE_ROW_SIZE, 4 pages, pointed by 4 bytes
+                    ptr = (uint32_t*)malloc(NVMCTRL_RWWEEPROM_ROWSIZE/sizeof(*ptr));
+                    //Read whole page information and copy it to ptr
+                    NVMCTRL_RWWEEPROM_Read(ptr, NVMCTRL_RWWEEPROM_ROWSIZE/sizeof(*ptr), RowStartAddr);
+                    //copy new information to ptr
+                    memcpy((((uint8_t*)ptr)+Address+ByteCnt-RowStartAddr), Data+ByteCnt, BytesToWr);
+                    //Erase row before writing pages
+                    NVMCTRL_RWWEEPROM_RowErase(RowStartAddr);
+                    PageCnt = 0;
+                    IntEEpromWrfsm++;
+                }
+                else
+                {
+                    ByteCnt = 0;
+                    result = 2;
+                }
+                break;
+
+            case 1:
+                //Check page counter when writing pages
+                if(PageCnt < 4)
+                {
+                    NVMCTRL_RWWEEPROM_PageWrite(ptr, RowStartAddr+(PageCnt*NVMCTRL_RWWEEPROM_PAGESIZE));
+                    PageCnt++;
+                }
+                else
+                {
+                    free(ptr);
+                    ByteCnt += BytesToWr;
+                    IntEEpromWrfsm = 0;
+                }
+                break;
+        }
+    }
+    return result;
 }
 /* *****************************************************************************
  End of File

@@ -205,6 +205,7 @@ enum SPI0_STATUS
 #define IC_MHM_STAT_DISMISS_Msk     (uint8_t)0x08   //Illegal Address
 #define IC_MHM_STAT_ERROR_Msk       (uint8_t)0x80   //Invalid opcode
                 
+#define IC_MHM_ERROR_REG            (uint8_t)0x70
 #define IC_MHM_0x70_ERR_CFG_Msk     (uint8_t)0x01
 #define IC_MHM_0x70_ERR_OFFS_Msk    (uint8_t)0x02
 #define IC_MHM_0x70_ERR_POS_Msk     (uint8_t)0x04
@@ -255,7 +256,7 @@ enum SPI0_STATUS
 #define IC_MHM_OFFS_ADDR            ((uint8_t)0x1D)
 #define IC_MHM_OFFS_LENGTH          ((uint8_t)7)
 
-//EEPROM defines
+//External EEPROM defines
 #define WR_PAGE_SIZE_BYTES          ((uint8_t)16)
 #define EEPROM_SIZE_16KBITS         ((uint8_t)16)
 //#define EEPROM_SIZE_8KBITS          ((uint8_t)8)
@@ -292,6 +293,18 @@ typedef struct __ExtEEpromDataType
 
 #define EXT_EEPROM_TWR_ms           20
 #define EXT_EEPROM_TWR_SET         (((EXT_EEPROM_TWR_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+//Internal EEPROM defines, RWWEE memory
+#define RWWEE_PAGE_SIZE             ((uint8_t)64)
+#define RWWEE_ROW_SIZE              ((uint16_t)64 * 4)
+#define RWEEE_PV_CFG_ADDR           ((uint32_t)0x400000)
+#define RWWEE_PV_CFG_LEN            ((uint8_t)5)
+#define RWEEE_PV_CNT_ADDR           ((uint32_t)(RWEEE_PV_CFG_ADDR+RWWEE_PV_CFG_LEN))
+#define RWWEE_PV_CNT_LEN            ((uint8_t)6)
+#define RWWEE_MHM_CFG_ADDR          ((uint32_t)0x400010)
+#define RWWEE_MHM_CFG_LEN           ((uint8_t)13)
+#define RWWEE_MHM_OFFS_ADDR         ((uint32_t)(RWWEE_MHM_CFG_ADDR+RWWEE_MHM_CFG_LEN))
+#define RWWEE_MHM_OFFS_LEN          ((uint8_t)7)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
