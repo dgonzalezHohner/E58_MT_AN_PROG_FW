@@ -277,17 +277,19 @@ enum SPI0_STATUS
 
 typedef struct __ExtEEpromDataType
 {
+    uint8_t ExtEEpromfsm;
     uint8_t SlaveAddr;  //LSB contains R/nW operation
     uint16_t MemoryAddr;
     uint16_t TxLength;
     uint8_t* TxData;
     uint16_t TxCnt;
+    uint8_t* pData;
+    uint8_t PgStartAddr;
     uint8_t NextPgAddr;
-    uint8_t NextPgGap;
+    uint8_t BytesToWr;
     uint16_t RxLength;
     uint8_t* RxData;
-    uint8_t Result;
-    void (*pInitExtEEpromData) (struct __ExtEEpromDataType* pExtEEpromData);
+    bool (*pInitExtEEpromData) (struct __ExtEEpromDataType* pExtEEpromData);
 	void (*pDeInitExtEEpromData) (struct __ExtEEpromDataType* pExtEEpromData);
 }ExtEEpromDataType;
 
@@ -295,6 +297,22 @@ typedef struct __ExtEEpromDataType
 #define EXT_EEPROM_TWR_SET         (((EXT_EEPROM_TWR_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
 //Internal EEPROM defines, RWWEE memory
+typedef struct __IntRWWEEWrType
+{
+    uint8_t IntEEpromWrfsm;
+    uint8_t PageCnt;
+    uint8_t ByteCnt;
+    uint32_t RowStartAddr;
+    uint32_t NextRowAddr;
+    uint32_t BytesToWr;
+    uint8_t* pData;
+    uint32_t Address;
+    uint16_t length;
+    uint32_t* pRowData;
+    bool (*pInitRWWEEWrData) (struct __IntRWWEEWrType* pIntRWWEEWr);
+    void (*pDeInitRWWEEWrData) (struct __IntRWWEEWrType* pIntRWWEEWr);
+}IntRWWEEWrType;
+
 #define RWWEE_PAGE_SIZE             ((uint8_t)64)
 #define RWWEE_ROW_SIZE              ((uint16_t)64 * 4)
 #define RWEEE_PV_CFG_ADDR           ((uint32_t)0x400000)
@@ -387,10 +405,17 @@ uint8_t IC_MHM_PresetPV();
         
 void IC_MHM_Task();
 
-void InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
+bool InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
 void DeInitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
-void ExtEEpromDataBufferInit(ExtEEpromDataType** pExtEEpromData, uint8_t SlaveAddr, uint8_t TxLength, uint8_t RxLength);
+bool ExtEEpromDataBufferInit(ExtEEpromDataType** pExtEEpromData, uint8_t SlaveAddr, uint8_t TxLength, uint8_t RxLength);
 void ExtEEpromDataBufferFree(ExtEEpromDataType** pExtEEpromData);
+uint8_t ExtEEpromRdWr(void);
+
+bool InitRWWEEWrData (IntRWWEEWrType* ptr);
+void DeInitRWWEEWrData(IntRWWEEWrType* ptr);
+bool RWWEEWrInit (IntRWWEEWrType** pIntRWWEEWr, uint32_t Address, uint16_t length);
+void RWWEEWRfree (IntRWWEEWrType** pIntRWWEEWr);
+uint8_t IntEEpromWrite(void);
     /* Provide C++ Compatibility */
 #ifdef __cplusplus
 }

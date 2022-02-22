@@ -77,6 +77,9 @@ static uint8_t PositionRead[7];
 static uint8_t StatusReg[4];
 static uint8_t IC_MHMCmdfsm = 0;
 static uint8_t IC_MHMProcFsm = 0;
+
+//Internal EEPROM, RWWEEprom variables and pointers
+static IntRWWEEWrType* pIntRWWEEWr = NULL;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -782,34 +785,57 @@ uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Len
 }
 
 //External EEprom management functions
-void InitExtEEpromData(ExtEEpromDataType* pExtEEpromData)
+bool InitExtEEpromData(ExtEEpromDataType* pExtEEpromData)
 {
-	pExtEEpromData->TxData = (uint8_t*)malloc(pExtEEpromData->TxLength * sizeof(*(pExtEEpromData->TxData)));
-	pExtEEpromData->RxData = (uint8_t*)malloc(pExtEEpromData->RxLength * sizeof(*(pExtEEpromData->RxData)));
+	pExtEEpromData->TxData = (pExtEEpromData->TxLength)? (uint8_t*)malloc(pExtEEpromData->TxLength * sizeof(*(pExtEEpromData->TxData))) : NULL;
+	pExtEEpromData->RxData = (pExtEEpromData->RxLength)? (uint8_t*)malloc(pExtEEpromData->RxLength * sizeof(*(pExtEEpromData->RxData))) : NULL;
+    
+    if(((pExtEEpromData->TxLength) && (pExtEEpromData->TxData == NULL))||((pExtEEpromData->RxLength) && (pExtEEpromData->RxData == NULL)))
+        return false;
+	else 
+        return true;
 }
 
 void DeInitExtEEpromData(ExtEEpromDataType* pExtEEpromData)
 {
-	free(pExtEEpromData->TxData);
-	free(pExtEEpromData->RxData);
+	if(pExtEEpromData->TxData != NULL) free(pExtEEpromData->TxData);
+    if(pExtEEpromData->RxData != NULL) free(pExtEEpromData->RxData);
 }
 
-void ExtEEpromDataBufferInit(ExtEEpromDataType** pExtEEpromData, uint8_t SlaveAddr, uint8_t TxLength, uint8_t RxLength)
+bool ExtEEpromDataBufferInit(ExtEEpromDataType** pExtEEpromData, uint8_t SlaveAddr, uint8_t TxLength, uint8_t RxLength)
 {
 	ExtEEpromDataType* ptr = malloc(sizeof(ExtEEpromDataType));
 
-	ptr->SlaveAddr = SlaveAddr;
-    ptr->TxLength = TxLength;
-    ptr->RxLength = RxLength;
-	ptr->Result = 0;
-    ptr->MemoryAddr = 0;
-    ptr->NextPgAddr = 0;
-    ptr->NextPgGap = 0;
-    ptr->TxCnt = 0;
-    ptr->pInitExtEEpromData = InitExtEEpromData;
-	ptr->pDeInitExtEEpromData = DeInitExtEEpromData;
-	ptr->pInitExtEEpromData (ptr);
-	*pExtEEpromData = ptr;
+    if(ptr != NULL)
+    {
+        ptr->ExtEEpromfsm = 0;
+        ptr->SlaveAddr = SlaveAddr;
+        ptr->TxLength = TxLength;
+        ptr->RxLength = RxLength;
+        ptr->MemoryAddr = 0;
+        ptr->PgStartAddr = 0;
+        ptr->NextPgAddr = 0;
+        ptr->BytesToWr = 0;
+        ptr->TxCnt = 0;
+        ptr->pInitExtEEpromData = InitExtEEpromData;
+        ptr->pDeInitExtEEpromData = DeInitExtEEpromData;
+        if(ptr->pInitExtEEpromData(ptr))
+        {
+            (*pExtEEpromData) = ptr;
+            return true;
+        }
+        else
+        {
+            if(ptr->TxData != NULL) free(ptr->TxData);
+            if(ptr->RxData != NULL) free(ptr->RxData);
+            return false;
+        }
+	}
+    else
+    {
+        (*pExtEEpromData) = NULL;
+        return false;
+    }
 }
 
 void ExtEEpromDataBufferFree(ExtEEpromDataType** pExtEEpromData)
@@ -819,179 +845,209 @@ void ExtEEpromDataBufferFree(ExtEEpromDataType** pExtEEpromData)
 	(*pExtEEpromData) = NULL;
 }
 
-void ExtEEpromTask()
+uint8_t ExtEEpromRdWr(void)
 {
-    static uint8_t ExtEEpromfsm = 0;
-    static uint8_t* pData = NULL;
+    uint8_t Result = 0;
     
-    if(!SERCOM2_I2C_IsBusy() && pExtEEpromData != NULL)
+    if(!SERCOM2_I2C_IsBusy() && (pExtEEpromData != NULL))
     {
-        switch (ExtEEpromfsm)
+        switch (pExtEEpromData->ExtEEpromfsm)
         {
             case 0:
-                ExtEEpromfsm = ((pExtEEpromData->SlaveAddr & 0x01) == I2C_TRANSFER_READ) ? 1 : 3;
+                pExtEEpromData->ExtEEpromfsm = ((pExtEEpromData->SlaveAddr & 0x01) == I2C_TRANSFER_READ) ? 1 : 3;
                 break;
             
             case 1:
                 //Read
-                //Check memory size limit.
+                //Check memory size limit. Try to read more bytes than EEPROM_SIZE_BYTES, stop process.
                 if((pExtEEpromData->MemoryAddr >= EEPROM_SIZE_BYTES) || ((pExtEEpromData->MemoryAddr + pExtEEpromData->RxLength) > EEPROM_SIZE_BYTES))
-                {
-                    //Try to read more bytes than EEPROM_SIZE_BYTES, stop process
-                    ExtEEpromfsm = 0;
-                    pExtEEpromData->Result = 0x01;
-                }
+                    Result = 1;
                 else
                 {
                     if (SERCOM2_I2C_Write((((pExtEEpromData->MemoryAddr >> 7) & 0x0E) | pExtEEpromData->SlaveAddr) >> 1, (uint8_t*)(&pExtEEpromData->MemoryAddr), 1))
-                        ExtEEpromfsm = 2;
+                        pExtEEpromData->ExtEEpromfsm = 2;
+                    else
+                        Result = 1;
                 }
                 break;
                 
             case 2:
-                if (SERCOM2_I2C_Read((((pExtEEpromData->MemoryAddr >> 7) & 0x0E) | pExtEEpromData->SlaveAddr) >> 1, pExtEEpromData->RxData, pExtEEpromData->RxLength))
+                if(SERCOM2_I2C_ErrorGet() != SERCOM_I2C_ERROR_NONE)
                 {
-                    ExtEEpromfsm = 0;
-                    pExtEEpromData->Result = 0x02;
+                    if (SERCOM2_I2C_Read((((pExtEEpromData->MemoryAddr >> 7) & 0x0E) | pExtEEpromData->SlaveAddr) >> 1, pExtEEpromData->RxData, pExtEEpromData->RxLength))
+                        Result = 2;
+                    else
+                        Result = 1;
                 }
+                //Any error while addressing I2C slave
+                else
+                    Result = 1;
                 break;
                 
             case 3:
                 //Write
-                //Check memory size limit.
+                //Check memory size limit. //Try to write more bytes than EEPROM_SIZE_BYTES, stop process.
                 if((pExtEEpromData->MemoryAddr >= EEPROM_SIZE_BYTES) || ((pExtEEpromData->MemoryAddr + pExtEEpromData->TxLength) > EEPROM_SIZE_BYTES))
-                {
-                    //Try to write more bytes than EEPROM_SIZE_BYTES, stop process
-                    ExtEEpromfsm = 0;
-                    pExtEEpromData->Result = 0x01;
-                }
+                    Result = 1;
                 else if (pExtEEpromData->TxLength > pExtEEpromData->TxCnt)
                 {
                     //Check current page overflow
-                    pExtEEpromData->NextPgAddr = ((((pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt)/WR_PAGE_SIZE_BYTES)+1)*WR_PAGE_SIZE_BYTES);
+                    pExtEEpromData->PgStartAddr = ((pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt)/WR_PAGE_SIZE_BYTES)*WR_PAGE_SIZE_BYTES;
+                    pExtEEpromData->NextPgAddr = pExtEEpromData->PgStartAddr + WR_PAGE_SIZE_BYTES;
+                    //page overflow
                     if((pExtEEpromData->MemoryAddr + pExtEEpromData->TxLength) >= pExtEEpromData->NextPgAddr)
-                    {
-                        pExtEEpromData->NextPgGap = pExtEEpromData->NextPgAddr - (pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
-                        pData = (uint8_t*)malloc(sizeof(*pData) * (pExtEEpromData->NextPgGap + 1));
-                        pData[0] = (uint8_t)(pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
-                        memcpy(&pData[1], &pExtEEpromData->TxData[pExtEEpromData->TxCnt], pExtEEpromData->NextPgGap);
-                        if (SERCOM2_I2C_Write(((((pExtEEpromData->MemoryAddr+pExtEEpromData->TxCnt)>>7)&0x0E)|pExtEEpromData->SlaveAddr)>>1, pData, (pExtEEpromData->NextPgGap + 1)))
-                        {
-                            pExtEEpromData->TxCnt += pExtEEpromData->NextPgGap;
-                            ExtEEpromTimer = EXT_EEPROM_TWR_SET;
-                            ExtEEpromfsm = 4;
-                        }
-                        else
-                        {
-                            free(pData);
-                            pData= NULL;
-                        }
-                    }
+                        pExtEEpromData->BytesToWr = pExtEEpromData->NextPgAddr - (pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
                     //no page overflow
                     else
-                    {
-                        pExtEEpromData->NextPgGap = 0;
-                        pData = (uint8_t*)malloc(sizeof(*pData) * (pExtEEpromData->TxLength - pExtEEpromData->TxCnt + 1));
-                        pData[0] = (uint8_t)(pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
-                        memcpy(&pData[1], &pExtEEpromData->TxData[pExtEEpromData->TxCnt], pExtEEpromData->TxLength - pExtEEpromData->TxCnt);
-                        if (SERCOM2_I2C_Write(((((pExtEEpromData->MemoryAddr+pExtEEpromData->TxCnt)>>7)&0x0E)|pExtEEpromData->SlaveAddr)>>1, pData, pExtEEpromData->TxLength-pExtEEpromData->RxLength+1))
+                        pExtEEpromData->BytesToWr = pExtEEpromData->TxLength - pExtEEpromData->TxCnt;
+                    pExtEEpromData->pData = (uint8_t*)malloc(sizeof(*pExtEEpromData->pData) * (pExtEEpromData->BytesToWr + 1));
+                    if(pExtEEpromData->pData != NULL)
+                    {                    
+                        pExtEEpromData->pData[0] = (uint8_t)(pExtEEpromData->MemoryAddr + pExtEEpromData->TxCnt);
+                        memcpy(&pExtEEpromData->pData[1], &pExtEEpromData->TxData[pExtEEpromData->TxCnt], pExtEEpromData->BytesToWr);
+                        if (SERCOM2_I2C_Write(((((pExtEEpromData->MemoryAddr+pExtEEpromData->TxCnt)>>7)&0x0E)|pExtEEpromData->SlaveAddr)>>1, pExtEEpromData->pData, pExtEEpromData->BytesToWr + 1))
                         {
-                            pExtEEpromData->TxCnt += (pExtEEpromData->TxLength-pExtEEpromData->TxCnt);
+                            pExtEEpromData->TxCnt += pExtEEpromData->BytesToWr;
                             ExtEEpromTimer = EXT_EEPROM_TWR_SET;
-                            ExtEEpromfsm = 4;
+                            pExtEEpromData->ExtEEpromfsm = 4;
                         }
                         else
                         {
-                            free(pData);
-                            pData= NULL;
+                            free(pExtEEpromData->pData);
+                            pExtEEpromData->pData= NULL;
+                            Result = 1;
                         }
                     }
+                    else
+                        Result = 1;
                 }
                 else
-                {
-                    ExtEEpromfsm = 0;
-                    pExtEEpromData->Result = 0x02;
-                }
+                    Result = 0x02;
                 break;
 
             case 4:
-                if(ExtEEpromTimer == (uint8_t)1)
+                if(SERCOM2_I2C_ErrorGet() != SERCOM_I2C_ERROR_NONE)
                 {
-                    free(pData);
-                    pData= NULL;
-                    ExtEEpromfsm = 3;
+                    if(ExtEEpromTimer == (uint8_t)1)
+                    {
+                        free(pExtEEpromData->pData);
+                        pExtEEpromData->pData= NULL;
+                        pExtEEpromData->ExtEEpromfsm = 3;
+                    }
                 }
+                else
+                    Result = 1;
                 break;
         }
     }
-    
+    return Result;
 }
 
-uint8_t IntEEpromWrite(uint8_t* Data, uint32_t Address, uint16_t length)
+//Internal MCU EEPROM (RWWEEprom) Writing functions
+bool InitRWWEEWrData (IntRWWEEWrType* ptr)
 {
-    static uint32_t* ptr;
-    static uint8_t IntEEpromWrfsm = 0;
-    static uint8_t PageCnt = 0;
-    static uint8_t ByteCnt = 0;
-    static uint32_t RowStartAddr = 0;
-    static uint32_t NextRowAddr = 0;
-    static uint32_t BytesToWr = 0;
+    ptr->pData = (uint8_t*)malloc((ptr->length) * sizeof(*ptr->pData));
+    ptr->pRowData = (uint32_t*)malloc(NVMCTRL_RWWEEPROM_ROWSIZE/sizeof(*ptr->pRowData));
+    if((ptr->pData != NULL) && (ptr->pRowData != NULL)) return true;
+    else return false;
+}
+    
+void DeInitRWWEEWrData(IntRWWEEWrType* ptr)
+{
+    if(ptr->pData != NULL) free(ptr->pData);
+    if(ptr->pRowData != NULL) free(ptr->pRowData);
+}
+
+bool RWWEEWrInit (IntRWWEEWrType** pIntRWWEEWr, uint32_t Address, uint16_t length)
+{
+    IntRWWEEWrType* ptr = (IntRWWEEWrType*)malloc(sizeof(IntRWWEEWrType));
+    
+    if(ptr != NULL)
+    {
+        ptr->IntEEpromWrfsm = 0;
+        ptr->PageCnt = 0;
+        ptr->ByteCnt = 0;
+        ptr->RowStartAddr = 0;
+        ptr->NextRowAddr = 0;
+        ptr->BytesToWr = 0;
+        ptr->Address = Address;
+        ptr->length = length;
+        ptr->pInitRWWEEWrData = InitRWWEEWrData;
+        ptr->pDeInitRWWEEWrData = DeInitRWWEEWrData;
+        if(ptr->pInitRWWEEWrData(ptr))
+        {
+            (*pIntRWWEEWr) = ptr;
+            return true;
+        }
+        else
+        {
+            if(ptr->pData != NULL) free(ptr->pData);
+            if(ptr->pRowData != NULL) free(ptr->pRowData);
+            return false;
+        }
+    }
+    else
+    {
+        (*pIntRWWEEWr) = NULL;
+        return false;
+    }
+}
+
+void RWWEEWRfree (IntRWWEEWrType** pIntRWWEEWr)
+{
+    (*pIntRWWEEWr)->pDeInitRWWEEWrData(*pIntRWWEEWr);
+    free(*pIntRWWEEWr);
+    (*pIntRWWEEWr) = NULL;
+}
+
+uint8_t IntEEpromWrite(void)
+{
     uint8_t result = 0;
     
-    if(!NVMCTRL_IsBusy())
+    if(!NVMCTRL_IsBusy() || (pIntRWWEEWr != NULL))
     {
-        switch (IntEEpromWrfsm)
+        switch (pIntRWWEEWr->IntEEpromWrfsm)
         {
             case 0:
                 //Check memory size limit
-                if ((Address>=(NVMCTRL_RWWEEPROM_START_ADDRESS+NVMCTRL_RWWEEPROM_SIZE))||((Address+length)>(NVMCTRL_RWWEEPROM_START_ADDRESS + NVMCTRL_RWWEEPROM_SIZE)))
-                {
-
-                    ByteCnt = 0;
+                if ((pIntRWWEEWr->Address >= (NVMCTRL_RWWEEPROM_START_ADDRESS+NVMCTRL_RWWEEPROM_SIZE))||((pIntRWWEEWr->Address+pIntRWWEEWr->length) > (NVMCTRL_RWWEEPROM_START_ADDRESS + NVMCTRL_RWWEEPROM_SIZE)))
                     result = 1;
-
-                }
-                else if(length>ByteCnt)
+                //Check if all bytes stored
+                else if(pIntRWWEEWr->length > pIntRWWEEWr->ByteCnt)
                 {
                     //Check page size limit
-                    RowStartAddr = ((Address+ByteCnt)/NVMCTRL_RWWEEPROM_ROWSIZE)*NVMCTRL_RWWEEPROM_ROWSIZE;
-                    NextRowAddr = RowStartAddr + NVMCTRL_RWWEEPROM_ROWSIZE;
+                    pIntRWWEEWr->RowStartAddr = ((pIntRWWEEWr->Address + pIntRWWEEWr->ByteCnt)/NVMCTRL_RWWEEPROM_ROWSIZE)*NVMCTRL_RWWEEPROM_ROWSIZE;
+                    pIntRWWEEWr->NextRowAddr = pIntRWWEEWr->RowStartAddr + NVMCTRL_RWWEEPROM_ROWSIZE;
                     //Check row overflow
-                    if(((Address+ByteCnt)+(length-ByteCnt))>=NextRowAddr)
-                        BytesToWr = NextRowAddr-(Address+ByteCnt);
+                    if((pIntRWWEEWr->Address + pIntRWWEEWr->length) >= pIntRWWEEWr->NextRowAddr)
+                        pIntRWWEEWr->BytesToWr = pIntRWWEEWr->NextRowAddr-(pIntRWWEEWr->Address + pIntRWWEEWr->ByteCnt);
                     //no row overflow
                     else
-                        BytesToWr = (length-ByteCnt);
-                    //Allocate 256 bytes corresponding to RWWEE_ROW_SIZE, 4 pages, pointed by 4 bytes
-                    ptr = (uint32_t*)malloc(NVMCTRL_RWWEEPROM_ROWSIZE/sizeof(*ptr));
+                        pIntRWWEEWr->BytesToWr = (pIntRWWEEWr->length - pIntRWWEEWr->ByteCnt);
                     //Read whole page information and copy it to ptr
-                    NVMCTRL_RWWEEPROM_Read(ptr, NVMCTRL_RWWEEPROM_ROWSIZE/sizeof(*ptr), RowStartAddr);
+                    NVMCTRL_RWWEEPROM_Read(pIntRWWEEWr->pRowData, NVMCTRL_RWWEEPROM_ROWSIZE/sizeof(*pIntRWWEEWr->pRowData), pIntRWWEEWr->RowStartAddr);
                     //copy new information to ptr
-                    memcpy((((uint8_t*)ptr)+Address+ByteCnt-RowStartAddr), Data+ByteCnt, BytesToWr);
+                    memcpy(( ((uint8_t*)pIntRWWEEWr->pRowData) + pIntRWWEEWr->Address + pIntRWWEEWr->ByteCnt - pIntRWWEEWr->RowStartAddr), pIntRWWEEWr->pData + pIntRWWEEWr->ByteCnt, pIntRWWEEWr->BytesToWr);
                     //Erase row before writing pages
-                    NVMCTRL_RWWEEPROM_RowErase(RowStartAddr);
-                    PageCnt = 0;
-                    IntEEpromWrfsm++;
+                    NVMCTRL_RWWEEPROM_RowErase(pIntRWWEEWr->RowStartAddr);
+                    pIntRWWEEWr->PageCnt = 0;
+                    pIntRWWEEWr->IntEEpromWrfsm++;
                 }
                 else
-                {
-                    ByteCnt = 0;
-                    result = 2;
-                }
+                    pIntRWWEEWr->ByteCnt = 0;
                 break;
 
             case 1:
                 //Check page counter when writing pages
-                if(PageCnt < 4)
+                if(pIntRWWEEWr->PageCnt < 4)
                 {
-                    NVMCTRL_RWWEEPROM_PageWrite(ptr, RowStartAddr+(PageCnt*NVMCTRL_RWWEEPROM_PAGESIZE));
-                    PageCnt++;
+                    NVMCTRL_RWWEEPROM_PageWrite(pIntRWWEEWr->pRowData, pIntRWWEEWr->RowStartAddr + (pIntRWWEEWr->PageCnt * NVMCTRL_RWWEEPROM_PAGESIZE));
+                    pIntRWWEEWr->PageCnt++;
                 }
                 else
                 {
-                    free(ptr);
-                    ByteCnt += BytesToWr;
-                    IntEEpromWrfsm = 0;
+                    pIntRWWEEWr->ByteCnt += pIntRWWEEWr->BytesToWr;
+                    pIntRWWEEWr->IntEEpromWrfsm = 0;
                 }
                 break;
         }
