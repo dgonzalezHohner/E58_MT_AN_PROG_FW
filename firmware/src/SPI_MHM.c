@@ -603,8 +603,8 @@ void IC_MHM_Task()
             case MHM_STARTUP_2:
                 if(MHMTimer == (uint8_t)1)
                 {
-                    MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, 8);
-                    IC_MHMfsm = MHM_STARTUP_3;
+                    if(NERR_Get()) IC_MHMfsm = READ_POS_1;
+                    else IC_MHMfsm = MHM_STARTUP_1;
                 }
                 break;
             //Checks if received opcode is POSTION READ and nERR and nWARN bits

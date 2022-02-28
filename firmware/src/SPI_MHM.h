@@ -323,6 +323,8 @@ typedef struct __IntRWWEEWrType
 #define RWWEE_MHM_CFG_LEN           ((uint8_t)13)
 #define RWWEE_MHM_OFFS_ADDR         ((uint32_t)(RWWEE_MHM_CFG_ADDR+RWWEE_MHM_CFG_LEN))
 #define RWWEE_MHM_OFFS_LEN          ((uint8_t)7)
+#define RWWEE_CFG_OK_ADDR           ((uint32_t)0x400024)
+#define RWWEE_CFG_OK_VAL            ((uint8_t)0x55)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
