@@ -73,7 +73,6 @@ static ExtEEpromDataType* pExtEEpromData = NULL;
 volatile uint8_t ExtEEpromTimer = 0;
 
 static uint8_t RegAccessfsm = 0;
-static uint8_t PositionRead[7];
 static uint8_t StatusReg[4];
 static uint8_t IC_MHMCmdfsm = 0;
 static uint8_t IC_MHMProcFsm = 0;
@@ -314,11 +313,11 @@ void IC_MHM_RegAccesTask()
     }
 }
 
-uint8_t IC_MHM_ReadPos(uint8_t* Data)
+uint8_t IC_MHM_ReadPos(uint8_t* Data, uint8_t RxLength)
 {
     uint8_t Result = 0;
     
-    if(pMHMRegAccData == NULL) MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, 8);
+    if(pMHMRegAccData == NULL) MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, RxLength+1);
     else
     {
         IC_MHM_RegAccesTask();
@@ -576,18 +575,55 @@ uint8_t IC_MHM_PresetPV()
     }
     return TempResult;
 }
-
+void BuildPosition (void)
+{
+    uint8_t i;
+    
+    for (i=0;i<(CommonVars.SPIPosByteLen-1);i++)
+    {
+        //pSPIPosition contains data MSB first, BIG endian
+        //MCU works in Little endian, swap bytes required
+        CommonVars.pPosition[i] = CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-2-i];
+    }
+    //Mask ST MSB according to RESO_ST
+    CommonVars.pPosition[1] &= (0xFF >> CommonVars.ResoST);
+    //Check if SPI Position frame contains MT bytes.
+    //Fill empty ST MSB bits according to RESO_ST with MT LSB bits 
+    switch (CommonVars.ResoMT)
+    {
+        case 1:
+        case 2:
+            CommonVars.pPosition[3] = 0;
+        case 3:
+        case 4:
+            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-CommonVars.ResoST));
+            (*((uint16_t*)(&CommonVars.pPosition[2]))) >>= CommonVars.ResoST;
+            break;
+        case 5:
+        case 6:
+            CommonVars.pPosition[5] = 0;
+        case 7:
+            CommonVars.pPosition[6] = 0;
+            CommonVars.pPosition[7] = 0;
+            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-CommonVars.ResoST));
+            (*((uint32_t*)(&CommonVars.pPosition[2]))) >>= CommonVars.ResoST;
+            break;
+    }
+}
 void IC_MHM_Task()
 {
     static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
-    static uint8_t PowerUp = 1;
-    static uint8_t StartUpCnt = 0;
+//    static uint8_t PowerUp = 1;
+//    static uint8_t StartUpCnt = 0;
     uint8_t TempResult = 0;
+    uint8_t* pTemp = NULL;
     
     if(BISS_MASTER_Get())
     {
         IC_MHMfsm = MHM_STARTUP_1;
         IC_MHMAccessFree = 0;
+        IC_MHMCmdfsm = 0;
+        IC_MHMProcFsm = 0;
         if(pMHMRegAccData != NULL) MHMRegAccBufferFree(&pMHMRegAccData);
     }
     else
@@ -599,7 +635,7 @@ void IC_MHM_Task()
                 MHMTimer = START_UP_TIMER_SET;
                 IC_MHMfsm = MHM_STARTUP_2;
                 break;
-            //Try to send SPI POSITION READ command to IC-MHM
+            //Wait start up time then check NERR pin
             case MHM_STARTUP_2:
                 if(MHMTimer == (uint8_t)1)
                 {
@@ -607,62 +643,60 @@ void IC_MHM_Task()
                     else IC_MHMfsm = MHM_STARTUP_1;
                 }
                 break;
-            //Checks if received opcode is POSTION READ and nERR and nWARN bits
-            //During Start up, MISO is stuck high so No data will be received
-            case MHM_STARTUP_3:
-                if(pMHMRegAccData->Result & IC_MHM_STAT_VALID_Msk)
+            case READ_RESO:
+                //Read IC-MHM register 1 and get RESO_MT i RESO_ST
+                pTemp = (uint8_t*)malloc(1);
+                TempResult = IC_MHM_RegRd(IC_MHM_RESO_REG, pTemp);
+                if(TempResult & IC_MHM_STAT_VALID_Msk)
                 {
-                    //RxData contains SPI Received data from IC-MHM
-                    if(pMHMRegAccData->RxData[0] !=  POS_READ_OPC)
+                    CommonVars.ResoMT = (*pTemp >> IC_MHM_RESO_MT_POS) & IC_MHM_RESO_MT_MSK;
+                    CommonVars.ResoST = (*pTemp >> IC_MHM_RESO_ST_POS) & IC_MHM_RESO_ST_MSK;
+                    if(CommonVars.pSPIPosition != NULL)
                     {
-                        if(PowerUp)
-                        {
-                            //To Do EEPROM LOAD FAIL
-                            PowerUp = 0;
-                        }
-                        IC_MHMfsm = READ_POS_1;
+                        free(CommonVars.pSPIPosition);
+                        CommonVars.pSPIPosition = NULL;
                     }
-                    else
+                    if(CommonVars.pPosition != NULL)
                     {
-                        if(PowerUp)
-                        {
-                            //To Do EERPOM LOAD SUCCEED
-                            PowerUp = 0;
-                        }
-                        //During Start Up, nWARN and nERR are reset. 
-                        if(!(pMHMRegAccData->RxData[7]))
-                        {
-                            if(StartUpCnt < 2)
-                            {
-                                StartUpCnt++;
-                                IC_MHMfsm = MHM_STARTUP_4;
-                            }
-                            else
-                            {
-                                //To Do START UP ERROR 
-                                IC_MHMfsm = READ_POS_1;
-                            }
-                        }
-                        else
-                        {
-                            //To Do START UP SUCCEED
-                            IC_MHMfsm = READ_POS_1;
-                        }
+                        free(CommonVars.pPosition);
+                        CommonVars.pPosition = NULL;
                     }
+                    switch (CommonVars.ResoMT)
+                    {
+                        case 0:
+                            CommonVars.SPIPosByteLen = 3;
+                            CommonVars.PosByteLen = 2;
+                            break;
+                        case 1:
+                        case 2:
+                            CommonVars.SPIPosByteLen = 4;
+                            CommonVars.PosByteLen = 4;
+                            break;
+                        case 3:
+                        case 4:
+                            CommonVars.SPIPosByteLen = 5;
+                            CommonVars.PosByteLen = 4;
+                            break;
+                        case 5:
+                        case 6:
+                            CommonVars.SPIPosByteLen = 6;
+                            CommonVars.PosByteLen = 8;
+                            break;
+                        default:
+                            CommonVars.SPIPosByteLen = 7;
+                            CommonVars.PosByteLen = 8;
+                            break;
+                    }
+                    CommonVars.pSPIPosition = (uint8_t*)malloc(CommonVars.SPIPosByteLen);
+                    CommonVars.pPosition = (uint8_t*)malloc(CommonVars.PosByteLen);
+                    IC_MHMfsm = READ_POS_1;
                 }
-                MHMRegAccBufferFree(&pMHMRegAccData);
+                else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+                {
+                    IC_MHMfsm = READ_RESO;                
+                }
+                free(pTemp);
                 break;
-                
-            case MHM_STARTUP_4:
-                TempResult = IC_MHM_PresetPV();
-                if(TempResult & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = MHM_STARTUP_5;
-                break;
-
-            case MHM_STARTUP_5:
-                TempResult = IC_MHM_RegWr(IC_MHM_PRES_RES_REG, IC_MHM_0x74_RESET_Msk);
-                if(TempResult & IC_MHM_STAT_VALID_Msk) IC_MHMfsm = MHM_STARTUP_1;
-                break;
-
             case READ_POS_1:
                 IC_MHMAccessFree = 1;
                 MHMTimer = READ_POS_TIMER_SET;
@@ -682,10 +716,11 @@ void IC_MHM_Task()
                 break;
                 
             case READ_POS_3:
-                TempResult = IC_MHM_ReadPos(PositionRead);
+                TempResult = IC_MHM_ReadPos(CommonVars.pSPIPosition, CommonVars.SPIPosByteLen);
                 if(TempResult & IC_MHM_STAT_VALID_Msk)
                 {
-                    if(!(PositionRead[6] & IC_MHM_SPI_nERR_Msk)) 
+                    //Check last byte received during SPI Read Position
+                    if(!(CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-1] & IC_MHM_SPI_nERR_Msk)) 
                     {
                         //nERR bit detectec
                         IC_MHMfsm = READ_STATUS_1;
@@ -693,12 +728,12 @@ void IC_MHM_Task()
                     else
                     {
                         //Check for nWARN bit
-                        if(!(PositionRead[6] & IC_MHM_SPI_nWARN_Msk))
+                        if(!(CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-1] & IC_MHM_SPI_nWARN_Msk))
                         {
                             //nWARN bit detectec, excessive rotor speed
                         }
-                        //Read MT Position from PositionRead[1] to PositionRead[4]
                         //Read ST Position from PositionRead[5] to PositionRead[6]
+                        BuildPosition();
                         IC_MHMAccessFree = 1;
                         IC_MHMfsm = READ_POS_2;
                     }

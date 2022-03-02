@@ -117,6 +117,12 @@ typedef enum
 typedef struct
 {
     ScaleModeType Scaling;
+    uint8_t ResoST;
+    uint8_t ResoMT;
+    uint8_t* pSPIPosition;
+    uint8_t SPIPosByteLen;  // includes MT bytes, ST bytes and Repport byte (NWARN and nERR bits) in Big Endian, MSB first as received from IC-MHM
+    uint8_t* pPosition;
+    uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 }CommonVarsType;
 
 CommonVarsType CommonVars;
@@ -170,9 +176,7 @@ typedef enum
 {
     MHM_STARTUP_1 = (uint8_t)0,
     MHM_STARTUP_2,
-    MHM_STARTUP_3,
-    MHM_STARTUP_4,
-    MHM_STARTUP_5,
+    READ_RESO,
     READ_POS_1,
     READ_POS_2,
     READ_POS_3,
@@ -205,6 +209,12 @@ enum SPI0_STATUS
 #define IC_MHM_STAT_DISMISS_Msk     (uint8_t)0x08   //Illegal Address
 #define IC_MHM_STAT_ERROR_Msk       (uint8_t)0x80   //Invalid opcode
                 
+#define IC_MHM_RESO_REG             (uint8_t)0x01
+#define IC_MHM_RESO_MT_POS          (uint8_t)0
+#define IC_MHM_RESO_MT_MSK          (uint8_t)7
+#define IC_MHM_RESO_ST_POS          (uint8_t)4
+#define IC_MHM_RESO_ST_MSK          (uint8_t)7
+
 #define IC_MHM_ERROR_REG            (uint8_t)0x70
 #define IC_MHM_0x70_ERR_CFG_Msk     (uint8_t)0x01
 #define IC_MHM_0x70_ERR_OFFS_Msk    (uint8_t)0x02
@@ -394,7 +404,7 @@ void TimerTask();
 void IC_MHM_RegAccesTask();
 
 uint8_t IC_MHM_Activate(uint8_t Data);
-uint8_t IC_MHM_RdPos(uint8_t* Data);
+uint8_t IC_MHM_ReadPos(uint8_t* Data, uint8_t RxLength);
 uint8_t IC_MHM_RdStatus(uint8_t* Data);
 uint8_t IC_MHM_RegRdCtd(uint8_t Address, uint8_t* Data, uint8_t Length);
 uint8_t IC_MHM_RegWrCtd(uint8_t Address, uint8_t* Data, uint8_t Length);
@@ -404,7 +414,8 @@ uint8_t IC_MHM_RegRd(uint8_t Address, uint8_t* Data);
 uint8_t IC_MHM_SetFIO(uint8_t Data);
 uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
-        
+
+void BuildPosition (void);
 void IC_MHM_Task();
 
 bool InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
