@@ -208,7 +208,7 @@ void PushButtonsTask()
             }
         }
     }
-    if(EncoderCfg.Scalability)
+    if(USR_SCL_EN == SCALABLE)
     {
         switch (PBfsm)
         {

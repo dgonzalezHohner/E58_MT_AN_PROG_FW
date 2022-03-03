@@ -111,41 +111,54 @@ typedef enum
     NO_SCALE = (uint8_t)0,
     PB_SCALE,
     CT_SCALE,
-    UART_SCALE
+    UART_SCALE,
+    DEF_SCALE,
+    USR_SCALE
 }ScaleModeType;
 
+typedef enum
+{
+    NO_SCALABLE = (uint8_t)0,
+    SCALABLE = (uint8_t)1
+}ScalabilityType;
+
+typedef enum
+{
+    CCW = (uint8_t)0,
+    CW = (uint8_t)1
+}CSenseType;
 typedef struct
 {
+    uint8_t UserSclCfg;
     ScaleModeType Scaling;
     uint8_t ResoST;
     uint8_t ResoMT;
     uint8_t* pSPIPosition;
     uint8_t SPIPosByteLen;  // includes MT bytes, ST bytes and Repport byte (NWARN and nERR bits) in Big Endian, MSB first as received from IC-MHM
     uint8_t* pPosition;
+    uint8_t* pPosLowOut;
+    uint8_t* pPosHighOut;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 }CommonVarsType;
 
 CommonVarsType CommonVars;
 
-typedef enum
-{
-    NO_SCALABLE = (uint8_t)0,
-    SCALABLE
-}ScalabilityType;
+//User Scaling configuration definitions
+#define USR_SCL_RESOMT_POS  ((uint8_t)0)
+#define USR_SCL_RESOMT_MSK  ((uint8_t)7)
+#define USR_SCL_RESOMT      ((uint8_t)((CommonVars.UserSclCfg&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
 
-typedef enum
-{
-    CCW = (uint8_t)0,
-    CW
-}CSenseType;
+#define USR_SCL_EN_POS      ((uint8_t)3)
+#define USR_SCL_EN_MSK      ((uint8_t)1)
+#define USR_SCL_EN          ((ScalabilityType)((CommonVars.UserSclCfg&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
 
-typedef struct
-{
-    ScalabilityType Scalability;
-    CSenseType CodeSense;
-}EncoderCfgType;
+#define USR_SCL_DIR_POS     ((uint8_t)3)
+#define USR_SCL_DIR_MSK     ((uint8_t)1)
+#define USR_SCL_DIR         ((CSenseType)((CommonVars.UserSclCfg&(USR_SCL_DIR_MSK<<USR_SCL_DIR_POS))>>USR_SCL_DIR_POS))
 
-EncoderCfgType EncoderCfg;
+#define USR_SCL_AVAIL_POS   ((uint8_t)5)
+#define USR_SCL_AVAIL_MSK   ((uint8_t)7)
+#define USR_SCL_AVAIL       ((uint8_t)((CommonVars.UserSclCfg&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
 
 volatile uint8_t MHMTimer;
 volatile uint8_t MHMProcTimer;
@@ -177,6 +190,7 @@ typedef enum
     MHM_STARTUP_1 = (uint8_t)0,
     MHM_STARTUP_2,
     READ_RESO,
+    READ_CFG,
     READ_POS_1,
     READ_POS_2,
     READ_POS_3,
@@ -323,18 +337,32 @@ typedef struct __IntRWWEEWrType
     void (*pDeInitRWWEEWrData) (struct __IntRWWEEWrType* pIntRWWEEWr);
 }IntRWWEEWrType;
 
+//Internal EEPROM MAP
 #define RWWEE_PAGE_SIZE             ((uint8_t)64)
 #define RWWEE_ROW_SIZE              ((uint16_t)64 * 4)
+
 #define RWEEE_PV_CFG_ADDR           ((uint32_t)0x400000)
 #define RWWEE_PV_CFG_LEN            ((uint8_t)5)
+
 #define RWEEE_PV_CNT_ADDR           ((uint32_t)(RWEEE_PV_CFG_ADDR+RWWEE_PV_CFG_LEN))
 #define RWWEE_PV_CNT_LEN            ((uint8_t)6)
-#define RWWEE_MHM_CFG_ADDR          ((uint32_t)0x400010)
+
+#define RWWEE_MHM_CFG_ADDR          ((uint32_t)RWEEE_PV_CNT_ADDR+RWWEE_PV_CNT_LEN)
 #define RWWEE_MHM_CFG_LEN           ((uint8_t)13)
+
 #define RWWEE_MHM_OFFS_ADDR         ((uint32_t)(RWWEE_MHM_CFG_ADDR+RWWEE_MHM_CFG_LEN))
 #define RWWEE_MHM_OFFS_LEN          ((uint8_t)7)
-#define RWWEE_CFG_OK_ADDR           ((uint32_t)0x400024)
-#define RWWEE_CFG_OK_VAL            ((uint8_t)0x55)
+
+#define RWWEE_PV_MHM_CFG_OK_ADDR    ((uint32_t)(RWWEE_MHM_OFFS_ADDR+RWWEE_MHM_OFFS_LEN))
+#define RWWEE_PV_MHM_CFG_OK_LEN     ((uint8_t)1)
+#define RWWEE_CFG_PV_MHM_OK_VAL     ((uint8_t)0x55)
+
+#define RWWEE_ENC_CFG_ADDR          ((uint32_t)(RWWEE_PV_MHM_CFG_OK_ADDR+RWWEE_PV_MHM_CFG_OK_LEN))
+#define RWWEE_ENC_CFG_LEN           ((uint8_t)(17+sizeof(CommonVars.UserSclCfg)))
+#define RWWEE_ENC_CFG_AVAIL         ((uint8_t)5)
+
+#define RWWEE_next_address          ((uint32_t)(RWWEE_ENC_CFG_ADDR+RWWEE_ENC_CFG_LEN))
+
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -417,6 +445,8 @@ uint8_t IC_MHM_PresetPV();
 
 void BuildPosition (void);
 void IC_MHM_Task();
+
+uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length);
 
 bool InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
 void DeInitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
