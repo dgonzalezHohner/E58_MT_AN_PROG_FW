@@ -47,7 +47,7 @@ int main ( void )
         WDT_Clear();
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
-        //PushButtonsTask();
+        PushButtonsTask();
         IC_MHM_Task();
     }
 

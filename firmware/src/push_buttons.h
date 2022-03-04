@@ -68,7 +68,8 @@ extern "C" {
     #define NUMBER_PUSH_BUTTONS 4       //2 push buttons + 2 cable inputs
     #define DEB_TIME_ms         50
     #define DEB_TIMER_set       (((DEB_TIME_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
-
+    
+    //Push Buttons scaling timers
     #define PB_SCALE_CFG_T_ms   15000
     #define PB_SCALE_CFG_T_set  (((PB_SCALE_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
@@ -77,6 +78,16 @@ extern "C" {
 
     #define PB_SET_CFG_T_ms     2000
     #define PB_SET_CFG_T_set    (((PB_SET_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+    
+    //Contact scaling timers
+//    #define CT_SCALE_CFG_T_ms   1500
+//    #define CT_SCALE_CFG_T_set  (((CT_SCALE_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+    #define CT_DEF_CFG_T_ms     3000
+    #define CT_DEF_CFG_T_set    (((CT_DEF_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+    #define CT_SET_CFG_T_ms     1500
+    #define CT_SET_CFG_T_set    (((CT_SET_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Data Types
@@ -122,8 +133,17 @@ extern "C" {
         PB2_OFF_FIRST,
         PB1_ON_LAST,
         PB1_OFF_LAST,
-        
+                
+        CT1_ON_FIRST,
+        CT1_OFF_FIRST,
+        CT2_ON_LAST,
+        CT2_OFF_LAST,
+        CT2_ON_FIRST,
+        CT2_OFF_FIRST,
+        CT1_ON_LAST,
+        CT1_OFF_LAST,
         BOTH_CTS_ON,
+        WAIT_BOTH_CTS_OFF,
         RESTORE_DEF
     }PBfsmType;
     

@@ -109,12 +109,19 @@ extern "C" {
 typedef enum
 {
     NO_SCALE = (uint8_t)0,
-    PB_SCALE,
+    PB_SCALE_SOLID,
+    PB_SCALE_BLINK,
     CT_SCALE,
     UART_SCALE,
-    DEF_SCALE,
-    USR_SCALE
+    SCALE_SET1,
+    SCALE_SET2,
 }ScaleModeType;
+
+typedef enum
+{
+    DEF_SCALE = (uint8_t)0,
+    USR_SCALE
+}UsedScaleType;
 
 typedef enum
 {
@@ -127,12 +134,13 @@ typedef enum
     CCW = (uint8_t)0,
     CW = (uint8_t)1
 }CSenseType;
+
+#define USER_SCL_CFG_LEN (uint8_t)2
 typedef struct
 {
-    uint8_t UserSclCfg;
+    uint8_t UserSclCfg[USER_SCL_CFG_LEN];
     ScaleModeType Scaling;
-    uint8_t ResoST;
-    uint8_t ResoMT;
+    uint8_t ResoAndDir;
     uint8_t* pSPIPosition;
     uint8_t SPIPosByteLen;  // includes MT bytes, ST bytes and Repport byte (NWARN and nERR bits) in Big Endian, MSB first as received from IC-MHM
     uint8_t* pPosition;
@@ -144,21 +152,40 @@ typedef struct
 CommonVarsType CommonVars;
 
 //User Scaling configuration definitions
+//UserSclCfg[0]
+#define USR_SCL_EN_POS      ((uint8_t)0)
+#define USR_SCL_EN_MSK      ((uint8_t)1)
+#define USR_SCL_EN          ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
+
+#define USR_SCL_AVAIL_POS   ((uint8_t)1)
+#define USR_SCL_AVAIL_MSK   ((uint8_t)7)
+#define USR_SCL_AVAIL       ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+
+//UserSclCfg[1]
 #define USR_SCL_RESOMT_POS  ((uint8_t)0)
 #define USR_SCL_RESOMT_MSK  ((uint8_t)7)
-#define USR_SCL_RESOMT      ((uint8_t)((CommonVars.UserSclCfg&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
-
-#define USR_SCL_EN_POS      ((uint8_t)3)
-#define USR_SCL_EN_MSK      ((uint8_t)1)
-#define USR_SCL_EN          ((ScalabilityType)((CommonVars.UserSclCfg&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
+#define USR_SCL_RESOMT      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
 
 #define USR_SCL_DIR_POS     ((uint8_t)3)
 #define USR_SCL_DIR_MSK     ((uint8_t)1)
-#define USR_SCL_DIR         ((CSenseType)((CommonVars.UserSclCfg&(USR_SCL_DIR_MSK<<USR_SCL_DIR_POS))>>USR_SCL_DIR_POS))
+#define USR_SCL_DIR         ((CSenseType)((CommonVars.UserSclCfg[1]&(USR_SCL_DIR_MSK<<USR_SCL_DIR_POS))>>USR_SCL_DIR_POS))
 
-#define USR_SCL_AVAIL_POS   ((uint8_t)5)
-#define USR_SCL_AVAIL_MSK   ((uint8_t)7)
-#define USR_SCL_AVAIL       ((uint8_t)((CommonVars.UserSclCfg&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+#define USR_SCL_RESOST_POS  ((uint8_t)4)
+#define USR_SCL_RESOST_MSK  ((uint8_t)7)
+#define USR_SCL_RESOST      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+
+//ResoAndDir
+#define RESO_MT_POS         ((uint8_t)0)
+#define RESO_MT_MSK         ((uint8_t)7)
+#define RESO_MT             ((uint8_t)((CommonVars.ResoAndDir&(RESO_MT_MSK<<RESO_MT_POS))>>RESO_MT_POS))
+
+#define RESO_DIR_POS        ((uint8_t)3)
+#define RESO_DIR_MSK        ((uint8_t)1)
+#define RESO_DIR            ((uint8_t)((CommonVars.ResoAndDir&(RESO_DIR_MSK<<RESO_DIR_POS))>>RESO_DIR_POS))
+
+#define RESO_ST_POS         ((uint8_t)4)
+#define RESO_ST_MSK         ((uint8_t)7)
+#define RESO_ST             ((uint8_t)((CommonVars.ResoAndDir&(RESO_ST_MSK<<RESO_ST_POS))>>RESO_ST_POS))
 
 volatile uint8_t MHMTimer;
 volatile uint8_t MHMProcTimer;
@@ -189,7 +216,7 @@ typedef enum
 {
     MHM_STARTUP_1 = (uint8_t)0,
     MHM_STARTUP_2,
-    READ_RESO,
+    READ_RESO_DIR,
     READ_CFG,
     READ_POS_1,
     READ_POS_2,
@@ -223,6 +250,10 @@ enum SPI0_STATUS
 #define IC_MHM_STAT_DISMISS_Msk     (uint8_t)0x08   //Illegal Address
 #define IC_MHM_STAT_ERROR_Msk       (uint8_t)0x80   //Invalid opcode
                 
+#define IC_MHM_REG0_ADDR            (uint8_t)0x00
+#define IC_MHM_REG0_DIR_POS         (uint8_t)5
+#define IC_MHM_REG0_DIR_MSK         (uint8_t)1
+
 #define IC_MHM_RESO_REG             (uint8_t)0x01
 #define IC_MHM_RESO_MT_POS          (uint8_t)0
 #define IC_MHM_RESO_MT_MSK          (uint8_t)7
@@ -444,6 +475,7 @@ uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
 void BuildPosition (void);
+void SetDefultScale(void);
 void IC_MHM_Task();
 
 uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length);
