@@ -214,7 +214,7 @@ void PushButtonsTask()
         switch (PBfsm)
         {
             case WAIT_PB_CT:
-                CommonVars.Scaling = NO_SCALE;
+                SCALE_MODE_WR(NO_SCALE);
                 //Check both PBs are pressed, start timers
                 if(!PB1_DEB_VAL && !PB2_DEB_VAL)
                 {
@@ -246,7 +246,7 @@ void PushButtonsTask()
                 break;
 
             case BOTH_PBS_ON:
-                CommonVars.Scaling = PB_SCALE_SOLID;
+                SCALE_MODE_WR(PB_SCALE_SOLID);
                 //Check if Scale configuration timer not end
                 if(ScaleCfgTimer != 1)
                 {
@@ -264,7 +264,7 @@ void PushButtonsTask()
                 break;
 
             case BOTH_PBS_OFF:
-                CommonVars.Scaling = PB_SCALE_BLINK;
+                SCALE_MODE_WR(PB_SCALE_BLINK);
                 //Both leds blinking
                 if(!PB1_DEB_VAL)
                 {
@@ -280,7 +280,7 @@ void PushButtonsTask()
 
             case PB1_ON_FIRST:
             case PB2_ON_FIRST:
-                CommonVars.Scaling = PB_SCALE_BLINK;
+                SCALE_MODE_WR(PB_SCALE_BLINK);
                 //Before timer end
                 if(ScaleCfgTimer != 1)
                 {
@@ -311,7 +311,7 @@ void PushButtonsTask()
                 if(PBfsm == PB1_OFF_FIRST)
                 {
                     //Green led solid, Yellow led blink
-                    CommonVars.Scaling = SCALE_SET1;
+                    SCALE_MODE_WR(SCALE_SET1);
                     if(!PB2_DEB_VAL)
                     {
                         ScaleCfgTimer = PB_SET_CFG_T_set;
@@ -321,7 +321,7 @@ void PushButtonsTask()
                 else
                 {
                     //Green led blink, Yellow led solid
-                    CommonVars.Scaling = SCALE_SET2;
+                    SCALE_MODE_WR(SCALE_SET2);
                     if(!PB1_DEB_VAL)
                     {
                         ScaleCfgTimer = PB_SET_CFG_T_set;
@@ -337,13 +337,13 @@ void PushButtonsTask()
                     if(ScaleCfgTimer != 1)
                     {
                         //Green led solid, Yellow led blink
-                        CommonVars.Scaling = SCALE_SET1;
+                        SCALE_MODE_WR(SCALE_SET1);
                         if(PB2_DEB_VAL) PBfsm = PB1_OFF_FIRST;
                     }
                     else
                     {
                         //both leds solid
-                        CommonVars.Scaling = PB_SCALE_SOLID;
+                        SCALE_MODE_WR(PB_SCALE_SOLID);
                         if(PB2_DEB_VAL)
                         {
                             //To Do, Get current position as highest position
@@ -361,13 +361,13 @@ void PushButtonsTask()
                     if(ScaleCfgTimer != 1)
                     {
                         //Green led blink, Yellow solid
-                        CommonVars.Scaling = SCALE_SET2;
+                        SCALE_MODE_WR(SCALE_SET2);
                         if(PB1_DEB_VAL) PBfsm = PB2_OFF_FIRST;
                     }
                     else
                     {
                         //both leds solid
-                        CommonVars.Scaling = PB_SCALE_SOLID;
+                        SCALE_MODE_WR(PB_SCALE_SOLID);
                         if(PB1_DEB_VAL)
                         {
                             //To Do, Get current position as lowest position
@@ -384,7 +384,7 @@ void PushButtonsTask()
             case PB2_OFF_LAST:
             case PB1_OFF_LAST:
                 //both leds solid
-                CommonVars.Scaling = PB_SCALE_SOLID;
+                SCALE_MODE_WR(PB_SCALE_SOLID);
                 if(ScaleCfgTimer == 1) PBfsm = WAIT_PB_CT;
                 break;
 
@@ -392,7 +392,7 @@ void PushButtonsTask()
             case CT2_ON_FIRST:
                 if(PBfsm == CT1_ON_FIRST)
                 {
-                    CommonVars.Scaling = PB_SCALE_BLINK;
+                    SCALE_MODE_WR(PB_SCALE_BLINK);
                     if(ScaleCfgTimer != 1)
                     {
                         //Check if CT is released before validation time
@@ -416,7 +416,7 @@ void PushButtonsTask()
                 }
                 else
                 {
-                    CommonVars.Scaling = PB_SCALE_BLINK;
+                    SCALE_MODE_WR(PB_SCALE_BLINK);
                     if(ScaleCfgTimer != 1)
                     {
                         //Check if CT is released before validation time
@@ -445,7 +445,7 @@ void PushButtonsTask()
                 if(PBfsm == CT1_OFF_FIRST)
                 {
                     //Green led solid, Yellow led blink
-                    CommonVars.Scaling = SCALE_SET1;
+                    SCALE_MODE_WR(SCALE_SET1);
                     if(SET2_DEB_VAL)
                     {
                         ScaleCfgTimer = CT_SET_CFG_T_set;
@@ -455,7 +455,7 @@ void PushButtonsTask()
                 else
                 {
                     //Green led blink, Yellow led solid
-                    CommonVars.Scaling = SCALE_SET2;
+                    SCALE_MODE_WR(SCALE_SET2);
                     if(SET1_DEB_VAL)
                     {
                         ScaleCfgTimer = CT_SET_CFG_T_set;
@@ -501,7 +501,7 @@ void PushButtonsTask()
             case CT2_OFF_LAST:
             case CT1_OFF_LAST:
                 //both leds solid
-                CommonVars.Scaling = PB_SCALE_SOLID;
+                SCALE_MODE_WR(PB_SCALE_SOLID);
                 if(ScaleCfgTimer == 1) PBfsm = WAIT_BOTH_CTS_OFF;
                 break;
 
@@ -517,15 +517,15 @@ void PushButtonsTask()
                 break;
 
             case WAIT_BOTH_CTS_OFF:
-                CommonVars.Scaling = NO_SCALE;
+                SCALE_MODE_WR(NO_SCALE);
                 if(!SET1_DEB_VAL && !SET2_DEB_VAL) PBfsm = WAIT_PB_CT;
                 break;
 
             case RESTORE_DEF:
-                CommonVars.Scaling = PB_SCALE_BLINK;
+                SCALE_MODE_WR(PB_SCALE_BLINK);
                 if(PB1_DEB_VAL && PB2_DEB_VAL)
                 {
-                    SetDefultScale();
+                    SetScale(FACTORY_SCALE);
                     PBfsm = WAIT_PB_CT;
                 }
                 break;
@@ -534,9 +534,8 @@ void PushButtonsTask()
     //Encoder no scalable, use SET1 as DIR input and SET2 as preset
     else
     {
-        CommonVars.Scaling = NO_SCALE;
+        SCALE_MODE_WR(NO_SCALE);
         PBfsm = BOTH_PBS_ON;
-        
     }
 }
 

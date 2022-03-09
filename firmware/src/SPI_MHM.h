@@ -119,14 +119,15 @@ typedef enum
 
 typedef enum
 {
-    DEF_SCALE = (uint8_t)0,
-    USR_SCALE
+    FACTORY_SCALE = (uint8_t)0,
+    USR_SCALE,
+    DEFAULT_SCALE
 }UsedScaleType;
 
 typedef enum
 {
-    NO_SCALABLE = (uint8_t)0,
-    SCALABLE = (uint8_t)1
+    NO_SCALABLE = (uint8_t)1,
+    SCALABLE = (uint8_t)0
 }ScalabilityType;
 
 typedef enum
@@ -139,7 +140,7 @@ typedef enum
 typedef struct
 {
     uint8_t UserSclCfg[USER_SCL_CFG_LEN];
-    ScaleModeType Scaling;
+    uint8_t Scaling;
     uint8_t ResoAndDir;
     uint8_t* pSPIPosition;
     uint8_t SPIPosByteLen;  // includes MT bytes, ST bytes and Repport byte (NWARN and nERR bits) in Big Endian, MSB first as received from IC-MHM
@@ -153,39 +154,61 @@ CommonVarsType CommonVars;
 
 //User Scaling configuration definitions
 //UserSclCfg[0]
-#define USR_SCL_EN_POS      ((uint8_t)0)
-#define USR_SCL_EN_MSK      ((uint8_t)1)
-#define USR_SCL_EN          ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
+#define USR_SCL_EN_POS          ((uint8_t)0)
+#define USR_SCL_EN_MSK          ((uint8_t)1)
+#define USR_SCL_EN              ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
 
-#define USR_SCL_AVAIL_POS   ((uint8_t)1)
-#define USR_SCL_AVAIL_MSK   ((uint8_t)7)
-#define USR_SCL_AVAIL       ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+#define USR_SCL_AVAIL_POS       ((uint8_t)1)
+#define USR_SCL_AVAIL_MSK       ((uint8_t)1)
+#define USR_SCL_AVAIL           ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+
+#define USR_SCL_RESOMT_POS      ((uint8_t)2)
+#define USR_SCL_RESOMT_MSK      ((uint8_t)7)
+#define USR_SCL_RESOMT          ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+
+#define USR_SCL_RESOST_POS      ((uint8_t)5)
+#define USR_SCL_RESOST_MSK      ((uint8_t)7)
+#define USR_SCL_RESOST          ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_RESOST_MSK<<USR_SCL_RESOST_POS))>>USR_SCL_RESOST_POS))
 
 //UserSclCfg[1]
-#define USR_SCL_RESOMT_POS  ((uint8_t)0)
-#define USR_SCL_RESOMT_MSK  ((uint8_t)7)
-#define USR_SCL_RESOMT      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+#define USR_SCL_MHM_RESOMT_POS  ((uint8_t)0)
+#define USR_SCL_MHM_RESOMT_MSK  ((uint8_t)7)
+#define USR_SCL_MHM_RESOMT      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOMT_MSK<<USR_SCL_MHM_RESOMT_POS))>>USR_SCL_MHM_RESOMT_POS))
 
-#define USR_SCL_DIR_POS     ((uint8_t)3)
-#define USR_SCL_DIR_MSK     ((uint8_t)1)
-#define USR_SCL_DIR         ((CSenseType)((CommonVars.UserSclCfg[1]&(USR_SCL_DIR_MSK<<USR_SCL_DIR_POS))>>USR_SCL_DIR_POS))
+#define USR_SCL_MHM_DIR_POS     ((uint8_t)3)
+#define USR_SCL_MHM_DIR_MSK     ((uint8_t)1)
+#define USR_SCL_MHM_DIR         ((CSenseType)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_DIR_POS<<USR_SCL_MHM_DIR_MSK))>>USR_SCL_MHM_DIR_MSK))
 
-#define USR_SCL_RESOST_POS  ((uint8_t)4)
-#define USR_SCL_RESOST_MSK  ((uint8_t)7)
-#define USR_SCL_RESOST      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+#define USR_SCL_MHM_RESOST_POS  ((uint8_t)4)
+#define USR_SCL_MHM_RESOST_MSK  ((uint8_t)7)
+#define USR_SCL_MHM_RESOST      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOST_MSK<<USR_SCL_MHM_RESOST_POS))>>USR_SCL_MHM_RESOST_POS))
 
+#define USR_SCL_FRACT_RNG_USE_POS   ((uint8_t)7)
+#define USR_SCL_FRACT_RNG_USE_MSK   ((uint8_t)1)
+#define USR_SCL_FRACT_RNG_USE       ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_FRACT_RNG_USE_MSK<<USR_SCL_FRACT_RNG_USE_POS))>>USR_SCL_FRACT_RNG_USE_POS))
 //ResoAndDir
-#define RESO_MT_POS         ((uint8_t)0)
-#define RESO_MT_MSK         ((uint8_t)7)
-#define RESO_MT             ((uint8_t)((CommonVars.ResoAndDir&(RESO_MT_MSK<<RESO_MT_POS))>>RESO_MT_POS))
+#define RESDIR_RESO_MT_POS      ((uint8_t)0)
+#define RESDIR_RESO_MT_MSK      ((uint8_t)7)
+#define RESDIR_RESO_MT          ((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_MT_MSK<<RESDIR_RESO_MT_POS))>>RESDIR_RESO_MT_POS))
 
-#define RESO_DIR_POS        ((uint8_t)3)
-#define RESO_DIR_MSK        ((uint8_t)1)
-#define RESO_DIR            ((uint8_t)((CommonVars.ResoAndDir&(RESO_DIR_MSK<<RESO_DIR_POS))>>RESO_DIR_POS))
+#define RESDIR_RESO_DIR_POS     ((uint8_t)3)
+#define RESDIR_RESO_DIR_MSK     ((uint8_t)1)
+#define RESDIR_RESO_DIR         ((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_DIR_MSK<<RESDIR_RESO_DIR_POS))>>RESDIR_RESO_DIR_POS))
 
-#define RESO_ST_POS         ((uint8_t)4)
-#define RESO_ST_MSK         ((uint8_t)7)
-#define RESO_ST             ((uint8_t)((CommonVars.ResoAndDir&(RESO_ST_MSK<<RESO_ST_POS))>>RESO_ST_POS))
+#define RESDIR_RESO_ST_POS      ((uint8_t)4)
+#define RESDIR_RESO_ST_MSK      ((uint8_t)7)
+#define RESDIR_RESO_ST          ((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_ST_MSK<<RESDIR_RESO_ST_POS))>>RESDIR_RESO_ST_POS))
+
+//Scaling
+#define SCALE_MODE_POS          ((uint8_t)0)
+#define SCALE_MODE_MSK          ((uint8_t)15)
+#define SCALE_MODE_RD           ((ScaleModeType)((CommonVars.Scaling&(SCALE_MODE_MSK<<SCALE_MODE_POS))>>SCALE_MODE_POS))
+#define SCALE_MODE_WR(val)      CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_MODE_MSK<<SCALE_MODE_POS)))|((val&SCALE_MODE_MSK)<<SCALE_MODE_POS)
+
+#define SCALE_ACTIVE_POS        ((uint8_t)4)
+#define SCALE_ACTIVE_MSK        ((uint8_t)2)
+#define SCALE_ACTIVE_RD         ((UsedScaleType)((CommonVars.Scaling&(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS))>>SCALE_ACTIVE_POS))
+#define SCALE_ACTIVE_WR(val)    CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS)))|((val&SCALE_ACTIVE_MSK)<<SCALE_ACTIVE_POS)
 
 volatile uint8_t MHMTimer;
 volatile uint8_t MHMProcTimer;
@@ -389,10 +412,20 @@ typedef struct __IntRWWEEWrType
 #define RWWEE_CFG_PV_MHM_OK_VAL     ((uint8_t)0x55)
 
 #define RWWEE_ENC_CFG_ADDR          ((uint32_t)(RWWEE_PV_MHM_CFG_OK_ADDR+RWWEE_PV_MHM_CFG_OK_LEN))
-#define RWWEE_ENC_CFG_LEN           ((uint8_t)(17+sizeof(CommonVars.UserSclCfg)))
-#define RWWEE_ENC_CFG_AVAIL         ((uint8_t)5)
+#define RWWEE_ENC_CFG_LEN           ((uint8_t)(sizeof(CommonVars.UserSclCfg)))
+#define RWWEE_ENC_CFG_AVAIL         ((uint8_t)1)
 
-#define RWWEE_next_address          ((uint32_t)(RWWEE_ENC_CFG_ADDR+RWWEE_ENC_CFG_LEN))
+#define RWWEE_FRACT_RANGE_ADDR      ((uint32_t)(RWWEE_ENC_CFG_ADDR+RWWEE_ENC_CFG_LEN))
+#define RWWEE_FRACT_RANGE_LEN       ((uint8_t)(sizeof(uint16_t)))
+#define RWWEE_FRACT_RANGE_USE       ((uint8_t)1)
+
+#define RWWEE_SCL_POS_L_H_ADDR      ((uint32_t)(RWWEE_FRACT_RANGE_ADDR+RWWEE_FRACT_RANGE_LEN))
+#define RWWEE_SCL_POS_L_H_LEN       ((uint8_t)16)
+
+#define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_ENC_CFG_LEN+RWWEE_FRACT_RANGE_LEN+RWWEE_SCL_POS_L_H_LEN)
+
+#define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_SCL_POS_L_H_ADDR+RWWEE_SCL_POS_L_H_LEN))
+#define RWWEE_CFG_CRC_LEN           ((uint8_t)1)
 
     // *****************************************************************************
     // *****************************************************************************
@@ -475,7 +508,8 @@ uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
 void BuildPosition (void);
-void SetDefultScale(void);
+void pPosSetUp (uint8_t ResoMT);
+void SetScale(UsedScaleType Scaling);
 void IC_MHM_Task();
 
 uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length);

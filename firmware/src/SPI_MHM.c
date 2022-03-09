@@ -578,43 +578,102 @@ uint8_t IC_MHM_PresetPV()
 void BuildPosition (void)
 {
     uint8_t i;
+    uint8_t ResoMT, ResoST;
     
-    for (i=0;i<(CommonVars.SPIPosByteLen-1);i++)
+    for (i=0;i<(CommonVars.PosByteLen-1);i++)
     {
         //pSPIPosition contains data MSB first, BIG endian
         //MCU works in Little endian, swap bytes required
         CommonVars.pPosition[i] = CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-2-i];
     }
+    ResoMT = (USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT;
+    ResoST = (USR_SCL_RESOST <= RESDIR_RESO_ST)?USR_SCL_RESOST:RESDIR_RESO_ST;
     //Mask ST MSB according to RESO_ST
-    CommonVars.pPosition[1] &= (0xFF >> RESO_MT);
+    CommonVars.pPosition[1] &= (0xFF >> ResoST);
     //Check if SPI Position frame contains MT bytes.
     //Fill empty ST MSB bits according to RESO_ST with MT LSB bits 
-    switch (RESO_MT)
+    switch (ResoMT)
     {
+        case 0:
+            //Add half ResoST positions to deliver half way when preset PV and MHM
+            //(*((uint16_t*)(&CommonVars.pPosition[0]))) += ((uint16_t)1)<<(14-ResoST); 
+            break;
         case 1:
         case 2:
             (*((uint16_t*)(&CommonVars.pPosition[2]))) &= ((uint16_t)0x00FF);
         case 3:
         case 4:
-            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-RESO_ST));
-            (*((uint16_t*)(&CommonVars.pPosition[2]))) >>= RESO_ST;
+            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
+            (*((uint16_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
             break;
         case 5:
         case 6:
             (*((uint16_t*)(&CommonVars.pPosition[4]))) &= ((uint16_t)0x00FF);
         case 7:
             (*((uint16_t*)(&CommonVars.pPosition[6]))) &= ((uint16_t)0x0000);
-            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-RESO_ST));
-            (*((uint32_t*)(&CommonVars.pPosition[2]))) >>= RESO_ST;
+            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
+            (*((uint32_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
             break;
     }
 }
-void SetDefultScale(void)
+
+void pPosSetUp (uint8_t ResoMT)
 {
+    if(CommonVars.pPosition != NULL)
+    {
+        free(CommonVars.pPosition);
+        CommonVars.pPosition = NULL;
+    }
+    if(CommonVars.pPosLowOut != NULL)
+    {
+        free(CommonVars.pPosLowOut);
+        CommonVars.pPosLowOut = NULL;
+    }
+    if(CommonVars.pPosHighOut != NULL)
+    {
+        free(CommonVars.pPosHighOut);
+        CommonVars.pPosHighOut = NULL;
+    }
+
+    switch (ResoMT)
+    {
+        case 0:
+            CommonVars.PosByteLen = 2;
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            CommonVars.PosByteLen = 4;
+            break;
+        default:
+            CommonVars.PosByteLen = 8;
+            break;
+    }
+    CommonVars.pPosition = (uint8_t*)malloc(CommonVars.PosByteLen);
+    CommonVars.pPosLowOut = (uint8_t*)malloc(CommonVars.PosByteLen);
+    CommonVars.pPosHighOut = (uint8_t*)malloc(CommonVars.PosByteLen);
+}
+
+void SetScale(UsedScaleType Scaling)
+{
+    switch (Scaling)
+    {
+        case FACTORY_SCALE:
+            
+            break;
+            
+        case DEFAULT_SCALE:
+            
+            break;
+            
+        default:
+            break;
+    }
     memset(CommonVars.pPosLowOut, 0x00, CommonVars.PosByteLen);
-    memset(CommonVars.pPosHighOut, 0xFF, CommonVars.PosByteLen > 6 ? 6:CommonVars.PosByteLen);
-    if(CommonVars.PosByteLen > 6) memset(CommonVars.pPosLowOut + 6, 0x00, 2);
-    CommonVars.Scaling = DEF_SCALE;
+    memset(CommonVars.pPosHighOut, 0x00, CommonVars.PosByteLen);
+    memset(CommonVars.pPosHighOut, 0xFF, (CommonVars.PosByteLen > 6)?6:CommonVars.PosByteLen);
+    SCALE_ACTIVE_WR(Scaling);
 }
 void IC_MHM_Task()
 {
@@ -656,7 +715,7 @@ void IC_MHM_Task()
                 TempResult = IC_MHM_RegRdCtd(IC_MHM_REG0_ADDR, pTemp, USER_SCL_CFG_LEN);
                 if(TempResult & IC_MHM_STAT_VALID_Msk)
                 {
-                    CommonVars.ResoAndDir = 0x00 + (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_DIR_POS);
+                    CommonVars.ResoAndDir = 0x00 + (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_MHM_DIR_POS);
                     pTemp++;
                     CommonVars.ResoAndDir |= (*pTemp & 0x77);
                     if(CommonVars.pSPIPosition != NULL)
@@ -664,41 +723,28 @@ void IC_MHM_Task()
                         free(CommonVars.pSPIPosition);
                         CommonVars.pSPIPosition = NULL;
                     }
-                    if(CommonVars.pPosition != NULL)
-                    {
-                        free(CommonVars.pPosition);
-                        CommonVars.pPosition = NULL;
-                    }
-                    switch (RESO_MT)
+                    switch (RESDIR_RESO_MT)
                     {
                         case 0:
                             CommonVars.SPIPosByteLen = 3;
-                            CommonVars.PosByteLen = 2;
                             break;
                         case 1:
                         case 2:
                             CommonVars.SPIPosByteLen = 4;
-                            CommonVars.PosByteLen = 4;
                             break;
                         case 3:
                         case 4:
                             CommonVars.SPIPosByteLen = 5;
-                            CommonVars.PosByteLen = 4;
                             break;
                         case 5:
                         case 6:
                             CommonVars.SPIPosByteLen = 6;
-                            CommonVars.PosByteLen = 8;
                             break;
                         default:
                             CommonVars.SPIPosByteLen = 7;
-                            CommonVars.PosByteLen = 8;
                             break;
                     }
                     CommonVars.pSPIPosition = (uint8_t*)malloc(CommonVars.SPIPosByteLen);
-                    CommonVars.pPosition = (uint8_t*)malloc(CommonVars.PosByteLen);
-                    CommonVars.pPosLowOut = (uint8_t*)malloc(CommonVars.PosByteLen);
-                    CommonVars.pPosHighOut = (uint8_t*)malloc(CommonVars.PosByteLen);
                     IC_MHMfsm = READ_CFG;
                 }
                 else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
@@ -710,20 +756,29 @@ void IC_MHM_Task()
                 
             case READ_CFG:
                 pTemp = (uint8_t*)RWWEE_ENC_CFG_ADDR;
-                if(pTemp[RWWEE_ENC_CFG_LEN-1] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_LEN-1))
+                if(pTemp[RWWEE_ENC_CFG_TOTAL_LEN-1] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_TOTAL_LEN-1))
                 {    
                     memcpy((uint8_t*)(&CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
+                    pPosSetUp((USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT);
                     if((USR_SCL_EN == SCALABLE)&&(USR_SCL_AVAIL == RWWEE_ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
                     {
-                        pTemp += sizeof(CommonVars.UserSclCfg);
+                        pTemp = (uint8_t*)RWWEE_SCL_POS_L_H_ADDR;
                         memcpy(CommonVars.pPosLowOut, pTemp, CommonVars.PosByteLen);
                         pTemp += CommonVars.PosByteLen;
                         memcpy(CommonVars.pPosHighOut, pTemp, CommonVars.PosByteLen);
-                        CommonVars.Scaling = USR_SCALE;
+                        SCALE_ACTIVE_WR(USR_SCALE);
                     }
-                    else SetDefultScale();
+                    else
+                    {
+                        pPosSetUp((USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT);
+                        SetScale(FACTORY_SCALE);
+                    }
                 }
-                else SetDefultScale();
+                else
+                {
+                    pPosSetUp(RESDIR_RESO_MT);
+                    SetScale(DEFAULT_SCALE);
+                }
                 IC_MHMfsm = READ_POS_1;
                 break;
 
