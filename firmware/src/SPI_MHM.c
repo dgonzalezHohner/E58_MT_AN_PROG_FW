@@ -578,43 +578,38 @@ uint8_t IC_MHM_PresetPV()
 void BuildPosition (void)
 {
     uint8_t i;
-    uint8_t ResoMT, ResoST;
-    
-    for (i=0;i<(CommonVars.PosByteLen-1);i++)
+
+    for (i=0;i<((CommonVars.SPIPosByteLen-1)>=CommonVars.PosByteLen)?CommonVars.PosByteLen:(CommonVars.SPIPosByteLen-1);i++)
     {
         //pSPIPosition contains data MSB first, BIG endian
         //MCU works in Little endian, swap bytes required
         CommonVars.pPosition[i] = CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-2-i];
     }
-    ResoMT = (USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT;
-    ResoST = (USR_SCL_RESOST <= RESDIR_RESO_ST)?USR_SCL_RESOST:RESDIR_RESO_ST;
-    //Mask ST MSB according to RESO_ST
-    CommonVars.pPosition[1] &= (0xFF >> ResoST);
-    //Check if SPI Position frame contains MT bytes.
-    //Fill empty ST MSB bits according to RESO_ST with MT LSB bits 
-    switch (ResoMT)
-    {
-        case 0:
-            //Add half ResoST positions to deliver half way when preset PV and MHM
-            //(*((uint16_t*)(&CommonVars.pPosition[0]))) += ((uint16_t)1)<<(14-ResoST); 
-            break;
-        case 1:
-        case 2:
-            (*((uint16_t*)(&CommonVars.pPosition[2]))) &= ((uint16_t)0x00FF);
-        case 3:
-        case 4:
-            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
-            (*((uint16_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
-            break;
-        case 5:
-        case 6:
-            (*((uint16_t*)(&CommonVars.pPosition[4]))) &= ((uint16_t)0x00FF);
-        case 7:
-            (*((uint16_t*)(&CommonVars.pPosition[6]))) &= ((uint16_t)0x0000);
-            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
-            (*((uint32_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
-            break;
-    }
+    //to do, apply mask to MSB bits according to PosByteLen ans SPIPosByteLen
+    
+//    switch (ResoMT)
+//    {
+//        case 0:
+//            //Add half ResoST positions to deliver half way when preset PV and MHM
+//            //(*((uint16_t*)(&CommonVars.pPosition[0]))) += ((uint16_t)1)<<(14-ResoST); 
+//            break;
+//        case 1:
+//        case 2:
+//            (*((uint16_t*)(&CommonVars.pPosition[2]))) &= ((uint16_t)0x00FF);
+//        case 3:
+//        case 4:
+//            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
+//            (*((uint16_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
+//            break;
+//        case 5:
+//        case 6:
+//            (*((uint16_t*)(&CommonVars.pPosition[4]))) &= ((uint16_t)0x00FF);
+//        case 7:
+//            (*((uint16_t*)(&CommonVars.pPosition[6]))) &= ((uint16_t)0x0000);
+//            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
+//            (*((uint32_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
+//            break;
+//    }
 }
 
 void pPosSetUp (uint8_t ResoMT)
@@ -653,26 +648,65 @@ void pPosSetUp (uint8_t ResoMT)
     CommonVars.pPosition = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosLowOut = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosHighOut = (uint8_t*)malloc(CommonVars.PosByteLen);
+    
 }
 
 void SetScale(UsedScaleType Scaling)
 {
+    uint8_t ResoMT;
+
+    //Set position low to 0, position high to 1 turn.
+    memset(CommonVars.pPosLowOut, 0x00, CommonVars.PosByteLen);
+    memset(CommonVars.pPosHighOut, 0x00, CommonVars.PosByteLen);
+    
     switch (Scaling)
     {
         case FACTORY_SCALE:
-            
+            ResoMT = (USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT;
+            switch(ResoMT)
+            {
+                case 0:
+                    //Check ST fractional setting
+                    if(!USR_SCL_FRACT_RNG_USE)
+                    {
+                        *((uint16_t*)(CommonVars.pPosHighOut)) = (uint16_t)(((*((uint16_t*)RWWEE_FRACT_RANGE_ADDR))*(((uint32_t)0x10000)>>RESDIR_RESO_ST))/3600);
+                    }
+                    //ST no fractional
+                    else
+                    {
+                        *((uint16_t*)(CommonVars.pPosHighOut)) = 0xFFFF >> RESDIR_RESO_ST;
+                    }
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF >> RESDIR_RESO_ST;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[2])) = ((uint16_t)0xFFFF)>>(16-(4*ResoMT));
+                    break;
+                case 5:
+                case 6:
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF >> RESDIR_RESO_ST;
+                    *((uint32_t*)(&CommonVars.pPosHighOut[2])) = ((uint32_t)0xFFFFFFFF)>>(32-(4*ResoMT));
+                    break;
+                default:
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF >> RESDIR_RESO_ST;
+                    *((uint32_t*)(&CommonVars.pPosHighOut[2])) = (uint32_t)0xFFFFFFFF;
+                    break;
+            }
             break;
             
         case DEFAULT_SCALE:
-            
+            CommonVars.UserSclCfg[0] = (uint8_t)0;
+            CommonVars.UserSclCfg[1] = CommonVars.ResoAndDir;
+            *((uint16_t*)(CommonVars.pPosHighOut)) = 0xFFFF >> RESDIR_RESO_ST;
             break;
             
         default:
+            memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
+            memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
             break;
     }
-    memset(CommonVars.pPosLowOut, 0x00, CommonVars.PosByteLen);
-    memset(CommonVars.pPosHighOut, 0x00, CommonVars.PosByteLen);
-    memset(CommonVars.pPosHighOut, 0xFF, (CommonVars.PosByteLen > 6)?6:CommonVars.PosByteLen);
     SCALE_ACTIVE_WR(Scaling);
 }
 void IC_MHM_Task()
@@ -715,7 +749,7 @@ void IC_MHM_Task()
                 TempResult = IC_MHM_RegRdCtd(IC_MHM_REG0_ADDR, pTemp, USER_SCL_CFG_LEN);
                 if(TempResult & IC_MHM_STAT_VALID_Msk)
                 {
-                    CommonVars.ResoAndDir = 0x00 + (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_MHM_DIR_POS);
+                    CommonVars.ResoAndDir = 0x00 | (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_MHM_DIR_POS);
                     pTemp++;
                     CommonVars.ResoAndDir |= (*pTemp & 0x77);
                     if(CommonVars.pSPIPosition != NULL)
@@ -759,14 +793,10 @@ void IC_MHM_Task()
                 if(pTemp[RWWEE_ENC_CFG_TOTAL_LEN-1] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_TOTAL_LEN-1))
                 {    
                     memcpy((uint8_t*)(&CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
-                    pPosSetUp((USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT);
                     if((USR_SCL_EN == SCALABLE)&&(USR_SCL_AVAIL == RWWEE_ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
                     {
-                        pTemp = (uint8_t*)RWWEE_SCL_POS_L_H_ADDR;
-                        memcpy(CommonVars.pPosLowOut, pTemp, CommonVars.PosByteLen);
-                        pTemp += CommonVars.PosByteLen;
-                        memcpy(CommonVars.pPosHighOut, pTemp, CommonVars.PosByteLen);
-                        SCALE_ACTIVE_WR(USR_SCALE);
+                        pPosSetUp(RESDIR_RESO_MT);
+                        SetScale(USR_SCALE);
                     }
                     else
                     {

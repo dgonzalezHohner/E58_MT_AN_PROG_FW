@@ -154,61 +154,63 @@ CommonVarsType CommonVars;
 
 //User Scaling configuration definitions
 //UserSclCfg[0]
-#define USR_SCL_EN_POS          ((uint8_t)0)
-#define USR_SCL_EN_MSK          ((uint8_t)1)
-#define USR_SCL_EN              ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
+#define USR_SCL_EN_POS              ((uint8_t)0)
+#define USR_SCL_EN_MSK              ((uint8_t)1)
+#define USR_SCL_EN                  ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
 
-#define USR_SCL_AVAIL_POS       ((uint8_t)1)
-#define USR_SCL_AVAIL_MSK       ((uint8_t)1)
-#define USR_SCL_AVAIL           ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+#define USR_SCL_AVAIL_POS           ((uint8_t)1)
+#define USR_SCL_AVAIL_MSK           ((uint8_t)1)
+#define USR_SCL_AVAIL               ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
 
-#define USR_SCL_RESOMT_POS      ((uint8_t)2)
-#define USR_SCL_RESOMT_MSK      ((uint8_t)7)
-#define USR_SCL_RESOMT          ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+#define USR_SCL_UF_OF_POS			((uint8_t)2)
+#define USR_SCL_UF_OF_MSK			((uint8_t)1)
+#define USR_SCL_UF_OF				((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))>>USR_SCL_UF_OF_POS))
+#define USR_SCL_UF_OF_WR(val)		CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)))|((val&USR_SCL_UF_OF_MSK)<<USR_SCL_UF_OF_POS)
 
-#define USR_SCL_RESOST_POS      ((uint8_t)5)
-#define USR_SCL_RESOST_MSK      ((uint8_t)7)
-#define USR_SCL_RESOST          ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_RESOST_MSK<<USR_SCL_RESOST_POS))>>USR_SCL_RESOST_POS))
+#define USR_SCL_RESOMT_POS          ((uint8_t)3)
+#define USR_SCL_RESOMT_MSK          ((uint8_t)7)
+#define USR_SCL_RESOMT	            ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+
+#define USR_SCL_FRACT_RNG_USE_POS   ((uint8_t)6)
+#define USR_SCL_FRACT_RNG_USE_MSK   ((uint8_t)1)
+#define USR_SCL_FRACT_RNG_USE       ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_FRACT_RNG_USE_MSK<<USR_SCL_FRACT_RNG_USE_POS))>>USR_SCL_FRACT_RNG_USE_POS))
 
 //UserSclCfg[1]
-#define USR_SCL_MHM_RESOMT_POS  ((uint8_t)0)
-#define USR_SCL_MHM_RESOMT_MSK  ((uint8_t)7)
-#define USR_SCL_MHM_RESOMT      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOMT_MSK<<USR_SCL_MHM_RESOMT_POS))>>USR_SCL_MHM_RESOMT_POS))
+#define USR_SCL_MHM_RESOMT_POS      ((uint8_t)0)
+#define USR_SCL_MHM_RESOMT_MSK      ((uint8_t)7)
+#define USR_SCL_MHM_RESOMT          ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOMT_MSK<<USR_SCL_MHM_RESOMT_POS))>>USR_SCL_MHM_RESOMT_POS))
 
-#define USR_SCL_MHM_DIR_POS     ((uint8_t)3)
-#define USR_SCL_MHM_DIR_MSK     ((uint8_t)1)
-#define USR_SCL_MHM_DIR         ((CSenseType)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_DIR_POS<<USR_SCL_MHM_DIR_MSK))>>USR_SCL_MHM_DIR_MSK))
+#define USR_SCL_MHM_DIR_POS			((uint8_t)3)
+#define USR_SCL_MHM_DIR_MSK         ((uint8_t)1)
+#define USR_SCL_MHM_DIR             ((CSenseType)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_DIR_POS<<USR_SCL_MHM_DIR_MSK))>>USR_SCL_MHM_DIR_MSK))
 
-#define USR_SCL_MHM_RESOST_POS  ((uint8_t)4)
-#define USR_SCL_MHM_RESOST_MSK  ((uint8_t)7)
-#define USR_SCL_MHM_RESOST      ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOST_MSK<<USR_SCL_MHM_RESOST_POS))>>USR_SCL_MHM_RESOST_POS))
+#define USR_SCL_MHM_RESOST_POS	    ((uint8_t)4)
+#define USR_SCL_MHM_RESOST_MSK	    ((uint8_t)7)
+#define USR_SCL_MHM_RESOST			((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOST_MSK<<USR_SCL_MHM_RESOST_POS))>>USR_SCL_MHM_RESOST_POS))
 
-#define USR_SCL_FRACT_RNG_USE_POS   ((uint8_t)7)
-#define USR_SCL_FRACT_RNG_USE_MSK   ((uint8_t)1)
-#define USR_SCL_FRACT_RNG_USE       ((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_FRACT_RNG_USE_MSK<<USR_SCL_FRACT_RNG_USE_POS))>>USR_SCL_FRACT_RNG_USE_POS))
 //ResoAndDir
-#define RESDIR_RESO_MT_POS      ((uint8_t)0)
-#define RESDIR_RESO_MT_MSK      ((uint8_t)7)
-#define RESDIR_RESO_MT          ((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_MT_MSK<<RESDIR_RESO_MT_POS))>>RESDIR_RESO_MT_POS))
+#define RESDIR_RESO_MT_POS			((uint8_t)0)
+#define RESDIR_RESO_MT_MSK			((uint8_t)7)
+#define RESDIR_RESO_MT				((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_MT_MSK<<RESDIR_RESO_MT_POS))>>RESDIR_RESO_MT_POS))
 
-#define RESDIR_RESO_DIR_POS     ((uint8_t)3)
-#define RESDIR_RESO_DIR_MSK     ((uint8_t)1)
-#define RESDIR_RESO_DIR         ((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_DIR_MSK<<RESDIR_RESO_DIR_POS))>>RESDIR_RESO_DIR_POS))
+#define RESDIR_RESO_DIR_POS			((uint8_t)3)
+#define RESDIR_RESO_DIR_MSK			((uint8_t)1)
+#define RESDIR_RESO_DIR				((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_DIR_MSK<<RESDIR_RESO_DIR_POS))>>RESDIR_RESO_DIR_POS))
 
-#define RESDIR_RESO_ST_POS      ((uint8_t)4)
-#define RESDIR_RESO_ST_MSK      ((uint8_t)7)
-#define RESDIR_RESO_ST          ((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_ST_MSK<<RESDIR_RESO_ST_POS))>>RESDIR_RESO_ST_POS))
+#define RESDIR_RESO_ST_POS			((uint8_t)4)
+#define RESDIR_RESO_ST_MSK			((uint8_t)7)
+#define RESDIR_RESO_ST				((uint8_t)((CommonVars.ResoAndDir&(RESDIR_RESO_ST_MSK<<RESDIR_RESO_ST_POS))>>RESDIR_RESO_ST_POS))
 
 //Scaling
-#define SCALE_MODE_POS          ((uint8_t)0)
-#define SCALE_MODE_MSK          ((uint8_t)15)
-#define SCALE_MODE_RD           ((ScaleModeType)((CommonVars.Scaling&(SCALE_MODE_MSK<<SCALE_MODE_POS))>>SCALE_MODE_POS))
-#define SCALE_MODE_WR(val)      CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_MODE_MSK<<SCALE_MODE_POS)))|((val&SCALE_MODE_MSK)<<SCALE_MODE_POS)
+#define SCALE_MODE_POS				((uint8_t)0)
+#define SCALE_MODE_MSK				((uint8_t)15)
+#define SCALE_MODE_RD				((ScaleModeType)((CommonVars.Scaling&(SCALE_MODE_MSK<<SCALE_MODE_POS))>>SCALE_MODE_POS))
+#define SCALE_MODE_WR(val)			CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_MODE_MSK<<SCALE_MODE_POS)))|((val&SCALE_MODE_MSK)<<SCALE_MODE_POS)
 
-#define SCALE_ACTIVE_POS        ((uint8_t)4)
-#define SCALE_ACTIVE_MSK        ((uint8_t)2)
-#define SCALE_ACTIVE_RD         ((UsedScaleType)((CommonVars.Scaling&(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS))>>SCALE_ACTIVE_POS))
-#define SCALE_ACTIVE_WR(val)    CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS)))|((val&SCALE_ACTIVE_MSK)<<SCALE_ACTIVE_POS)
+#define SCALE_ACTIVE_POS			((uint8_t)4)
+#define SCALE_ACTIVE_MSK			((uint8_t)2)
+#define SCALE_ACTIVE_RD				((UsedScaleType)((CommonVars.Scaling&(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS))>>SCALE_ACTIVE_POS))
+#define SCALE_ACTIVE_WR(val)	    CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS)))|((val&SCALE_ACTIVE_MSK)<<SCALE_ACTIVE_POS)
 
 volatile uint8_t MHMTimer;
 volatile uint8_t MHMProcTimer;

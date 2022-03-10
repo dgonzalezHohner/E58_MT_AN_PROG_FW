@@ -525,6 +525,7 @@ void PushButtonsTask()
                 SCALE_MODE_WR(PB_SCALE_BLINK);
                 if(PB1_DEB_VAL && PB2_DEB_VAL)
                 {
+                    pPosSetUp(RESDIR_RESO_MT);
                     SetScale(FACTORY_SCALE);
                     PBfsm = WAIT_PB_CT;
                 }
