@@ -78,6 +78,9 @@ extern "C" {
 
     #define PB_SET_CFG_T_ms     2000
     #define PB_SET_CFG_T_set    (((PB_SET_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+	#define PB_READ_POS_T_ms	200
+    #define PB_READ_POS_T_set	(((PB_READ_POS_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
     
     //Contact scaling timers
 //    #define CT_SCALE_CFG_T_ms   1500
@@ -88,6 +91,9 @@ extern "C" {
 
     #define CT_SET_CFG_T_ms     1500
     #define CT_SET_CFG_T_set    (((CT_SET_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+
+	#define CT_READ_POS_T_ms	200
+    #define CT_READ_POS_T_set	(((CT_READ_POS_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Data Types
@@ -126,19 +132,25 @@ extern "C" {
         BOTH_PBS_ON,
         BOTH_PBS_OFF,
         PB1_ON_FIRST,
+		PB1_FIRST_PRESET,
+		PB1_FIRST_RD_POS,
         PB1_OFF_FIRST,
         PB2_ON_LAST,
         PB2_OFF_LAST,
         PB2_ON_FIRST,
+		PB2_FIRST_PRESET,
+		PB2_FIRST_RD_POS,
         PB2_OFF_FIRST,
         PB1_ON_LAST,
         PB1_OFF_LAST,
                 
         CT1_ON_FIRST,
+		CT1_FIRST_RD_POS,
         CT1_OFF_FIRST,
         CT2_ON_LAST,
         CT2_OFF_LAST,
         CT2_ON_FIRST,
+		CT2_FIRST_RD_POS,
         CT2_OFF_FIRST,
         CT1_ON_LAST,
         CT1_OFF_LAST,

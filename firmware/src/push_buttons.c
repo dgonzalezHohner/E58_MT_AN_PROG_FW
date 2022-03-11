@@ -291,19 +291,39 @@ void PushButtonsTask()
                 {
                     if((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL)
                     {
-                        //To Do, Get current position as lowest output
-                        
-                        PBfsm = PB1_OFF_FIRST;
+                        pPosSetUp(RESDIR_RESO_MT);
+                        ScaleCfgTimer = PB_READ_POS_T_set;
+                        PBfsm = PB1_FIRST_RD_POS;
                     }
                     else if((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL)
                     {
-                        //To Do, Get current position as highest output
-                        
+                        pPosSetUp(RESDIR_RESO_MT);
+                        ScaleCfgTimer = PB_READ_POS_T_set;
+                        PBfsm = PB2_FIRST_RD_POS;
+                    }
+                }
+                break;
+            case PB1_FIRST_PRESET:
+            case PB2_FIRST_PRESET:
+
+                break;
+            case PB1_FIRST_RD_POS:
+            case PB2_FIRST_RD_POS:
+                if(ScaleCfgTimer == 1)
+                {
+                    if(PBfsm == PB1_FIRST_RD_POS)
+                    {
+                        CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
+                        PBfsm = PB1_OFF_FIRST;
+                    }
+                    else
+                    {
+                        CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
                         PBfsm = PB2_OFF_FIRST;
                     }
                 }
                 break;
-
+                
             case PB1_OFF_FIRST:
             case PB2_OFF_FIRST:
                 if(PBfsm == PB1_OFF_FIRST)
@@ -344,10 +364,7 @@ void PushButtonsTask()
                         SCALE_MODE_WR(PB_SCALE_SOLID);
                         if(PB2_DEB_VAL)
                         {
-                            //To Do, Get current position as highest position
-                            
-                            //To Do, Apply user scaling if possible or default scaling
-                            
+                            CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
                             ScaleCfgTimer = PB_SET_CFG_T_set;
                             PBfsm = PB2_OFF_LAST;
                         }
@@ -355,7 +372,6 @@ void PushButtonsTask()
                 }
                 else
                 {
-                    
                     if(ScaleCfgTimer != 1)
                     {
                         //Green led blink, Yellow solid
@@ -368,10 +384,7 @@ void PushButtonsTask()
                         SCALE_MODE_WR(PB_SCALE_SOLID);
                         if(PB1_DEB_VAL)
                         {
-                            //To Do, Get current position as lowest position
-                            
-                            //To Do, Apply user scaling if possible or default scaling
-                            
+                            CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
                             ScaleCfgTimer = PB_SET_CFG_T_set;
                             PBfsm = PB1_OFF_LAST;
                         }
@@ -408,8 +421,9 @@ void PushButtonsTask()
                     //Scale configuration timer end SET1 released
                     else if(!SET1_DEB_VAL)
                     {
-                        //To Do, Get current position as lowest output
-                        PBfsm = CT1_OFF_FIRST;
+                        pPosSetUp(RESDIR_RESO_MT);
+                        ScaleCfgTimer = CT_READ_POS_T_set;
+                        PBfsm = CT1_FIRST_RD_POS;
                     }
                 }
                 else
@@ -432,14 +446,32 @@ void PushButtonsTask()
                     //Scale configuration timer end SET1 released
                     else if(!SET2_DEB_VAL)
                     {
-                        //To Do, Get current position as highest output
-                        PBfsm = CT2_OFF_FIRST;
+                        pPosSetUp(RESDIR_RESO_MT);
+                        ScaleCfgTimer = CT_READ_POS_T_set;
+                        PBfsm = CT2_FIRST_RD_POS;
                     }
                 }
                 break;
             
+            case CT1_FIRST_RD_POS:
+            case CT2_FIRST_RD_POS:
+                if(ScaleCfgTimer == 1)
+                {
+                    if(PBfsm == CT1_FIRST_RD_POS)
+                    {
+                        CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
+                        PBfsm = CT1_OFF_FIRST;
+                    }
+                    else
+                    {
+                        CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
+                        PBfsm = CT2_OFF_FIRST;
+                    }
+                }
+                break;
+                
             case CT1_OFF_FIRST:
-            case CT2_OFF_FIRST:    
+            case CT2_OFF_FIRST:
                 if(PBfsm == CT1_OFF_FIRST)
                 {
                     //Green led solid, Yellow led blink
@@ -474,7 +506,7 @@ void PushButtonsTask()
                     //Scale configuration timer end SET1 released
                     else if(!SET2_DEB_VAL)
                     {
-                        //To Do, Get current position as highest output
+                        CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
                         ScaleCfgTimer = CT_SET_CFG_T_set;
                         PBfsm = CT2_OFF_LAST;
                     }
@@ -489,7 +521,7 @@ void PushButtonsTask()
                     //Scale configuration timer end SET1 released
                     else if(!SET1_DEB_VAL)
                     {
-                        //To Do, Get current position as lowest output
+                        CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
                         ScaleCfgTimer = CT_SET_CFG_T_set;
                         PBfsm = CT1_OFF_LAST;
                     }

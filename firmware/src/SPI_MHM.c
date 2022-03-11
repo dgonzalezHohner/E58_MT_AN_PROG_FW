@@ -562,6 +562,7 @@ uint8_t IC_MHM_PresetPV()
                     MHMProcTimer = PV_PRESET_TIMER_SET;
                     IC_MHMProcFsm++;
                 }
+                TempResult = 0;
             }
             break;
         
@@ -569,12 +570,33 @@ uint8_t IC_MHM_PresetPV()
             if(MHMProcTimer == 1)
             {
                 MHMProcTimer = 0;
-                IC_MHMProcFsm++;
+                IC_MHMProcFsm = 0;
+                TempResult = 1;
             }
             break;
     }
     return TempResult;
 }
+
+void CopyPosition (uint8_t* Dest, uint8_t* Source)
+{
+    switch (RESDIR_RESO_MT)
+    {
+        case 0:
+            *((uint16_t*)Dest) = *((uint16_t*)Source);
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            *((uint32_t*)Dest) = *((uint32_t*)Source);
+            break;
+        default:
+            *((uint64_t*)Dest) = *((uint64_t*)Source);
+            break;
+    }
+}
+
 void BuildPosition (uint8_t Scaling)
 {
     uint8_t ResoMT;
@@ -659,7 +681,6 @@ void pPosSetUp (uint8_t ResoMT)
     CommonVars.pPosition = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosLowOut = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosHighOut = (uint8_t*)malloc(CommonVars.PosByteLen);
-    
 }
 
 void SetScale(UsedScaleType Scaling)
