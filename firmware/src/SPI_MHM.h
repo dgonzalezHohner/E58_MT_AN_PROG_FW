@@ -509,7 +509,7 @@ uint8_t IC_MHM_SetFIO(uint8_t Data);
 uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
-void BuildPosition (void);
+void BuildPosition (uint8_t Scaling);
 void pPosSetUp (uint8_t ResoMT);
 void SetScale(UsedScaleType Scaling);
 void IC_MHM_Task();

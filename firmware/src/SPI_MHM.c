@@ -575,41 +575,52 @@ uint8_t IC_MHM_PresetPV()
     }
     return TempResult;
 }
-void BuildPosition (void)
+void BuildPosition (uint8_t Scaling)
 {
-    uint8_t i;
-
-    for (i=0;i<((CommonVars.SPIPosByteLen-1)>=CommonVars.PosByteLen)?CommonVars.PosByteLen:(CommonVars.SPIPosByteLen-1);i++)
+    uint8_t ResoMT;
+    
+    for (uint8_t i=0;i<((CommonVars.SPIPosByteLen-1)>=CommonVars.PosByteLen)?CommonVars.PosByteLen:(CommonVars.SPIPosByteLen-1);i++)
     {
         //pSPIPosition contains data MSB first, BIG endian
         //MCU works in Little endian, swap bytes required
         CommonVars.pPosition[i] = CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-2-i];
     }
-    //to do, apply mask to MSB bits according to PosByteLen ans SPIPosByteLen
     
-//    switch (ResoMT)
-//    {
-//        case 0:
-//            //Add half ResoST positions to deliver half way when preset PV and MHM
-//            //(*((uint16_t*)(&CommonVars.pPosition[0]))) += ((uint16_t)1)<<(14-ResoST); 
-//            break;
-//        case 1:
-//        case 2:
-//            (*((uint16_t*)(&CommonVars.pPosition[2]))) &= ((uint16_t)0x00FF);
-//        case 3:
-//        case 4:
-//            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
-//            (*((uint16_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
-//            break;
-//        case 5:
-//        case 6:
-//            (*((uint16_t*)(&CommonVars.pPosition[4]))) &= ((uint16_t)0x00FF);
-//        case 7:
-//            (*((uint16_t*)(&CommonVars.pPosition[6]))) &= ((uint16_t)0x0000);
-//            CommonVars.pPosition[1] |= (CommonVars.pPosition[2] << (8-ResoST));
-//            (*((uint32_t*)(&CommonVars.pPosition[2]))) >>= ResoST;
-//            break;
-//    }
+    switch (Scaling)
+    {
+        case FACTORY_SCALE:
+            ResoMT = (USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT;
+            break;
+        case DEFAULT_SCALE:
+            ResoMT = 0;
+            break;
+        default:
+            ResoMT = RESDIR_RESO_MT;
+            break;
+    }
+    
+    switch (ResoMT)
+    {
+        case 0:
+            *((uint16_t*)(CommonVars.pPosition)) = (0xFFFF >> RESDIR_RESO_ST);
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            *((uint16_t*)(&CommonVars.pPosition[0])) &= (0xFFFF >> RESDIR_RESO_ST);
+            *((uint16_t*)(&CommonVars.pPosition[0])) <<= RESDIR_RESO_ST;
+            *((uint16_t*)(&CommonVars.pPosition[2])) &= ((uint16_t)0xFFFF)>>(16-(4*ResoMT));
+            *((uint32_t*)(&CommonVars.pPosition[0])) >>= RESDIR_RESO_ST;
+            break;
+        default:
+            *((uint16_t*)(&CommonVars.pPosition[0])) &= (0xFFFF >> RESDIR_RESO_ST);
+            *((uint16_t*)(&CommonVars.pPosition[0])) <<= RESDIR_RESO_ST;
+            *((uint32_t*)(&CommonVars.pPosition[2])) &= ((uint32_t)0xFFFFFFFF)>>(32-(4*ResoMT));
+            *((uint64_t*)(&CommonVars.pPosition[0])) >>= RESDIR_RESO_ST;
+            *((uint16_t*)(&CommonVars.pPosition[6])) = 0x0000;
+            break;
+    }
 }
 
 void pPosSetUp (uint8_t ResoMT)
@@ -667,7 +678,7 @@ void SetScale(UsedScaleType Scaling)
             {
                 case 0:
                     //Check ST fractional setting
-                    if(!USR_SCL_FRACT_RNG_USE)
+                    if(USR_SCL_FRACT_RNG_USE)
                     {
                         *((uint16_t*)(CommonVars.pPosHighOut)) = (uint16_t)(((*((uint16_t*)RWWEE_FRACT_RANGE_ADDR))*(((uint32_t)0x10000)>>RESDIR_RESO_ST))/3600);
                     }
@@ -681,17 +692,20 @@ void SetScale(UsedScaleType Scaling)
                 case 2:
                 case 3:
                 case 4:
-                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF >> RESDIR_RESO_ST;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
                     *((uint16_t*)(&CommonVars.pPosHighOut[2])) = ((uint16_t)0xFFFF)>>(16-(4*ResoMT));
+                    *((uint32_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
                     break;
                 case 5:
                 case 6:
-                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF >> RESDIR_RESO_ST;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
                     *((uint32_t*)(&CommonVars.pPosHighOut[2])) = ((uint32_t)0xFFFFFFFF)>>(32-(4*ResoMT));
+                    *((uint64_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
                     break;
                 default:
-                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF >> RESDIR_RESO_ST;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
                     *((uint32_t*)(&CommonVars.pPosHighOut[2])) = (uint32_t)0xFFFFFFFF;
+                    *((uint64_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
                     break;
             }
             break;
@@ -848,7 +862,7 @@ void IC_MHM_Task()
                             //nWARN bit detectec, excessive rotor speed
                         }
                         //Read ST Position from PositionRead[5] to PositionRead[6]
-                        BuildPosition();
+                        BuildPosition(SCALE_ACTIVE_RD);
                         IC_MHMAccessFree = 1;
                         IC_MHMfsm = READ_POS_2;
                     }

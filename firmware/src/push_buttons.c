@@ -241,8 +241,6 @@ void PushButtonsTask()
                         DefCfgTimer = 0;
                     }
                 }
-                //
-
                 break;
 
             case BOTH_PBS_ON:
@@ -525,7 +523,7 @@ void PushButtonsTask()
                 SCALE_MODE_WR(PB_SCALE_BLINK);
                 if(PB1_DEB_VAL && PB2_DEB_VAL)
                 {
-                    pPosSetUp(RESDIR_RESO_MT);
+                    pPosSetUp((USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT);
                     SetScale(FACTORY_SCALE);
                     PBfsm = WAIT_PB_CT;
                 }
