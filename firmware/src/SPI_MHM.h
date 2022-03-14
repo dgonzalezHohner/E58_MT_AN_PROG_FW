@@ -148,10 +148,11 @@ typedef struct
     uint8_t* pPosLowOut;
     uint8_t* pPosHighOut;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
+	uint8_t ExchgFlags;
 }CommonVarsType;
 
 CommonVarsType CommonVars;
-
+bool IC_MHMAccessFree;
 //User Scaling configuration definitions
 //UserSclCfg[0]
 #define USR_SCL_EN_POS              ((uint8_t)0)
@@ -212,6 +213,19 @@ CommonVarsType CommonVars;
 #define SCALE_ACTIVE_RD				((UsedScaleType)((CommonVars.Scaling&(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS))>>SCALE_ACTIVE_POS))
 #define SCALE_ACTIVE_WR(val)	    CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS)))|((val&SCALE_ACTIVE_MSK)<<SCALE_ACTIVE_POS)
 
+//Exhange Flags
+#define EXCHG_FLAG_NEWPOS_POS		((uint8_t)0)
+#define EXCHG_FLAG_NEWPOS_MSK		((uint8_t)1)
+#define EXCHG_FLAG_NEWPOS			((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_NEWPOS_MSK<<EXCHG_FLAG_NEWPOS_POS))>>EXCHG_FLAG_NEWPOS_POS))
+#define EXCHG_FLAG_NEWPOS_SET		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_NEWPOS_MSK<<EXCHG_FLAG_NEWPOS_POS)))|((1&EXCHG_FLAG_NEWPOS_MSK)<<EXCHG_FLAG_NEWPOS_POS)
+#define EXCHG_FLAG_NEWPOS_CLR		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_NEWPOS_MSK<<EXCHG_FLAG_NEWPOS_POS)))
+
+#define EXCHG_FLAG_PRESET_POS		((uint8_t)1)
+#define EXCHG_FLAG_PRESET_MSK		((uint8_t)1)
+#define EXCHG_FLAG_PRESET			((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_PRESET_MSK<<EXCHG_FLAG_PRESET_POS))>>EXCHG_FLAG_PRESET_POS))
+#define EXCHG_FLAG_PRESET_SET		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_PRESET_MSK<<EXCHG_FLAG_PRESET_POS)))|((1&EXCHG_FLAG_PRESET_MSK)<<EXCHG_FLAG_PRESET_POS)
+#define EXCHG_FLAG_PRESET_CLR		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_PRESET_MSK<<EXCHG_FLAG_PRESET_POS)))
+
 volatile uint8_t MHMTimer;
 volatile uint8_t MHMProcTimer;
 
@@ -232,7 +246,6 @@ typedef struct __IC_MHM_REG_ACCType
 	uint8_t*	TxData;
 	uint8_t		RxLength;
 	uint8_t*	RxData;
-    uint8_t     Result;
 	void (*pInitMHMRegAccData) (struct __IC_MHM_REG_ACCType* MHMRegAccData);
 	void (*pDeInitMHMRegAccData) (struct __IC_MHM_REG_ACCType* MHMRegAccData);
 }IC_MHM_REG_ACCType;
@@ -246,7 +259,9 @@ typedef enum
     READ_POS_1,
     READ_POS_2,
     READ_POS_3,
-    READ_STATUS_1
+    READ_STATUS_1,
+	PV_PRESET,
+	MHM_PRESET
 }IC_MHMfsmType;
 
 enum MHM_OPCODE
@@ -308,13 +323,13 @@ enum SPI0_STATUS
 #define IC_MHM_0x75_FIO_2_Msk       (uint8_t)0x04
 #define IC_MHM_0x75_FIO_3_Msk       (uint8_t)0x08
 
-#define START_UP_T_ms               500
+#define START_UP_T_ms               200
 #define START_UP_TIMER_SET          (((START_UP_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
 #define READ_POS_T_ms               20
 #define READ_POS_TIMER_SET          (((READ_POS_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
-#define PV_PRESET_PULSE_T_ms        20
+#define PV_PRESET_PULSE_T_ms        30
 #define PV_PRESET_TIMER_SET         (((PV_PRESET_PULSE_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
 //CRC defines for IC-PV and IC-MHM
@@ -495,7 +510,7 @@ void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, ui
 void MHMRegAccBufferFree(IC_MHM_REG_ACCType** pMHMRegAccData);
 void TimerTask();
 
-void IC_MHM_RegAccesTask();
+uint8_t IC_MHM_RegAccesTask();
 
 uint8_t IC_MHM_Activate(uint8_t Data);
 uint8_t IC_MHM_ReadPos(uint8_t* Data, uint8_t RxLength);

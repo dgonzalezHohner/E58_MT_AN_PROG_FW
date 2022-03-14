@@ -289,27 +289,25 @@ void PushButtonsTask()
                 }
                 else
                 {
-                    if((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL)
+                    if((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL) PBfsm = PB1_FIRST_RD_POS;
+                    else if((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL) PBfsm = PB2_FIRST_RD_POS;
+                    
+                    if((PBfsm == PB1_FIRST_RD_POS)||PBfsm == PB2_FIRST_RD_POS)
                     {
                         pPosSetUp(RESDIR_RESO_MT);
-                        ScaleCfgTimer = PB_READ_POS_T_set;
-                        PBfsm = PB1_FIRST_RD_POS;
-                    }
-                    else if((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL)
-                    {
-                        pPosSetUp(RESDIR_RESO_MT);
-                        ScaleCfgTimer = PB_READ_POS_T_set;
-                        PBfsm = PB2_FIRST_RD_POS;
+                        EXCHG_FLAG_PRESET_SET;
+                        DefCfgTimer = PB_NEWPOS_TOUT_set;
                     }
                 }
                 break;
-            case PB1_FIRST_PRESET:
-            case PB2_FIRST_PRESET:
-
-                break;
+                
             case PB1_FIRST_RD_POS:
             case PB2_FIRST_RD_POS:
-                if(ScaleCfgTimer == 1)
+                if(DefCfgTimer == 1)
+                {
+                    PBfsm = RESTORE_DEF;
+                }
+                else if(!EXCHG_FLAG_PRESET && EXCHG_FLAG_NEWPOS)
                 {
                     if(PBfsm == PB1_FIRST_RD_POS)
                     {
@@ -322,6 +320,7 @@ void PushButtonsTask()
                         PBfsm = PB2_OFF_FIRST;
                     }
                 }
+                EXCHG_FLAG_NEWPOS_CLR;
                 break;
                 
             case PB1_OFF_FIRST:
@@ -333,6 +332,7 @@ void PushButtonsTask()
                     if(!PB2_DEB_VAL)
                     {
                         ScaleCfgTimer = PB_SET_CFG_T_set;
+                        DefCfgTimer = PB_SET_CFG_T_set+PB_NEWPOS_TOUT_set;
                         PBfsm = PB2_ON_LAST;
                     }
                 }
@@ -343,6 +343,7 @@ void PushButtonsTask()
                     if(!PB1_DEB_VAL)
                     {
                         ScaleCfgTimer = PB_SET_CFG_T_set;
+                        DefCfgTimer = PB_SET_CFG_T_set+PB_NEWPOS_TOUT_set;
                         PBfsm = PB1_ON_LAST;
                     }
                 }
@@ -360,13 +361,18 @@ void PushButtonsTask()
                     }
                     else
                     {
-                        //both leds solid
-                        SCALE_MODE_WR(PB_SCALE_SOLID);
-                        if(PB2_DEB_VAL)
+                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF;
+                        else if(EXCHG_FLAG_NEWPOS)
                         {
-                            CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
-                            ScaleCfgTimer = PB_SET_CFG_T_set;
-                            PBfsm = PB2_OFF_LAST;
+                            DefCfgTimer = PB_NEWPOS_TOUT_set;
+                            //both leds solid
+                            SCALE_MODE_WR(PB_SCALE_SOLID);
+                            if(PB2_DEB_VAL)
+                            {
+                                CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
+                                ScaleCfgTimer = PB_SET_CFG_T_set;
+                                PBfsm = PB2_OFF_LAST;
+                            }
                         }
                     }
                 }
@@ -380,16 +386,22 @@ void PushButtonsTask()
                     }
                     else
                     {
-                        //both leds solid
-                        SCALE_MODE_WR(PB_SCALE_SOLID);
-                        if(PB1_DEB_VAL)
+                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF;
+                        else if(EXCHG_FLAG_NEWPOS)
                         {
-                            CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
-                            ScaleCfgTimer = PB_SET_CFG_T_set;
-                            PBfsm = PB1_OFF_LAST;
+                            DefCfgTimer = PB_NEWPOS_TOUT_set;
+                            //both leds solid
+                            SCALE_MODE_WR(PB_SCALE_SOLID);
+                            if(PB1_DEB_VAL)
+                            {
+                                CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
+                                ScaleCfgTimer = PB_SET_CFG_T_set;
+                                PBfsm = PB1_OFF_LAST;
+                            }
                         }
                     }
                 }
+                EXCHG_FLAG_NEWPOS_CLR;
                 break;
 
             case PB2_OFF_LAST:
@@ -408,14 +420,11 @@ void PushButtonsTask()
                     {
                         //Check if CT is released before validation time
                         if(!SET1_DEB_VAL) PBfsm = WAIT_BOTH_CTS_OFF;
-                        else
+                        else if(SET2_DEB_VAL)
                         {
-                            if(SET2_DEB_VAL)
-                            {
-                                ScaleCfgTimer = 0;
-                                DefCfgTimer = CT_DEF_CFG_T_set;
-                                PBfsm = BOTH_CTS_ON;
-                            }
+                            ScaleCfgTimer = 0;
+                            DefCfgTimer = CT_DEF_CFG_T_set;
+                            PBfsm = BOTH_CTS_ON;
                         }
                     }
                     //Scale configuration timer end SET1 released
@@ -433,14 +442,11 @@ void PushButtonsTask()
                     {
                         //Check if CT is released before validation time
                         if(!SET2_DEB_VAL) PBfsm = WAIT_BOTH_CTS_OFF;
-                        else
+                        else if(SET1_DEB_VAL)
                         {
-                            if(SET1_DEB_VAL)
-                            {
-                                ScaleCfgTimer = 0;
-                                DefCfgTimer = CT_DEF_CFG_T_set;
-                                PBfsm = BOTH_CTS_ON;
-                            }
+                            ScaleCfgTimer = 0;
+                            DefCfgTimer = CT_DEF_CFG_T_set;
+                            PBfsm = BOTH_CTS_ON;
                         }
                     }
                     //Scale configuration timer end SET1 released

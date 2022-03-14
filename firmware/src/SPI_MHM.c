@@ -61,7 +61,7 @@
 //int global_data;
 
 //IC-MHM variables and pointers.
-bool IC_MHMAccessFree = 0;
+//bool IC_MHMAccessFree = 0;
 static IC_MHM_REG_ACCType* pMHMRegAccData = NULL;
 
 //Externla DAC variables and pointers.
@@ -137,20 +137,20 @@ static IntRWWEEWrType* pIntRWWEEWr = NULL;
 //static int ExampleLocalFunction(int param1, int param2) {
 //    return 0;
 //}
-bool IsMHMAccessFree()
-{
-    return IC_MHMAccessFree;
-}
-
-void SetMHMAccessFree()
-{
-    IC_MHMAccessFree = (bool)1;
-}
-
-void SetMHMAccessDenied()
-{
-    IC_MHMAccessFree = (bool)0;
-}
+//bool IsMHMAccessFree()
+//{
+//    return IC_MHMAccessFree;
+//}
+//
+//void SetMHMAccessFree()
+//{
+//    IC_MHMAccessFree = (bool)1;
+//}
+//
+//void SetMHMAccessDenied()
+//{
+//    IC_MHMAccessFree = (bool)0;
+//}
 
 void Init_IC_MHM_SPIData(SPI_IC_MHMType* IC_MHM_SPIData)
 {
@@ -199,7 +199,6 @@ void MHMRegAccBufferInit(IC_MHM_REG_ACCType** pMHMRegAccData, uint8_t Opcode, ui
 {
 	IC_MHM_REG_ACCType* ptr = malloc(sizeof(IC_MHM_REG_ACCType));
 
-    ptr->Result = (uint8_t)0;
 	ptr->TxLength = TxLength;
     ptr->RxLength = RxLength;
 	ptr->pInitMHMRegAccData = InitMHMRegAccData;
@@ -245,9 +244,10 @@ void TimerTask()
      if( ExtEEpromTimer > 1) ExtEEpromTimer--;
 }
 
-void IC_MHM_RegAccesTask()
+uint8_t IC_MHM_RegAccesTask()
 {
     static SPI_IC_MHMType* pSPIMHM = NULL;
+    uint8_t RetVal = IC_MHM_STAT_BUSY_Msk;
     
     if(BISS_MASTER_Get())
     {
@@ -284,7 +284,7 @@ void IC_MHM_RegAccesTask()
                     else
                     {
                         RegAccessfsm = 0;
-                        pMHMRegAccData->Result = pSPIMHM->RxData[1];
+                        RetVal = pSPIMHM->RxData[1];
                     }
                 }
                 IC_MHM_SPIBufferFree(&pSPIMHM);
@@ -311,69 +311,61 @@ void IC_MHM_RegAccesTask()
                 break;
         }
     }
+    return RetVal;
 }
 
 uint8_t IC_MHM_ReadPos(uint8_t* Data, uint8_t RxLength)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL) MHMRegAccBufferInit(&pMHMRegAccData, POS_READ_OPC, 1, RxLength+1);
-    else
+
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
     {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            memcpy(Data, &pMHMRegAccData->RxData[1], 7);
-            Result = pMHMRegAccData->Result;
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
+        memcpy(Data, &pMHMRegAccData->RxData[1], 7);
+        MHMRegAccBufferFree(&pMHMRegAccData);
     }
-    return Result;
+    return RetVal;
 }
 
 uint8_t IC_MHM_RdStatus(uint8_t* Data)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL) MHMRegAccBufferInit(&pMHMRegAccData, READ_STATUS_OPC, 1, 5);
-    else
+
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
     {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            memcpy(Data, &pMHMRegAccData->RxData[1], 4);
-            Result = pMHMRegAccData->Result;
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
+        memcpy(Data, &pMHMRegAccData->RxData[1], 4);
+        MHMRegAccBufferFree(&pMHMRegAccData);
     }
-    return Result;
+    return RetVal;
 }
 
 uint8_t IC_MHM_RegRdCtd(uint8_t Address, uint8_t* Data, uint8_t Length)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL)
     {
         MHMRegAccBufferInit(&pMHMRegAccData, REG_RD_CTD_OPC, 2, Length+2);
         pMHMRegAccData->TxData[1] = Address;
     }
-    else
+    
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
     {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            memcpy(Data, &pMHMRegAccData->RxData[2], pMHMRegAccData->RxLength-2);
-            Result = pMHMRegAccData->Result;
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
+        memcpy(Data, &pMHMRegAccData->RxData[2], pMHMRegAccData->RxLength-2);
+        MHMRegAccBufferFree(&pMHMRegAccData);
     }
-    return Result;
+    return RetVal;
 }
 
 uint8_t IC_MHM_RegWrCt(uint8_t Address, uint8_t* Data, uint8_t Length)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL)
     {
@@ -381,42 +373,34 @@ uint8_t IC_MHM_RegWrCt(uint8_t Address, uint8_t* Data, uint8_t Length)
         pMHMRegAccData->TxData[1] = Address;
         memcpy(&pMHMRegAccData->TxData[2], Data, Length);
     }
-    else
-    {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            Result = pMHMRegAccData->Result;
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
-    }
-    return Result;
+
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
+        MHMRegAccBufferFree(&pMHMRegAccData);
+
+    return RetVal;
 }
 
 uint8_t IC_MHM_WrInstr(uint8_t* Data, uint8_t Length)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL)
     {
         MHMRegAccBufferInit(&pMHMRegAccData, WR_INST_OPC, Length+1, 0);
         memcpy(&pMHMRegAccData->TxData[1], Data, Length);
     }
-    else
-    {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            Result = pMHMRegAccData->Result;
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
-    }
-    return Result;
+
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
+        MHMRegAccBufferFree(&pMHMRegAccData);
+
+    return RetVal;
 }
 
 uint8_t IC_MHM_RegWr(uint8_t Address, uint8_t Data)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL)
     {
@@ -424,64 +408,54 @@ uint8_t IC_MHM_RegWr(uint8_t Address, uint8_t Data)
         pMHMRegAccData->TxData[1] = Address;
         pMHMRegAccData->TxData[2] = Data;
     }
-    else
-    {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            Result = pMHMRegAccData->Result;
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
-    }
-    return Result;
+
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
+        MHMRegAccBufferFree(&pMHMRegAccData);
+
+    return RetVal;
 }
 
 uint8_t IC_MHM_RegRd(uint8_t Address, uint8_t* Data)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL)
     {
         MHMRegAccBufferInit(&pMHMRegAccData, REG_RD_OPC, 2, 3);
         pMHMRegAccData->TxData[1] = Address;
     }
-    else
+
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
     {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            Result = pMHMRegAccData->Result;
-            *Data = pMHMRegAccData->RxData[2];
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
+        *Data = pMHMRegAccData->RxData[2];
+        MHMRegAccBufferFree(&pMHMRegAccData);
     }
-    return Result;
+
+    return RetVal;
 }
 
 uint8_t IC_MHM_Activate(uint8_t Data)
 {
-    uint8_t Result = 0;
+    uint8_t RetVal;
     
     if(pMHMRegAccData == NULL)
     {
         MHMRegAccBufferInit(&pMHMRegAccData, ACTIVATE_OPC, 2, 0);
         pMHMRegAccData->TxData[1] = Data | 0x80;
     }
-    else
-    {
-        IC_MHM_RegAccesTask();
-        if(pMHMRegAccData->Result)
-        {
-            Result = pMHMRegAccData->Result;
-            MHMRegAccBufferFree(&pMHMRegAccData);
-        }
-    }
-    return Result;
+
+    RetVal = IC_MHM_RegAccesTask();
+    if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
+        MHMRegAccBufferFree(&pMHMRegAccData);
+
+    return RetVal;
 }
 
 uint8_t IC_MHM_SetFIO(uint8_t Data)
 {
-    uint8_t TempResult = 0;
+    uint8_t TempResult = IC_MHM_STAT_BUSY_Msk;
     static uint8_t TempData = 0;
     
     switch (IC_MHMCmdfsm)
@@ -491,9 +465,9 @@ uint8_t IC_MHM_SetFIO(uint8_t Data)
             if(TempResult & IC_MHM_STAT_VALID_Msk)
             {
                 TempData |= Data;
+                TempResult = IC_MHM_STAT_BUSY_Msk;
                 IC_MHMCmdfsm++;
             }
-            TempResult = 0;
             break;
             
         case 1:
@@ -510,7 +484,7 @@ uint8_t IC_MHM_SetFIO(uint8_t Data)
 
 uint8_t IC_MHM_ClrFIO(uint8_t Data)
 {
-    uint8_t TempResult = 0;
+    uint8_t TempResult = IC_MHM_STAT_BUSY_Msk;
     static uint8_t TempData = 0;
     
     switch (IC_MHMCmdfsm)
@@ -522,7 +496,6 @@ uint8_t IC_MHM_ClrFIO(uint8_t Data)
                 TempData &= ~(Data);
                 IC_MHMCmdfsm++;
             }
-            TempResult = 0;
             break;
             
         case 1:
@@ -539,7 +512,7 @@ uint8_t IC_MHM_ClrFIO(uint8_t Data)
 
 uint8_t IC_MHM_PresetPV()
 {
-    uint8_t TempResult = 0;
+    uint8_t TempResult = IC_MHM_STAT_BUSY_Msk;
     
     switch (IC_MHMProcFsm)
     {
@@ -548,9 +521,9 @@ uint8_t IC_MHM_PresetPV()
             if(TempResult & IC_MHM_STAT_VALID_Msk)
             {
                 MHMProcTimer = PV_PRESET_TIMER_SET;
+                TempResult = IC_MHM_STAT_BUSY_Msk;
                 IC_MHMProcFsm++;
             }
-            TempResult = 0;
             break;
             
         case 1:
@@ -560,9 +533,9 @@ uint8_t IC_MHM_PresetPV()
                 if(TempResult & IC_MHM_STAT_VALID_Msk)
                 {
                     MHMProcTimer = PV_PRESET_TIMER_SET;
+                    TempResult = IC_MHM_STAT_BUSY_Msk;
                     IC_MHMProcFsm++;
                 }
-                TempResult = 0;
             }
             break;
         
@@ -570,8 +543,8 @@ uint8_t IC_MHM_PresetPV()
             if(MHMProcTimer == 1)
             {
                 MHMProcTimer = 0;
+                TempResult = IC_MHM_STAT_VALID_Msk;
                 IC_MHMProcFsm = 0;
-                TempResult = 1;
             }
             break;
     }
@@ -773,7 +746,11 @@ void IC_MHM_Task()
             case MHM_STARTUP_2:
                 if(MHMTimer == (uint8_t)1)
                 {
-                    if(NERR_Get()) IC_MHMfsm = READ_RESO_DIR;
+                    if(NERR_Get())
+                    {
+                        IC_MHMfsm = (!EXCHG_FLAG_PRESET)?READ_RESO_DIR:READ_POS_1;
+                        //IC_MHMfsm = READ_RESO_DIR;
+                    }
                     else IC_MHMfsm = MHM_STARTUP_1;
                 }
                 break;
@@ -848,6 +825,7 @@ void IC_MHM_Task()
                 break;
 
             case READ_POS_1:
+                CommonVars.ExchgFlags = 0;
                 IC_MHMAccessFree = 1;
                 MHMTimer = READ_POS_TIMER_SET;
                 IC_MHMfsm = READ_POS_2;
@@ -861,6 +839,17 @@ void IC_MHM_Task()
                     {
                         IC_MHMAccessFree = 0;
                         IC_MHMfsm = READ_POS_3;
+                    }
+                }
+                else
+                {
+                    if(IC_MHMAccessFree)
+                    {
+                        if(EXCHG_FLAG_PRESET)
+                        {
+                            IC_MHMAccessFree = 0;
+                            IC_MHMfsm = PV_PRESET;
+                        }
                     }
                 }
                 break;
@@ -882,8 +871,8 @@ void IC_MHM_Task()
                         {
                             //nWARN bit detectec, excessive rotor speed
                         }
-                        //Read ST Position from PositionRead[5] to PositionRead[6]
                         BuildPosition(SCALE_ACTIVE_RD);
+                        EXCHG_FLAG_NEWPOS_SET;
                         IC_MHMAccessFree = 1;
                         IC_MHMfsm = READ_POS_2;
                     }
@@ -909,6 +898,32 @@ void IC_MHM_Task()
                 else if (TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
                 {
                     IC_MHMfsm = READ_STATUS_1;
+                }
+                break;
+                
+            case PV_PRESET:
+                TempResult = IC_MHM_PresetPV();
+                if(TempResult & IC_MHM_STAT_VALID_Msk)
+                {
+                    IC_MHMfsm = MHM_PRESET;
+                }
+                else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+                {
+                    IC_MHMAccessFree = 1;
+                    IC_MHMfsm = READ_POS_2;
+                }
+                break;
+                
+            case MHM_PRESET:
+                TempResult = IC_MHM_RegWr(IC_MHM_PRES_RES_REG, IC_MHM_0x74_PRESET_Msk);
+                if(TempResult & IC_MHM_STAT_VALID_Msk)
+                {
+                    IC_MHMfsm = MHM_STARTUP_1;
+                }
+                else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+                {
+                    IC_MHMAccessFree = 1;
+                    IC_MHMfsm = READ_POS_2;
                 }
                 break;
         }

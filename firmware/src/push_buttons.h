@@ -79,8 +79,8 @@ extern "C" {
     #define PB_SET_CFG_T_ms     2000
     #define PB_SET_CFG_T_set    (((PB_SET_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
-	#define PB_READ_POS_T_ms	200
-    #define PB_READ_POS_T_set	(((PB_READ_POS_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+	#define PB_NEWPOS_TOUT_ms	500
+    #define PB_NEWPOS_TOUT_set	(((PB_NEWPOS_TOUT_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
     
     //Contact scaling timers
 //    #define CT_SCALE_CFG_T_ms   1500
@@ -128,17 +128,15 @@ extern "C" {
      */
     typedef enum
     {
-        WAIT_PB_CT = (uint8_t)0,
+		WAIT_PB_CT = (uint8_t)0,
         BOTH_PBS_ON,
         BOTH_PBS_OFF,
         PB1_ON_FIRST,
-		PB1_FIRST_PRESET,
 		PB1_FIRST_RD_POS,
         PB1_OFF_FIRST,
         PB2_ON_LAST,
         PB2_OFF_LAST,
         PB2_ON_FIRST,
-		PB2_FIRST_PRESET,
 		PB2_FIRST_RD_POS,
         PB2_OFF_FIRST,
         PB1_ON_LAST,
