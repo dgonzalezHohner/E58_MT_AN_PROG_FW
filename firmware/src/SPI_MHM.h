@@ -147,6 +147,7 @@ typedef struct
     uint8_t* pPosition;
     uint8_t* pPosLowOut;
     uint8_t* pPosHighOut;
+	uint8_t* pPosOffset;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 	uint8_t ExchgFlags;
 }CommonVarsType;
@@ -439,10 +440,14 @@ typedef struct __IntRWWEEWrType
 #define RWWEE_SCL_POS_L_H_ADDR      ((uint32_t)(RWWEE_FRACT_RANGE_ADDR+RWWEE_FRACT_RANGE_LEN))
 #define RWWEE_SCL_POS_L_H_LEN       ((uint8_t)16)
 
-#define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_ENC_CFG_LEN+RWWEE_FRACT_RANGE_LEN+RWWEE_SCL_POS_L_H_LEN)
+#define RWWEE_FACT_OFFSET_ADDR		((uint32_t)(RWWEE_SCL_POS_L_H_ADDR+RWWEE_SCL_POS_L_H_LEN))
+#define RWWEE_FACT_OFFSET_LEN		((uint8_t)1)
+#define RWWEE_FACT_OFFSET_MAX		((uint8_t)200)
 
-#define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_SCL_POS_L_H_ADDR+RWWEE_SCL_POS_L_H_LEN))
+#define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_FACT_OFFSET_ADDR+RWWEE_FACT_OFFSET_LEN))
 #define RWWEE_CFG_CRC_LEN           ((uint8_t)1)
+
+#define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_CFG_CRC_ADDR-RWWEE_ENC_CFG_ADDR)
 
     // *****************************************************************************
     // *****************************************************************************

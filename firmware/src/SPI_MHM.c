@@ -620,22 +620,26 @@ void BuildPosition (uint8_t Scaling)
 
 void pPosSetUp (uint8_t ResoMT)
 {
-    if(CommonVars.pPosition != NULL)
+    if(CommonVars.pPosOffset != NULL)
     {
-        free(CommonVars.pPosition);
-        CommonVars.pPosition = NULL;
-    }
-    if(CommonVars.pPosLowOut != NULL)
-    {
-        free(CommonVars.pPosLowOut);
-        CommonVars.pPosLowOut = NULL;
+        free(CommonVars.pPosOffset);
+        CommonVars.pPosOffset = NULL;
     }
     if(CommonVars.pPosHighOut != NULL)
     {
         free(CommonVars.pPosHighOut);
         CommonVars.pPosHighOut = NULL;
     }
-
+    if(CommonVars.pPosLowOut != NULL)
+    {
+        free(CommonVars.pPosLowOut);
+        CommonVars.pPosLowOut = NULL;
+    }
+    if(CommonVars.pPosition != NULL)
+    {
+        free(CommonVars.pPosition);
+        CommonVars.pPosition = NULL;
+    }
     switch (ResoMT)
     {
         case 0:
@@ -654,52 +658,57 @@ void pPosSetUp (uint8_t ResoMT)
     CommonVars.pPosition = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosLowOut = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosHighOut = (uint8_t*)malloc(CommonVars.PosByteLen);
+    CommonVars.pPosOffset = (uint8_t*)malloc(CommonVars.PosByteLen);
 }
 
 void SetScale(UsedScaleType Scaling)
 {
     uint8_t ResoMT;
 
-    //Set position low to 0, position high to 1 turn.
     memset(CommonVars.pPosLowOut, 0x00, CommonVars.PosByteLen);
     memset(CommonVars.pPosHighOut, 0x00, CommonVars.PosByteLen);
+    memset(CommonVars.pPosOffset, 0x00, CommonVars.PosByteLen);
     
     switch (Scaling)
     {
         case FACTORY_SCALE:
             ResoMT = (USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT;
+            ResoMT = (ResoMT > 6)?8:ResoMT;
             switch(ResoMT)
             {
                 case 0:
                     //Check ST fractional setting
                     if(USR_SCL_FRACT_RNG_USE)
                     {
-                        *((uint16_t*)(CommonVars.pPosHighOut)) = (uint16_t)(((*((uint16_t*)RWWEE_FRACT_RANGE_ADDR))*(((uint32_t)0x10000)>>RESDIR_RESO_ST))/3600);
+                        (*((uint16_t*)(CommonVars.pPosHighOut))) = (uint16_t)(((*((uint16_t*)RWWEE_FRACT_RANGE_ADDR))*(((uint32_t)0x10000)>>RESDIR_RESO_ST))/3600);
                     }
                     //ST no fractional
                     else
                     {
-                        *((uint16_t*)(CommonVars.pPosHighOut)) = 0xFFFF >> RESDIR_RESO_ST;
+                        (*((uint16_t*)(CommonVars.pPosHighOut))) = 0xFFFF >> RESDIR_RESO_ST;
                     }
+                    (*((uint16_t*)(CommonVars.pPosOffset))) = (uint16_t)(((*((uint16_t*)(CommonVars.pPosHighOut)))*((uint32_t)(*((uint8_t*)RWWEE_FACT_OFFSET_ADDR))))/200);
                     break;
                 case 1:
                 case 2:
                 case 3:
                 case 4:
                     *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) <<= RESDIR_RESO_ST;
                     *((uint16_t*)(&CommonVars.pPosHighOut[2])) = ((uint16_t)0xFFFF)>>(16-(4*ResoMT));
                     *((uint32_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
-                    break;
-                case 5:
-                case 6:
-                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
-                    *((uint32_t*)(&CommonVars.pPosHighOut[2])) = ((uint32_t)0xFFFFFFFF)>>(32-(4*ResoMT));
-                    *((uint64_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
+                    
+                    *((uint16_t*)(&CommonVars.pPosOffset[2])) = ((uint16_t)((((uint32_t)0x10000)*((uint32_t)(*((uint8_t*)RWWEE_FACT_OFFSET_ADDR))))/200))>>(16-(4*ResoMT));
+                    *((uint32_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
                     break;
                 default:
                     *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
-                    *((uint32_t*)(&CommonVars.pPosHighOut[2])) = (uint32_t)0xFFFFFFFF;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) <<= RESDIR_RESO_ST;
+                    *((uint32_t*)(&CommonVars.pPosHighOut[2])) = ((uint32_t)0xFFFFFFFF)>>(32-(4*ResoMT));
                     *((uint64_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
+                    
+                    *((uint32_t*)(&CommonVars.pPosOffset[2])) = ((uint32_t)((((uint64_t)0x100000000)*((uint32_t)(*((uint8_t*)RWWEE_FACT_OFFSET_ADDR))))/200))>>(32-(4*ResoMT));
+                    *((uint32_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
                     break;
             }
             break;
@@ -708,11 +717,30 @@ void SetScale(UsedScaleType Scaling)
             CommonVars.UserSclCfg[0] = (uint8_t)0;
             CommonVars.UserSclCfg[1] = CommonVars.ResoAndDir;
             *((uint16_t*)(CommonVars.pPosHighOut)) = 0xFFFF >> RESDIR_RESO_ST;
+            *((uint16_t*)(CommonVars.pPosOffset)) = 0x8000 >> RESDIR_RESO_ST;
             break;
             
         default:
             memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
             memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
+            ResoMT = (RESDIR_RESO_MT>6) ? 8:RESDIR_RESO_MT;
+            switch (ResoMT)
+            {
+                case 0:
+                    *((uint16_t*)(CommonVars.pPosOffset)) = 0x8000 >> RESDIR_RESO_ST;
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    *((uint16_t*)(&CommonVars.pPosOffset[2])) = ((uint16_t)0x8000)>>(16-(4*ResoMT));
+                    *((uint32_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
+                    break;
+                default:
+                    *((uint32_t*)(&CommonVars.pPosOffset[2])) = ((uint32_t)0x80000000)>>(32-(4*ResoMT));
+                    *((uint64_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
+                    break;
+            }
             break;
     }
     SCALE_ACTIVE_WR(Scaling);
@@ -841,15 +869,12 @@ void IC_MHM_Task()
                         IC_MHMfsm = READ_POS_3;
                     }
                 }
-                else
+                else if(IC_MHMAccessFree)
                 {
-                    if(IC_MHMAccessFree)
+                    if(EXCHG_FLAG_PRESET)
                     {
-                        if(EXCHG_FLAG_PRESET)
-                        {
-                            IC_MHMAccessFree = 0;
-                            IC_MHMfsm = PV_PRESET;
-                        }
+                        IC_MHMAccessFree = 0;
+                        IC_MHMfsm = PV_PRESET;
                     }
                 }
                 break;

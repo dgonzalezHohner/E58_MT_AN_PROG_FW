@@ -92,8 +92,8 @@ extern "C" {
     #define CT_SET_CFG_T_ms     1500
     #define CT_SET_CFG_T_set    (((CT_SET_CFG_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
-	#define CT_READ_POS_T_ms	200
-    #define CT_READ_POS_T_set	(((CT_READ_POS_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
+	#define CT_NEWPOS_OUT_ms	500
+    #define CT_NEWPOS_TOUT_set	(((CT_NEWPOS_OUT_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Data Types
@@ -154,7 +154,8 @@ extern "C" {
         CT1_OFF_LAST,
         BOTH_CTS_ON,
         WAIT_BOTH_CTS_OFF,
-        RESTORE_DEF
+        RESTORE_DEF_PB,
+		RESTORE_DEF_CT
     }PBfsmType;
     
     typedef struct
