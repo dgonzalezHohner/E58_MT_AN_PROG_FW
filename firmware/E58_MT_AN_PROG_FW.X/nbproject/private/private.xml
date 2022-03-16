@@ -10,9 +10,9 @@
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/push_buttons.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/sercom/spi_master/plib_sercom1_spi_master.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/port/plib_port.h</file>
+            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/E58_MT_AN_PROG_FW.X/nbproject/Makefile-impl.mk</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/SPI_MHM.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/nvmctrl/plib_nvmctrl.c</file>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/E58_MT_AN_PROG_FW.X/nbproject/Makefile-impl.mk</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/push_buttons.h</file>
         </group>
     </open-files>

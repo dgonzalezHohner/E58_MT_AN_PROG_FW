@@ -124,6 +124,12 @@ typedef enum
     DEFAULT_SCALE
 }UsedScaleType;
 
+#define DEFAULT_RESOMT	0
+
+#if DEFAULT_RESOMT > 7
+	#error "Default MT resolution 'DEFAULT_RESOMT' must be between 0 and 7"
+#endif
+
 typedef enum
 {
     NO_SCALABLE = (uint8_t)1,

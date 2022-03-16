@@ -587,7 +587,7 @@ void BuildPosition (uint8_t Scaling)
             ResoMT = (USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT;
             break;
         case DEFAULT_SCALE:
-            ResoMT = 0;
+            ResoMT = DEFAULT_RESOMT;
             break;
         default:
             ResoMT = RESDIR_RESO_MT;
@@ -597,7 +597,7 @@ void BuildPosition (uint8_t Scaling)
     switch (ResoMT)
     {
         case 0:
-            *((uint16_t*)(CommonVars.pPosition)) = (0xFFFF >> RESDIR_RESO_ST);
+            *((uint16_t*)(CommonVars.pPosition)) &= (0xFFFF >> RESDIR_RESO_ST);
             *((uint16_t*)(CommonVars.pPosition)) += (*((uint16_t*)(CommonVars.pPosOffset)));
             break;
         case 1:
@@ -676,6 +676,7 @@ void SetScale(UsedScaleType Scaling)
     {
         case FACTORY_SCALE:
             ResoMT = (USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT;
+            pPosSetUp(ResoMT);
             ResoMT = (ResoMT > 6)?8:ResoMT;
             switch(ResoMT)
             {
@@ -683,7 +684,7 @@ void SetScale(UsedScaleType Scaling)
                     //Check ST fractional setting
                     if(USR_SCL_FRACT_RNG_USE)
                     {
-                        (*((uint16_t*)(CommonVars.pPosHighOut))) = (uint16_t)(((*((uint16_t*)RWWEE_FRACT_RANGE_ADDR))*(((uint32_t)0x10000)>>RESDIR_RESO_ST))/3600);
+                        (*((uint16_t*)(CommonVars.pPosHighOut))) = (uint16_t)(((*((uint16_t*)RWWEE_FRACT_RANGE_ADDR))*(((uint32_t)0xFFFF)>>RESDIR_RESO_ST))/3600);
                     }
                     //ST no fractional
                     else
@@ -719,11 +720,40 @@ void SetScale(UsedScaleType Scaling)
         case DEFAULT_SCALE:
             CommonVars.UserSclCfg[0] = (uint8_t)0;
             CommonVars.UserSclCfg[1] = CommonVars.ResoAndDir;
-            *((uint16_t*)(CommonVars.pPosHighOut)) = 0xFFFF >> RESDIR_RESO_ST;
-            *((uint16_t*)(CommonVars.pPosOffset)) = 0x8000 >> RESDIR_RESO_ST;
+            pPosSetUp(DEFAULT_RESOMT);
+            ResoMT = (DEFAULT_RESOMT > 6)?8:DEFAULT_RESOMT;
+            switch (ResoMT)
+            {
+                case 0:
+                    *((uint16_t*)(CommonVars.pPosHighOut)) = 0xFFFF >> RESDIR_RESO_ST;
+                    *((uint16_t*)(CommonVars.pPosOffset)) = 0x8000 >> RESDIR_RESO_ST;
+                    break;
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) <<= RESDIR_RESO_ST;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[2])) = ((uint16_t)0xFFFF)>>(16-(4*ResoMT));
+                    *((uint32_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
+                    
+                    *((uint16_t*)(&CommonVars.pPosOffset[2])) = ((uint16_t)0x8000)>>(16-(4*ResoMT));
+                    *((uint32_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
+                    break;
+                default:
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) = 0xFFFF;
+                    *((uint16_t*)(&CommonVars.pPosHighOut[0])) <<= RESDIR_RESO_ST;
+                    *((uint32_t*)(&CommonVars.pPosHighOut[2])) = ((uint32_t)0xFFFFFFFF)>>(32-(4*ResoMT));
+                    *((uint64_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
+                    
+                    *((uint32_t*)(&CommonVars.pPosOffset[2])) = ((uint32_t)0x80000000)>>(32-(4*ResoMT));
+                    *((uint64_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
+                    break;
+            }
             break;
             
         default:
+            pPosSetUp(RESDIR_RESO_MT);
             memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
             memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
             ResoMT = (RESDIR_RESO_MT>6) ? 8:RESDIR_RESO_MT;
@@ -838,18 +868,15 @@ void IC_MHM_Task()
                     memcpy((uint8_t*)(&CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
                     if((USR_SCL_EN == SCALABLE)&&(USR_SCL_AVAIL == RWWEE_ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
                     {
-                        pPosSetUp(RESDIR_RESO_MT);
                         SetScale(USR_SCALE);
                     }
                     else
                     {
-                        pPosSetUp((USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT);
                         SetScale(FACTORY_SCALE);
                     }
                 }
                 else
                 {
-                    pPosSetUp(RESDIR_RESO_MT);
                     SetScale(DEFAULT_SCALE);
                 }
                 IC_MHMfsm = READ_POS_1;
