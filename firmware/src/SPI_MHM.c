@@ -598,6 +598,7 @@ void BuildPosition (uint8_t Scaling)
     {
         case 0:
             *((uint16_t*)(CommonVars.pPosition)) = (0xFFFF >> RESDIR_RESO_ST);
+            *((uint16_t*)(CommonVars.pPosition)) += (*((uint16_t*)(CommonVars.pPosOffset)));
             break;
         case 1:
         case 2:
@@ -607,6 +608,7 @@ void BuildPosition (uint8_t Scaling)
             *((uint16_t*)(&CommonVars.pPosition[0])) <<= RESDIR_RESO_ST;
             *((uint16_t*)(&CommonVars.pPosition[2])) &= ((uint16_t)0xFFFF)>>(16-(4*ResoMT));
             *((uint32_t*)(&CommonVars.pPosition[0])) >>= RESDIR_RESO_ST;
+            *((uint32_t*)(&CommonVars.pPosition[0])) += (*((uint32_t*)(&CommonVars.pPosOffset[0])));
             break;
         default:
             *((uint16_t*)(&CommonVars.pPosition[0])) &= (0xFFFF >> RESDIR_RESO_ST);
@@ -614,6 +616,7 @@ void BuildPosition (uint8_t Scaling)
             *((uint32_t*)(&CommonVars.pPosition[2])) &= ((uint32_t)0xFFFFFFFF)>>(32-(4*ResoMT));
             *((uint64_t*)(&CommonVars.pPosition[0])) >>= RESDIR_RESO_ST;
             *((uint16_t*)(&CommonVars.pPosition[6])) = 0x0000;
+            *((uint64_t*)(&CommonVars.pPosition[0])) += (*((uint64_t*)(&CommonVars.pPosOffset[0])));
             break;
     }
 }
@@ -708,7 +711,7 @@ void SetScale(UsedScaleType Scaling)
                     *((uint64_t*)(&CommonVars.pPosHighOut[0])) >>= RESDIR_RESO_ST;
                     
                     *((uint32_t*)(&CommonVars.pPosOffset[2])) = ((uint32_t)((((uint64_t)0x100000000)*((uint32_t)(*((uint8_t*)RWWEE_FACT_OFFSET_ADDR))))/200))>>(32-(4*ResoMT));
-                    *((uint32_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
+                    *((uint64_t*)(&CommonVars.pPosOffset[0])) >>= RESDIR_RESO_ST;
                     break;
             }
             break;
