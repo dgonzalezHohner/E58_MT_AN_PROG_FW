@@ -551,6 +551,67 @@ uint8_t IC_MHM_PresetPV()
     return TempResult;
 }
 
+void ComparePosition(uint8_t* pNewPos, uint8_t* pOldPos)
+{
+    uint8_t ResoMT;
+    ResoMT = (RESDIR_RESO_MT>6) ? 8:RESDIR_RESO_MT;
+    
+    switch (ResoMT)
+    {
+        case 0:
+            if((*((uint16_t*)pNewPos)) >= (*((uint16_t*)pOldPos)))
+            {
+                if((*((uint16_t*)pNewPos))-(*((uint16_t*)pOldPos)) >= (0x8000 >> RESDIR_RESO_ST))
+                {
+                    if(CommonVars.UF_OF_Cnt > UF_OV_MIN) CommonVars.UF_OF_Cnt--;
+                }
+            }
+            else
+            {
+                if((*((uint16_t*)pOldPos))-(*((uint16_t*)pNewPos)) >= (0x8000 >> RESDIR_RESO_ST))
+                {
+                    if(CommonVars.UF_OF_Cnt < UF_OV_MAX) CommonVars.UF_OF_Cnt++;
+                }
+            }
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            if((*((uint32_t*)pNewPos)) >= (*((uint32_t*)pOldPos)))
+            {
+                if((*((uint32_t*)pNewPos))-(*((uint32_t*)pOldPos)) >= (0x80000000>>((16-(4*ResoMT))+RESDIR_RESO_ST)))
+                {
+                    if(CommonVars.UF_OF_Cnt > UF_OV_MIN) CommonVars.UF_OF_Cnt--;
+                }
+            }
+            else
+            {
+                if((*((uint32_t*)pOldPos))-(*((uint32_t*)pNewPos)) >= (0x80000000>>((16-(4*ResoMT))+RESDIR_RESO_ST)))
+                {
+                    if(CommonVars.UF_OF_Cnt < UF_OV_MAX) CommonVars.UF_OF_Cnt++;
+                }
+            }
+            break;
+        default:
+            if((*((uint64_t*)pNewPos)) >= (*((uint64_t*)pOldPos)))
+            {
+                if((*((uint64_t*)pNewPos))-(*((uint64_t*)pOldPos)) >= (0x0000800000000000 >> ((32-(4*ResoMT))+RESDIR_RESO_ST)))
+                {
+                    if(CommonVars.UF_OF_Cnt > UF_OV_MIN) CommonVars.UF_OF_Cnt--;
+                }
+            }
+            else
+            {
+                if((*((uint64_t*)pOldPos))-(*((uint64_t*)pNewPos)) >= (0x0000800000000000 >> ((32-(4*ResoMT))+RESDIR_RESO_ST)))
+                {
+                    if(CommonVars.UF_OF_Cnt < UF_OV_MAX) CommonVars.UF_OF_Cnt++;
+                }
+            }
+            break;
+    }
+}
+
 void CopyPosition (uint8_t* Dest, uint8_t* Source)
 {
     switch (RESDIR_RESO_MT)
@@ -570,7 +631,7 @@ void CopyPosition (uint8_t* Dest, uint8_t* Source)
     }
 }
 
-void BuildPosition (uint8_t Scaling)
+void BuildPosition (UsedScaleType Scaling)
 {
     uint8_t ResoMT;
     
@@ -590,7 +651,7 @@ void BuildPosition (uint8_t Scaling)
             ResoMT = DEFAULT_RESOMT;
             break;
         default:
-            ResoMT = RESDIR_RESO_MT;
+            ResoMT = (RESDIR_RESO_MT>6) ? 8:RESDIR_RESO_MT;
             break;
     }
     
@@ -643,6 +704,12 @@ void pPosSetUp (uint8_t ResoMT)
         free(CommonVars.pPosition);
         CommonVars.pPosition = NULL;
     }
+    if(CommonVars.pLastPos != NULL)
+    {
+        free(CommonVars.pLastPos);
+        CommonVars.pLastPos = NULL;
+    }
+    
     switch (ResoMT)
     {
         case 0:
@@ -662,15 +729,16 @@ void pPosSetUp (uint8_t ResoMT)
     CommonVars.pPosLowOut = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosHighOut = (uint8_t*)malloc(CommonVars.PosByteLen);
     CommonVars.pPosOffset = (uint8_t*)malloc(CommonVars.PosByteLen);
+    
+    //memset(CommonVars.pPosition, 0x00, CommonVars.PosByteLen);
+    memset(CommonVars.pPosLowOut, 0x00, CommonVars.PosByteLen);
+    memset(CommonVars.pPosHighOut, 0x00, CommonVars.PosByteLen);
+    memset(CommonVars.pPosOffset, 0x00, CommonVars.PosByteLen);
 }
 
 void SetScale(UsedScaleType Scaling)
 {
     uint8_t ResoMT;
-
-    memset(CommonVars.pPosLowOut, 0x00, CommonVars.PosByteLen);
-    memset(CommonVars.pPosHighOut, 0x00, CommonVars.PosByteLen);
-    memset(CommonVars.pPosOffset, 0x00, CommonVars.PosByteLen);
     
     switch (Scaling)
     {
@@ -754,8 +822,8 @@ void SetScale(UsedScaleType Scaling)
             
         default:
             pPosSetUp(RESDIR_RESO_MT);
-            memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
-            memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
+            CommonVars.pLastPos = (uint8_t*)malloc(CommonVars.PosByteLen);
+            CommonVars.UF_OF_Cnt = 0;
             ResoMT = (RESDIR_RESO_MT>6) ? 8:RESDIR_RESO_MT;
             switch (ResoMT)
             {
@@ -810,7 +878,6 @@ void IC_MHM_Task()
                     if(NERR_Get())
                     {
                         IC_MHMfsm = (!EXCHG_FLAG_PRESET)?READ_RESO_DIR:READ_POS_1;
-                        //IC_MHMfsm = READ_RESO_DIR;
                     }
                     else IC_MHMfsm = MHM_STARTUP_1;
                 }
@@ -869,6 +936,8 @@ void IC_MHM_Task()
                     if((USR_SCL_EN == SCALABLE)&&(USR_SCL_AVAIL == RWWEE_ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
                     {
                         SetScale(USR_SCALE);
+                        memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
+                        memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
                     }
                     else
                     {
@@ -926,8 +995,28 @@ void IC_MHM_Task()
                         {
                             //nWARN bit detectec, excessive rotor speed
                         }
-                        BuildPosition(SCALE_ACTIVE_RD);
-                        EXCHG_FLAG_NEWPOS_SET;
+                        
+                        if(SCALE_ACTIVE_RD == USR_SCALE)
+                        {
+                            BuildPosition(SCALE_ACTIVE_RD);
+                            if(EXCHG_FLAG_1STREAD)
+                            {
+                                
+                                ComparePosition(CommonVars.pPosition, CommonVars.pLastPos);
+                                EXCHG_FLAG_NEWPOS_SET;
+                            }
+                            else
+                            {
+                                EXCHG_FLAG_1STREAD_SET;
+                                CommonVars.UF_OF_Cnt = 0;
+                            }
+                            CopyPosition (CommonVars.pPosition, CommonVars.pLastPos);
+                        }
+                        else
+                        {   
+                            BuildPosition(SCALE_ACTIVE_RD);
+                            EXCHG_FLAG_NEWPOS_SET;
+                        }
                         IC_MHMAccessFree = 1;
                         IC_MHMfsm = READ_POS_2;
                     }

@@ -154,8 +154,11 @@ typedef struct
     uint8_t* pPosLowOut;
     uint8_t* pPosHighOut;
 	uint8_t* pPosOffset;
+	uint8_t* pLastPos;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 	uint8_t ExchgFlags;
+	int8_t	UF_OF_Cnt;
+	
 }CommonVarsType;
 
 CommonVarsType CommonVars;
@@ -216,7 +219,7 @@ bool IC_MHMAccessFree;
 #define SCALE_MODE_WR(val)			CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_MODE_MSK<<SCALE_MODE_POS)))|((val&SCALE_MODE_MSK)<<SCALE_MODE_POS)
 
 #define SCALE_ACTIVE_POS			((uint8_t)4)
-#define SCALE_ACTIVE_MSK			((uint8_t)2)
+#define SCALE_ACTIVE_MSK			((uint8_t)3)
 #define SCALE_ACTIVE_RD				((UsedScaleType)((CommonVars.Scaling&(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS))>>SCALE_ACTIVE_POS))
 #define SCALE_ACTIVE_WR(val)	    CommonVars.Scaling = (CommonVars.Scaling&(~(SCALE_ACTIVE_MSK<<SCALE_ACTIVE_POS)))|((val&SCALE_ACTIVE_MSK)<<SCALE_ACTIVE_POS)
 
@@ -224,14 +227,24 @@ bool IC_MHMAccessFree;
 #define EXCHG_FLAG_NEWPOS_POS		((uint8_t)0)
 #define EXCHG_FLAG_NEWPOS_MSK		((uint8_t)1)
 #define EXCHG_FLAG_NEWPOS			((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_NEWPOS_MSK<<EXCHG_FLAG_NEWPOS_POS))>>EXCHG_FLAG_NEWPOS_POS))
-#define EXCHG_FLAG_NEWPOS_SET		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_NEWPOS_MSK<<EXCHG_FLAG_NEWPOS_POS)))|((1&EXCHG_FLAG_NEWPOS_MSK)<<EXCHG_FLAG_NEWPOS_POS)
-#define EXCHG_FLAG_NEWPOS_CLR		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_NEWPOS_MSK<<EXCHG_FLAG_NEWPOS_POS)))
+#define EXCHG_FLAG_NEWPOS_SET		CommonVars.ExchgFlags |= ((1&EXCHG_FLAG_NEWPOS_MSK)<<EXCHG_FLAG_NEWPOS_POS)
+#define EXCHG_FLAG_NEWPOS_CLR		CommonVars.ExchgFlags &= ((~(EXCHG_FLAG_NEWPOS_MSK<<EXCHG_FLAG_NEWPOS_POS)))
 
 #define EXCHG_FLAG_PRESET_POS		((uint8_t)1)
 #define EXCHG_FLAG_PRESET_MSK		((uint8_t)1)
 #define EXCHG_FLAG_PRESET			((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_PRESET_MSK<<EXCHG_FLAG_PRESET_POS))>>EXCHG_FLAG_PRESET_POS))
-#define EXCHG_FLAG_PRESET_SET		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_PRESET_MSK<<EXCHG_FLAG_PRESET_POS)))|((1&EXCHG_FLAG_PRESET_MSK)<<EXCHG_FLAG_PRESET_POS)
-#define EXCHG_FLAG_PRESET_CLR		CommonVars.ExchgFlags = (CommonVars.ExchgFlags&(~(EXCHG_FLAG_PRESET_MSK<<EXCHG_FLAG_PRESET_POS)))
+#define EXCHG_FLAG_PRESET_SET		CommonVars.ExchgFlags |= ((1&EXCHG_FLAG_PRESET_MSK)<<EXCHG_FLAG_PRESET_POS)
+#define EXCHG_FLAG_PRESET_CLR		CommonVars.ExchgFlags &= ((~(EXCHG_FLAG_PRESET_MSK<<EXCHG_FLAG_PRESET_POS)))
+
+#define EXCHG_FLAG_1STREAD_POS		((uint8_t)2)
+#define EXCHG_FLAG_1STREAD_MSK		((uint8_t)1)
+#define EXCHG_FLAG_1STREAD			((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_1STREAD_MSK<<EXCHG_FLAG_1STREAD_POS))>>EXCHG_FLAG_1STREAD_POS))
+#define EXCHG_FLAG_1STREAD_SET		CommonVars.ExchgFlags |= ((1&EXCHG_FLAG_1STREAD_MSK)<<EXCHG_FLAG_1STREAD_POS)
+#define EXCHG_FLAG_1STREAD_CLR		CommonVars.ExchgFlags &= ((~(EXCHG_FLAG_1STREAD_MSK<<EXCHG_FLAG_1STREAD_POS)))
+
+//UF_OF_Cnt
+#define UF_OV_MAX					(100)
+#define UF_OV_MIN					((-1)*UF_OV_MAX)
 
 volatile uint8_t MHMTimer;
 volatile uint8_t MHMProcTimer;
@@ -448,7 +461,7 @@ typedef struct __IntRWWEEWrType
 
 #define RWWEE_FACT_OFFSET_ADDR		((uint32_t)(RWWEE_SCL_POS_L_H_ADDR+RWWEE_SCL_POS_L_H_LEN))
 #define RWWEE_FACT_OFFSET_LEN		((uint8_t)1)
-#define RWWEE_FACT_OFFSET_MAX		((uint8_t)200)
+#define RWWEE_FACT_OFFSET_MAX		((uint8_t)199)
 
 #define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_FACT_OFFSET_ADDR+RWWEE_FACT_OFFSET_LEN))
 #define RWWEE_CFG_CRC_LEN           ((uint8_t)1)
@@ -536,7 +549,7 @@ uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
 void CopyPosition (uint8_t* Source, uint8_t* Dest);
-void BuildPosition (uint8_t Scaling);
+void BuildPosition (UsedScaleType Scaling);
 void pPosSetUp (uint8_t ResoMT);
 void SetScale(UsedScaleType Scaling);
 void IC_MHM_Task();

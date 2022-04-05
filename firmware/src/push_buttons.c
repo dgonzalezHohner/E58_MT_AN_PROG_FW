@@ -293,7 +293,7 @@ void PushButtonsTask()
                     
                     if((PBfsm == PB1_FIRST_RD_POS)||PBfsm == PB2_FIRST_RD_POS)
                     {
-                        pPosSetUp(RESDIR_RESO_MT);
+                        SetScale(USR_SCALE);
                         EXCHG_FLAG_PRESET_SET;
                         DefCfgTimer = PB_NEWPOS_TOUT_set;
                     }
@@ -310,12 +310,12 @@ void PushButtonsTask()
                 {
                     if(PBfsm == PB1_FIRST_RD_POS)
                     {
-                        CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
+                        CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
                         PBfsm = PB1_OFF_FIRST;
                     }
                     else
                     {
-                        CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
+                        CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
                         PBfsm = PB2_OFF_FIRST;
                     }
                 }
@@ -341,6 +341,7 @@ void PushButtonsTask()
                 {
                     ScaleCfgTimer = PB_SET_CFG_T_set;
                     DefCfgTimer = PB_SET_CFG_T_set+PB_NEWPOS_TOUT_set;
+                    EXCHG_FLAG_NEWPOS_CLR;
                 }
                 break;
 
@@ -360,11 +361,12 @@ void PushButtonsTask()
                         else if(EXCHG_FLAG_NEWPOS)
                         {
                             DefCfgTimer = PB_NEWPOS_TOUT_set;
+                            EXCHG_FLAG_NEWPOS_CLR;
                             //both leds solid
                             SCALE_MODE_WR(PB_SCALE_SOLID);
                             if(PB2_DEB_VAL)
                             {
-                                CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
+                                CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
                                 ScaleCfgTimer = PB_SET_CFG_T_set;
                                 PBfsm = PB2_OFF_LAST;
                             }
@@ -385,11 +387,12 @@ void PushButtonsTask()
                         else if(EXCHG_FLAG_NEWPOS)
                         {
                             DefCfgTimer = PB_NEWPOS_TOUT_set;
+                            EXCHG_FLAG_NEWPOS_CLR;
                             //both leds solid
                             SCALE_MODE_WR(PB_SCALE_SOLID);
                             if(PB1_DEB_VAL)
                             {
-                                CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
+                                CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
                                 ScaleCfgTimer = PB_SET_CFG_T_set;
                                 PBfsm = PB1_OFF_LAST;
                             }
@@ -444,12 +447,12 @@ void PushButtonsTask()
                 {
                     if(PBfsm == CT1_FIRST_RD_POS)
                     {
-                        CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
+                        CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
                         PBfsm = CT1_OFF_FIRST;
                     }
                     else
                     {
-                        CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
+                        CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
                         PBfsm = CT2_OFF_FIRST;
                     }
                 }
@@ -498,7 +501,7 @@ void PushButtonsTask()
                             SCALE_MODE_WR(PB_SCALE_SOLID);
                             if(!SET2_DEB_VAL)
                             {
-                                CopyPosition (CommonVars.pPosHighOut, CommonVars.pPosition);
+                                CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
                                 ScaleCfgTimer = CT_SET_CFG_T_set;
                                 PBfsm = CT2_OFF_LAST;
                             }
@@ -524,7 +527,7 @@ void PushButtonsTask()
                             SCALE_MODE_WR(PB_SCALE_SOLID);
                             if(!SET1_DEB_VAL)
                             {
-                                CopyPosition (CommonVars.pPosLowOut, CommonVars.pPosition);
+                                CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
                                 ScaleCfgTimer = CT_SET_CFG_T_set;
                                 PBfsm = CT1_OFF_LAST;
                             }
@@ -569,7 +572,7 @@ void PushButtonsTask()
                 break;
         }
     }
-    //Encoder no scalable, use SET1 as DIR input and SET2 as preset
+    //Encoder not scalable, use SET1 as DIR input and SET2 as preset
     else
     {
         SCALE_MODE_WR(NO_SCALE);
