@@ -367,6 +367,7 @@ void PushButtonsTask()
                             if(PB2_DEB_VAL)
                             {
                                 CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
+                                //Check PosHigh valid
                                 ScaleCfgTimer = PB_SET_CFG_T_set;
                                 PBfsm = PB2_OFF_LAST;
                             }
@@ -393,6 +394,7 @@ void PushButtonsTask()
                             if(PB1_DEB_VAL)
                             {
                                 CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
+                                //Check PosLow valid
                                 ScaleCfgTimer = PB_SET_CFG_T_set;
                                 PBfsm = PB1_OFF_LAST;
                             }
@@ -565,7 +567,6 @@ void PushButtonsTask()
                 SCALE_MODE_WR(PB_SCALE_BLINK);
                 if(((PBfsm == RESTORE_DEF_PB) && PB1_DEB_VAL && PB2_DEB_VAL)||((PBfsm == RESTORE_DEF_CT) && !SET1_DEB_VAL && !SET2_DEB_VAL))
                 {
-                    pPosSetUp((USR_SCL_RESOMT <= RESDIR_RESO_MT)?USR_SCL_RESOMT:RESDIR_RESO_MT);
                     SetScale(FACTORY_SCALE);
                     PBfsm = WAIT_PB_CT;
                 }

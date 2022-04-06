@@ -142,7 +142,7 @@ typedef enum
     CW = (uint8_t)1
 }CSenseType;
 
-#define USER_SCL_CFG_LEN (uint8_t)2
+#define USER_SCL_CFG_LEN (uint8_t)3
 typedef struct
 {
     uint8_t UserSclCfg[USER_SCL_CFG_LEN];
@@ -155,6 +155,7 @@ typedef struct
     uint8_t* pPosHighOut;
 	uint8_t* pPosOffset;
 	uint8_t* pLastPos;
+	uint8_t* pUserRange;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 	uint8_t ExchgFlags;
 	int8_t	UF_OF_Cnt;
@@ -198,6 +199,12 @@ bool IC_MHMAccessFree;
 #define USR_SCL_MHM_RESOST_POS	    ((uint8_t)4)
 #define USR_SCL_MHM_RESOST_MSK	    ((uint8_t)7)
 #define USR_SCL_MHM_RESOST			((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOST_MSK<<USR_SCL_MHM_RESOST_POS))>>USR_SCL_MHM_RESOST_POS))
+
+//UserSclCfg[2]
+#define USR_SCL_DAC_RESO_POS	    ((uint8_t)0)
+#define USR_SCL_DAC_RESO_MSK	    ((uint8_t)7)
+#define USR_SCL_DAC_RESO			((uint8_t)((CommonVars.UserSclCfg[2]&(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS))>>USR_SCL_DAC_RESO_POS))
+#define USR_SCL_DAC_RESO_WR(val)	CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS)))|((val&USR_SCL_DAC_RESO_MSK)<<USR_SCL_DAC_RESO_POS)
 
 //ResoAndDir
 #define RESDIR_RESO_MT_POS			((uint8_t)0)
@@ -548,6 +555,7 @@ uint8_t IC_MHM_SetFIO(uint8_t Data);
 uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
+void ComparePosition(uint8_t* pNewPos, uint8_t* pOldPos);
 void CopyPosition (uint8_t* Source, uint8_t* Dest);
 void BuildPosition (UsedScaleType Scaling);
 void pPosSetUp (uint8_t ResoMT);

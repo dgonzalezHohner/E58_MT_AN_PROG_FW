@@ -551,6 +551,58 @@ uint8_t IC_MHM_PresetPV()
     return TempResult;
 }
 
+uint8_t CheckUserScaling ()
+{
+    uint8_t RetVal=0;
+    uint8_t ResoMT;
+    
+    ResoMT = (RESDIR_RESO_MT>6) ? 8:RESDIR_RESO_MT;
+    
+    switch (CommonVars.UF_OF_Cnt)
+    {
+        case (-1):
+            break;
+
+        case 0:
+            switch (ResoMT)
+            {
+                case 0:
+                    (*((uint16_t*)CommonVars.pUserRange)) = ((*((uint16_t*)CommonVars.pPosHighOut))>=(*((uint16_t*)CommonVars.pPosLowOut))) ?
+                                                            ((*((uint16_t*)CommonVars.pPosHighOut))- (*((uint16_t*)CommonVars.pPosLowOut))) :
+                                                            ((*((uint16_t*)CommonVars.pPosLowOut)) - (*((uint16_t*)CommonVars.pPosHighOut)));
+                    //check minimum angle requirement
+                    if(((*((uint16_t*)CommonVars.pUserRange))) <= (0xFFFF>>(RESDIR_RESO_ST+4))) break;
+                    else RetVal=1;
+                    break;
+                    
+                case 1:
+                case 2:
+                case 3:
+                case 4:
+                    
+//                    for(i=0;(i+RESDIR_RESO_ST) <= 16;i++)
+//                    {
+//                        if((0xFFFF >> (i+RESDIR_RESO_ST)) < (*((uint16_t*)CommonVars.pUserRange))) break;
+//                    }
+//                    if(i)
+//                    {
+//                        (*((uint16_t*)CommonVars.pUserRange)) = (0xFFFF >> (i-1+RESDIR_RESO_ST));
+//                        RetVal = 1;
+//                    }
+                    break;
+                    
+                default:
+                    
+                    break;
+            }
+            break;
+            
+        case 1:
+            break;
+    }
+    return RetVal;
+}
+
 void ComparePosition(uint8_t* pNewPos, uint8_t* pOldPos)
 {
     uint8_t ResoMT;
@@ -849,8 +901,6 @@ void SetScale(UsedScaleType Scaling)
 void IC_MHM_Task()
 {
     static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
-//    static uint8_t PowerUp = 1;
-//    static uint8_t StartUpCnt = 0;
     uint8_t TempResult = 0;
     uint8_t* pTemp = NULL;
     
@@ -1008,7 +1058,7 @@ void IC_MHM_Task()
                             else
                             {
                                 EXCHG_FLAG_1STREAD_SET;
-                                CommonVars.UF_OF_Cnt = 0;
+                                //CommonVars.UF_OF_Cnt = 0;
                             }
                             CopyPosition (CommonVars.pPosition, CommonVars.pLastPos);
                         }
