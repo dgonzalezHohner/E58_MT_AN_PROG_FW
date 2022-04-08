@@ -367,9 +367,14 @@ void PushButtonsTask()
                             if(PB2_DEB_VAL)
                             {
                                 CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
-                                //Check PosHigh valid
-                                ScaleCfgTimer = PB_SET_CFG_T_set;
-                                PBfsm = PB2_OFF_LAST;
+                                if (CheckUserScaling())
+                                {
+                                    //Store new user scaling in RWWEEprom
+                                    ScaleCfgTimer = PB_SET_CFG_T_set;
+                                    PBfsm = PB2_OFF_LAST;
+                                }
+                                else
+                                    PBfsm = RESTORE_DEF_PB;
                             }
                         }
                     }
@@ -394,9 +399,14 @@ void PushButtonsTask()
                             if(PB1_DEB_VAL)
                             {
                                 CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
-                                //Check PosLow valid
-                                ScaleCfgTimer = PB_SET_CFG_T_set;
-                                PBfsm = PB1_OFF_LAST;
+                                if (CheckUserScaling())
+                                {
+                                    //Store new user scaling in RWWEEprom
+                                    ScaleCfgTimer = PB_SET_CFG_T_set;
+                                    PBfsm = PB1_OFF_LAST;
+                                }
+                                else
+                                    PBfsm = RESTORE_DEF_PB;
                             }
                         }
                     }
@@ -504,12 +514,17 @@ void PushButtonsTask()
                             if(!SET2_DEB_VAL)
                             {
                                 CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
-                                ScaleCfgTimer = CT_SET_CFG_T_set;
-                                PBfsm = CT2_OFF_LAST;
+                                if (CheckUserScaling())
+                                {
+                                    //Store new user scaling in RWWEEprom
+                                    ScaleCfgTimer = CT_SET_CFG_T_set;
+                                    PBfsm = CT2_OFF_LAST;
+                                }
+                                else
+                                    PBfsm = RESTORE_DEF_CT;
                             }
                         }
                     }
-
                 }
                 else
                 {
@@ -530,8 +545,14 @@ void PushButtonsTask()
                             if(!SET1_DEB_VAL)
                             {
                                 CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
-                                ScaleCfgTimer = CT_SET_CFG_T_set;
-                                PBfsm = CT1_OFF_LAST;
+                                if (CheckUserScaling())
+                                {
+                                    //Store new user scaling in RWWEEprom
+                                    ScaleCfgTimer = CT_SET_CFG_T_set;
+                                    PBfsm = CT1_OFF_LAST;
+                                }
+                                else
+                                    PBfsm = RESTORE_DEF_CT;
                             }
                         }
                     }
