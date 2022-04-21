@@ -155,7 +155,7 @@ typedef struct
     uint8_t* pPosHighOut;
 	uint8_t* pPosOffset;
 	uint8_t* pLastPos;
-	uint8_t* pUserRange;
+	uint8_t* pPosRange;
 	uint8_t* pROverRange;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 	uint8_t ExchgFlags;
@@ -558,7 +558,7 @@ uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
 void CalcROverRange(uint8_t ResoMT);
-void CalcUserRange(uint8_t ResoMT);
+void CalcPosRange(uint8_t ResoMT, int8_t UF_OF);
 uint8_t CheckUserScaling(void);
 void ComparePosition(uint8_t* pNewPos, uint8_t* pOldPos);
 void CopyPosition (uint8_t* Source, uint8_t* Dest);
