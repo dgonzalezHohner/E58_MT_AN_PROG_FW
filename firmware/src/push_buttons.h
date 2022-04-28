@@ -252,6 +252,7 @@ extern "C" {
     void DenitPushButtonData (PBGroupType* pPBGroup);
     void PBInit (PBGroupType** pPBGroup, uint8_t length);
     void PBFree (PBGroupType** pPBGroup);
+	void PB_BISS_Detection();
     void PushButtonsTask();
     void PBDebTimerTask();
     /* Provide C++ Compatibility */

@@ -63,6 +63,7 @@
 //int global_data;
 volatile uint16_t ScaleCfgTimer = 0;
 volatile uint16_t DefCfgTimer = 0;
+static PBfsmType  PBfsm = WAIT_PB_CT;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -177,10 +178,20 @@ void PBFree (PBGroupType** pPBGroup)
     *pPBGroup = NULL;
 }
 
+void PB_BISS_Detection()
+{
+    uint8_t i;
+    
+    ScaleCfgTimer = 0;
+    DefCfgTimer = 0;
+    PBfsm = WAIT_PB_CT;
+    
+    for(i=0; i<NUMBER_PUSH_BUTTONS ; i++) pPushButtons->pPBData[i].DebTimer = 0;
+}
+
 void PushButtonsTask()
 {
     uint8_t i;
-    static PBfsmType  PBfsm = WAIT_PB_CT;
     
     //Read Current Input value and store in push buttons data
     PB1_CURRENT_VAL = PB1_Get();

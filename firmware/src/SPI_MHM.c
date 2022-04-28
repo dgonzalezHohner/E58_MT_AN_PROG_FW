@@ -64,6 +64,8 @@
 //bool IC_MHMAccessFree = 0;
 static IC_MHM_REG_ACCType* pMHMRegAccData = NULL;
 
+static SPI_IC_MHMType* pSPIMHM = NULL;
+
 //Externla DAC variables and pointers.
 static uint8_t ExtDACData[3] = {0,0,0};
 static uint8_t* pExtDACData = NULL;
@@ -72,6 +74,7 @@ static uint8_t* pExtDACData = NULL;
 static ExtEEpromDataType* pExtEEpromData = NULL;
 volatile uint8_t ExtEEpromTimer = 0;
 
+static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
 static uint8_t RegAccessfsm = 0;
 static uint8_t StatusReg[4];
 static uint8_t IC_MHMCmdfsm = 0;
@@ -246,15 +249,15 @@ void TimerTask()
 
 uint8_t IC_MHM_RegAccesTask()
 {
-    static SPI_IC_MHMType* pSPIMHM = NULL;
+    //static SPI_IC_MHMType* pSPIMHM = NULL;
     uint8_t RetVal = IC_MHM_STAT_BUSY_Msk;
     
-    if(BISS_MASTER_Get())
-    {
-        RegAccessfsm = 6;
-        NCS_MHM_Set();
-    }
-    else if(!SERCOM0_SPI_IsBusy())
+//    if(BISS_MASTER_Get())
+//    {
+//        RegAccessfsm = 6;
+//        NCS_MHM_Set();
+//    }
+    if(!SERCOM0_SPI_IsBusy())
     {
         switch (RegAccessfsm)
         {
@@ -305,10 +308,10 @@ uint8_t IC_MHM_RegAccesTask()
                 IC_MHM_SPIBufferFree(&pSPIMHM);
                 break;
                 
-            case 6:
-                if(pSPIMHM != NULL) IC_MHM_SPIBufferFree(&pSPIMHM);
-                RegAccessfsm = 0;
-                break;
+//            case 6:
+//                if(pSPIMHM != NULL) IC_MHM_SPIBufferFree(&pSPIMHM);
+//                RegAccessfsm = 0;
+//                break;
         }
     }
     return RetVal;
@@ -1020,231 +1023,238 @@ void SetScale(UsedScaleType Scaling)
     }
     SCALE_ACTIVE_WR(Scaling);
 }
+
+void IC_MHM_BISS_Detection()
+{
+    IC_MHMfsm = MHM_STARTUP_1;
+    IC_MHMAccessFree = 0;
+    IC_MHMCmdfsm = 0;
+    IC_MHMProcFsm = 0;
+    if(pMHMRegAccData != NULL) MHMRegAccBufferFree(&pMHMRegAccData);
+
+    RegAccessfsm = 0;
+    NCS_MHM_Set();
+    if(pSPIMHM != NULL) IC_MHM_SPIBufferFree(&pSPIMHM);
+
+    CommonVars.ExchgFlags &= ~EXCHG_FLAG_PRESETON;
+}
+
 void IC_MHM_Task()
 {
-    static IC_MHMfsmType IC_MHMfsm = MHM_STARTUP_1;
     uint8_t TempResult = 0;
     uint8_t* pTemp = NULL;
-    
-    if(BISS_MASTER_Get())
+
+    switch (IC_MHMfsm)
     {
-        IC_MHMfsm = MHM_STARTUP_1;
-        IC_MHMAccessFree = 0;
-        IC_MHMCmdfsm = 0;
-        IC_MHMProcFsm = 0;
-        if(pMHMRegAccData != NULL) MHMRegAccBufferFree(&pMHMRegAccData);
-    }
-    else
-    {
-        switch (IC_MHMfsm)
-        {
-            case MHM_STARTUP_1:
-                IC_MHMAccessFree = 0;
-                MHMTimer = START_UP_TIMER_SET;
-                IC_MHMfsm = MHM_STARTUP_2;
-                break;
-            //Wait start up time then check NERR pin
-            case MHM_STARTUP_2:
-                if(MHMTimer == (uint8_t)1)
+        case MHM_STARTUP_1:
+            IC_MHMAccessFree = 0;
+            MHMTimer = START_UP_TIMER_SET;
+            IC_MHMfsm = MHM_STARTUP_2;
+            break;
+        //Wait start up time then check NERR pin
+        case MHM_STARTUP_2:
+            if(MHMTimer == (uint8_t)1)
+            {
+                if(NERR_Get())
                 {
-                    if(NERR_Get())
-                    {
-                        IC_MHMfsm = (!EXCHG_FLAG_PRESET)?READ_RESO_DIR:READ_POS_1;
-                    }
-                    else IC_MHMfsm = MHM_STARTUP_1;
+                    if(EXCHG_FLAG_PRESETON) IC_MHMfsm = PV_PRESET;
+                    else IC_MHMfsm = (!EXCHG_FLAG_PRESET)?READ_RESO_DIR:READ_POS_1;
                 }
-                break;
-                
-            case READ_RESO_DIR:
-                //Read IC-MHM registers 0 and 1 and get RESO_MT i RESO_ST
-                pTemp = (uint8_t*)malloc(USER_SCL_CFG_LEN);
-                TempResult = IC_MHM_RegRdCtd(IC_MHM_REG0_ADDR, pTemp, USER_SCL_CFG_LEN);
-                if(TempResult & IC_MHM_STAT_VALID_Msk)
+                else IC_MHMfsm = MHM_STARTUP_1;
+            }
+            break;
+
+        case READ_RESO_DIR:
+            //Read IC-MHM registers 0 and 1 and get RESO_MT i RESO_ST
+            pTemp = (uint8_t*)malloc(IC_MHM_INTRPLTR_LEN);
+            TempResult = IC_MHM_RegRdCtd(IC_MHM_REG0_ADDR, pTemp, IC_MHM_INTRPLTR_LEN);
+            if(TempResult & IC_MHM_STAT_VALID_Msk)
+            {
+                CommonVars.ResoAndDir = 0x00 | (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_MHM_DIR_POS);
+                pTemp++;
+                CommonVars.ResoAndDir |= (*pTemp & 0x77);
+                if(CommonVars.pSPIPosition != NULL)
                 {
-                    CommonVars.ResoAndDir = 0x00 | (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_MHM_DIR_POS);
-                    pTemp++;
-                    CommonVars.ResoAndDir |= (*pTemp & 0x77);
-                    if(CommonVars.pSPIPosition != NULL)
-                    {
-                        free(CommonVars.pSPIPosition);
-                        CommonVars.pSPIPosition = NULL;
-                    }
-                    switch (RESDIR_RESO_MT)
-                    {
-                        case 0:
-                            CommonVars.SPIPosByteLen = 3;
-                            break;
-                        case 1:
-                        case 2:
-                            CommonVars.SPIPosByteLen = 4;
-                            break;
-                        case 3:
-                        case 4:
-                            CommonVars.SPIPosByteLen = 5;
-                            break;
-                        case 5:
-                        case 6:
-                            CommonVars.SPIPosByteLen = 6;
-                            break;
-                        default:
-                            CommonVars.SPIPosByteLen = 7;
-                            break;
-                    }
-                    CommonVars.pSPIPosition = (uint8_t*)malloc(CommonVars.SPIPosByteLen);
-                    IC_MHMfsm = READ_CFG;
+                    free(CommonVars.pSPIPosition);
+                    CommonVars.pSPIPosition = NULL;
                 }
-                else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+                switch (RESDIR_RESO_MT)
                 {
-                    IC_MHMfsm = READ_RESO_DIR;                
+                    case 0:
+                        CommonVars.SPIPosByteLen = 3;
+                        break;
+                    case 1:
+                    case 2:
+                        CommonVars.SPIPosByteLen = 4;
+                        break;
+                    case 3:
+                    case 4:
+                        CommonVars.SPIPosByteLen = 5;
+                        break;
+                    case 5:
+                    case 6:
+                        CommonVars.SPIPosByteLen = 6;
+                        break;
+                    default:
+                        CommonVars.SPIPosByteLen = 7;
+                        break;
                 }
-                free(pTemp);
-                break;
-                
-            case READ_CFG:
-                pTemp = (uint8_t*)RWWEE_ENC_CFG_ADDR;
-                if(pTemp[RWWEE_ENC_CFG_TOTAL_LEN-1] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_TOTAL_LEN-1))
-                {    
-                    memcpy((uint8_t*)(CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
-                    if((USR_SCL_EN == SCALABLE)&&(USR_SCL_AVAIL == RWWEE_ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
-                    {
-                        SetScale(USR_SCALE);
-                        memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
-                        memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
-                        CalcPosRange((RESDIR_RESO_MT>6)?8:RESDIR_RESO_MT, USR_SCL_UF_OF);
-                        CalcROverRange((RESDIR_RESO_MT>6)?8:RESDIR_RESO_MT);
-                    }
-                    else
-                    {
-                        SetScale(FACTORY_SCALE);
-                    }
+                CommonVars.pSPIPosition = (uint8_t*)malloc(CommonVars.SPIPosByteLen);
+                IC_MHMfsm = READ_CFG;
+            }
+            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+            {
+                IC_MHMfsm = READ_RESO_DIR;                
+            }
+            free(pTemp);
+            break;
+
+        case READ_CFG:
+            pTemp = (uint8_t*)RWWEE_ENC_CFG_ADDR;
+            if(pTemp[RWWEE_ENC_CFG_TOTAL_LEN-1] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_TOTAL_LEN-1))
+            {    
+                memcpy((uint8_t*)(CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
+                if((USR_SCL_EN == SCALABLE)&&(USR_SCL_AVAIL == RWWEE_ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
+                {
+                    SetScale(USR_SCALE);
+                    memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
+                    memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
+                    CalcPosRange((RESDIR_RESO_MT>6)?8:RESDIR_RESO_MT, USR_SCL_UF_OF);
+                    CalcROverRange((RESDIR_RESO_MT>6)?8:RESDIR_RESO_MT);
                 }
                 else
                 {
-                    SetScale(DEFAULT_SCALE);
+                    SetScale(FACTORY_SCALE);
                 }
-                IC_MHMfsm = READ_POS_1;
-                break;
+            }
+            else
+            {
+                SetScale(DEFAULT_SCALE);
+            }
+            IC_MHMfsm = READ_POS_1;
+            break;
 
-            case READ_POS_1:
-                CommonVars.ExchgFlags = 0;
-                IC_MHMAccessFree = 1;
+        case READ_POS_1:
+            CommonVars.ExchgFlags = 0;
+            IC_MHMAccessFree = 1;
+            MHMTimer = READ_POS_TIMER_SET;
+            IC_MHMfsm = READ_POS_2;
+            break;
+
+        case READ_POS_2:
+            if(MHMTimer == (uint8_t)1)
+            {
                 MHMTimer = READ_POS_TIMER_SET;
-                IC_MHMfsm = READ_POS_2;
-                break;
-                
-            case READ_POS_2:
-                if(MHMTimer == (uint8_t)1)
+                if(IC_MHMAccessFree)
                 {
-                    MHMTimer = READ_POS_TIMER_SET;
-                    if(IC_MHMAccessFree)
-                    {
-                        IC_MHMAccessFree = 0;
-                        IC_MHMfsm = READ_POS_3;
-                    }
+                    IC_MHMAccessFree = 0;
+                    IC_MHMfsm = READ_POS_3;
                 }
-                else if(IC_MHMAccessFree)
+            }
+            else if(IC_MHMAccessFree)
+            {
+                if(EXCHG_FLAG_PRESET)
                 {
-                    if(EXCHG_FLAG_PRESET)
-                    {
-                        IC_MHMAccessFree = 0;
-                        IC_MHMfsm = PV_PRESET;
-                    }
+                    IC_MHMAccessFree = 0;
+                    IC_MHMfsm = PV_PRESET;
                 }
-                break;
-                
-            case READ_POS_3:
-                TempResult = IC_MHM_ReadPos(CommonVars.pSPIPosition, CommonVars.SPIPosByteLen);
-                if(TempResult & IC_MHM_STAT_VALID_Msk)
+            }
+            break;
+
+        case READ_POS_3:
+            TempResult = IC_MHM_ReadPos(CommonVars.pSPIPosition, CommonVars.SPIPosByteLen);
+            if(TempResult & IC_MHM_STAT_VALID_Msk)
+            {
+                //Check last byte received during SPI Read Position
+                if(!(CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-1] & IC_MHM_SPI_nERR_Msk)) 
                 {
-                    //Check last byte received during SPI Read Position
-                    if(!(CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-1] & IC_MHM_SPI_nERR_Msk)) 
-                    {
-                        //nERR bit detectec
-                        IC_MHMfsm = READ_STATUS_1;
-                    }
-                    else
-                    {
-                        //Check for nWARN bit
-                        if(!(CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-1] & IC_MHM_SPI_nWARN_Msk))
-                        {
-                            //nWARN bit detectec, excessive rotor speed
-                        }
-                        
-                        if(SCALE_ACTIVE_RD == USR_SCALE)
-                        {
-                            BuildPosition(SCALE_ACTIVE_RD);
-                            if(EXCHG_FLAG_1STREAD)
-                            {
-                                
-                                ComparePosition(CommonVars.pPosition, CommonVars.pLastPos);
-                                EXCHG_FLAG_NEWPOS_SET;
-                            }
-                            else
-                            {
-                                EXCHG_FLAG_1STREAD_SET;
-                                //CommonVars.UF_OF_Cnt = 0;
-                            }
-                            CopyPosition (CommonVars.pPosition, CommonVars.pLastPos);
-                        }
-                        else
-                        {   
-                            BuildPosition(SCALE_ACTIVE_RD);
-                            EXCHG_FLAG_NEWPOS_SET;
-                        }
-                        IC_MHMAccessFree = 1;
-                        IC_MHMfsm = READ_POS_2;
-                    }
-                }
-                else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
-                {
-                    IC_MHMfsm = READ_POS_2;                
-                }
-                break;
-                
-            case READ_STATUS_1:
-                TempResult = IC_MHM_RdStatus(StatusReg);
-                if(TempResult & IC_MHM_STAT_VALID_Msk)
-                {
-                    //Check Status Register 1, address 0x70
-                    if(StatusReg[0])
-                    {
-                        //error detected
-                    }
-                    IC_MHMAccessFree = 1;
-                    IC_MHMfsm = READ_POS_2;
-                }
-                else if (TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
-                {
+                    //nERR bit detected
                     IC_MHMfsm = READ_STATUS_1;
                 }
-                break;
-                
-            case PV_PRESET:
-                TempResult = IC_MHM_PresetPV();
-                if(TempResult & IC_MHM_STAT_VALID_Msk)
+                else
                 {
-                    IC_MHMfsm = MHM_PRESET;
-                }
-                else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
-                {
+                    //Check for nWARN bit
+                    if(!(CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-1] & IC_MHM_SPI_nWARN_Msk))
+                    {
+                        //nWARN bit detectec, excessive rotor speed
+                    }
+
+                    if(SCALE_ACTIVE_RD == USR_SCALE)
+                    {
+                        BuildPosition(SCALE_ACTIVE_RD);
+                        if(EXCHG_FLAG_1STREAD)
+                        {
+
+                            ComparePosition(CommonVars.pPosition, CommonVars.pLastPos);
+                            EXCHG_FLAG_NEWPOS_SET;
+                        }
+                        else
+                        {
+                            EXCHG_FLAG_1STREAD_SET;
+                            //CommonVars.UF_OF_Cnt = 0;
+                        }
+                        CopyPosition (CommonVars.pPosition, CommonVars.pLastPos);
+                    }
+                    else
+                    {   
+                        BuildPosition(SCALE_ACTIVE_RD);
+                        EXCHG_FLAG_NEWPOS_SET;
+                    }
                     IC_MHMAccessFree = 1;
                     IC_MHMfsm = READ_POS_2;
                 }
-                break;
-                
-            case MHM_PRESET:
-                TempResult = IC_MHM_RegWr(IC_MHM_PRES_RES_REG, IC_MHM_0x74_PRESET_Msk);
-                if(TempResult & IC_MHM_STAT_VALID_Msk)
+            }
+            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+            {
+                IC_MHMfsm = READ_POS_2;                
+            }
+            break;
+
+        case READ_STATUS_1:
+            TempResult = IC_MHM_RdStatus(StatusReg);
+            if(TempResult & IC_MHM_STAT_VALID_Msk)
+            {
+                //Check Status Register 1, address 0x70
+                if(StatusReg[0])
                 {
-                    IC_MHMfsm = MHM_STARTUP_1;
+                    //error detected
                 }
-                else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
-                {
-                    IC_MHMAccessFree = 1;
-                    IC_MHMfsm = READ_POS_2;
-                }
-                break;
-        }
+                IC_MHMAccessFree = 1;
+                IC_MHMfsm = READ_POS_2;
+            }
+            else if (TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+            {
+                IC_MHMfsm = READ_STATUS_1;
+            }
+            break;
+
+        case PV_PRESET:
+            EXCHG_FLAG_PRESETON_SET;
+            TempResult = IC_MHM_PresetPV();
+            if(TempResult & IC_MHM_STAT_VALID_Msk)
+            {
+                IC_MHMfsm = MHM_PRESET;
+            }
+            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+            {
+                IC_MHMAccessFree = 1;
+                IC_MHMfsm = READ_POS_2;
+            }
+            break;
+
+        case MHM_PRESET:
+            TempResult = IC_MHM_RegWr(IC_MHM_PRES_RES_REG, IC_MHM_0x74_PRESET_Msk);
+            if(TempResult & IC_MHM_STAT_VALID_Msk)
+            {
+                IC_MHMfsm = MHM_STARTUP_1;
+                EXCHG_FLAG_PRESETON_CLR;
+            }
+            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+            {
+                IC_MHMAccessFree = 1;
+                IC_MHMfsm = READ_POS_2;
+            }
+            break;
     }
 }
 

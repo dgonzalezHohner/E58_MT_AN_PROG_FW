@@ -149,7 +149,7 @@ typedef struct
     uint8_t Scaling;
     uint8_t ResoAndDir;
     uint8_t* pSPIPosition;
-    uint8_t SPIPosByteLen;  // includes MT bytes, ST bytes and Repport byte (NWARN and nERR bits) in Big Endian, MSB first as received from IC-MHM
+    uint8_t SPIPosByteLen;  // includes MT bytes, ST bytes and Report byte (NWARN and nERR bits) in Big Endian, MSB first as received from IC-MHM
     uint8_t* pPosition;
     uint8_t* pPosLowOut;
     uint8_t* pPosHighOut;
@@ -251,6 +251,12 @@ bool IC_MHMAccessFree;
 #define EXCHG_FLAG_1STREAD_SET		CommonVars.ExchgFlags |= (EXCHG_FLAG_1STREAD_MSK<<EXCHG_FLAG_1STREAD_POS)
 #define EXCHG_FLAG_1STREAD_CLR		CommonVars.ExchgFlags &= (~(EXCHG_FLAG_1STREAD_MSK<<EXCHG_FLAG_1STREAD_POS))
 
+#define EXCHG_FLAG_PRESETON_POS		((uint8_t)3)
+#define EXCHG_FLAG_PRESETON_MSK		((uint8_t)1)
+#define EXCHG_FLAG_PRESETON			((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_PRESETON_MSK<<EXCHG_FLAG_PRESETON_POS))>>EXCHG_FLAG_PRESETON_POS))
+#define EXCHG_FLAG_PRESETON_SET		CommonVars.ExchgFlags |= (EXCHG_FLAG_PRESETON_MSK<<EXCHG_FLAG_PRESETON_POS)
+#define EXCHG_FLAG_PRESETON_CLR		CommonVars.ExchgFlags &= (~(EXCHG_FLAG_PRESETON_MSK<<EXCHG_FLAG_PRESETON_POS))
+
 //UF_OF_Cnt
 #define UF_OV_MAX					(100)
 #define UF_OV_MIN					((-1)*UF_OV_MAX)
@@ -319,6 +325,8 @@ enum SPI0_STATUS
 #define IC_MHM_STAT_DISMISS_Msk     (uint8_t)0x08   //Illegal Address
 #define IC_MHM_STAT_ERROR_Msk       (uint8_t)0x80   //Invalid opcode
                 
+#define IC_MHM_INTRPLTR_LEN			(uint8_t)2
+
 #define IC_MHM_REG0_ADDR            (uint8_t)0x00
 #define IC_MHM_REG0_DIR_POS         (uint8_t)5
 #define IC_MHM_REG0_DIR_MSK         (uint8_t)1
@@ -565,6 +573,7 @@ void CopyPosition (uint8_t* Source, uint8_t* Dest);
 void BuildPosition (UsedScaleType Scaling);
 void pPosSetUp (uint8_t ResoMT);
 void SetScale(UsedScaleType Scaling);
+void IC_MHM_BISS_Detection();
 void IC_MHM_Task();
 
 uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length);
