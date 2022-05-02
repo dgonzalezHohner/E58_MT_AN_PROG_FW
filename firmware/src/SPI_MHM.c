@@ -558,68 +558,53 @@ void CalcROverRange(uint8_t ResoMT)
 {
     uint8_t i;
     
-    switch (ResoMT)
+    if(!ResoMT)
     {
-        case 0:
-            *((uint16_t*)(CommonVars.pROverRange)) = 0xFFFF >> RESDIR_RESO_ST;
-            break;
-
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-            for(i=(16-(4*ResoMT));i<=16;i++)
-            {
-                if((0xFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint32_t*)CommonVars.pPosRange))) break;
-            }
-            if(i<=16) (*((uint32_t*)CommonVars.pROverRange)) = (0xFFFFFFFF >> (i-1+RESDIR_RESO_ST));
-            else (*((uint32_t*)CommonVars.pROverRange)) = 0x0000FFFF >> RESDIR_RESO_ST;
-            
-            break;
-
-        default:
-            for(i=(32-(4*ResoMT));i<=32;i++)
-            {
-                if((0x0000FFFFFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint64_t*)CommonVars.pPosRange))) break;
-            }
-            if(i<=32) (*((uint64_t*)CommonVars.pROverRange)) = (0x0000FFFFFFFFFFFF >> (i-1+RESDIR_RESO_ST));
-            else (*((uint64_t*)CommonVars.pROverRange)) = 0x000000000000FFFF >> RESDIR_RESO_ST;
-
-            break;
+        *((uint16_t*)(CommonVars.pROverRange)) = 0xFFFF >> RESDIR_RESO_ST;
+    }
+    else if(ResoMT<=16)
+    {
+        for(i=(16-ResoMT);i<=16;i++)
+        {
+            if((0xFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint32_t*)CommonVars.pPosRange))) break;
+        }
+        if(i<=16) (*((uint32_t*)CommonVars.pROverRange)) = (0xFFFFFFFF >> (i-1+RESDIR_RESO_ST));
+        else (*((uint32_t*)CommonVars.pROverRange)) = 0x0000FFFF >> RESDIR_RESO_ST;
+    }
+    else
+    {
+        for(i=(32-ResoMT);i<=32;i++)
+        {
+            if((0x0000FFFFFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint64_t*)CommonVars.pPosRange))) break;
+        }
+        if(i<=32) (*((uint64_t*)CommonVars.pROverRange)) = (0x0000FFFFFFFFFFFF >> (i-1+RESDIR_RESO_ST));
+        else (*((uint64_t*)CommonVars.pROverRange)) = 0x000000000000FFFF >> RESDIR_RESO_ST;
     }
 }
 
 void CalcPosRange(uint8_t ResoMT, int8_t UF_OF)
 {
-    switch (ResoMT)
+    if(!ResoMT)
     {
-        case 0:
-            (*((uint16_t*)CommonVars.pPosRange)) = ((*((uint16_t*)CommonVars.pPosHighOut))<=(*((uint16_t*)CommonVars.pPosLowOut))) ?
-                            (*((uint16_t*)CommonVars.pPosLowOut))-(*((uint16_t*)CommonVars.pPosHighOut)):
-                            (*((uint16_t*)CommonVars.pPosHighOut))-(*((uint16_t*)CommonVars.pPosLowOut));
-            if(UF_OF != 0) (*((uint16_t*)CommonVars.pPosRange)) = (~(*((uint16_t*)CommonVars.pPosRange))+1);
-            break;
-
-        case 1:
-        case 2:
-        case 3:
-        case 4:
-            (*((uint32_t*)CommonVars.pPosRange)) = ((*((uint32_t*)CommonVars.pPosHighOut))<=(*((uint32_t*)CommonVars.pPosLowOut))) ?
-                                            (*((uint32_t*)CommonVars.pPosLowOut))-(*((uint32_t*)CommonVars.pPosHighOut)):
-                                            (*((uint32_t*)CommonVars.pPosHighOut))-(*((uint32_t*)CommonVars.pPosLowOut));
-            if(UF_OF != 0) (*((uint32_t*)CommonVars.pPosRange)) = (~(*((uint32_t*)CommonVars.pPosRange))+1);
-            break;
-
-        default:
-            (*((uint64_t*)CommonVars.pPosRange)) = ((*((uint64_t*)CommonVars.pPosHighOut))<=(*((uint64_t*)CommonVars.pPosLowOut))) ?
-                                            0x0000FFFFFFFFFFFF-((*((uint64_t*)CommonVars.pPosLowOut))-(*((uint64_t*)CommonVars.pPosHighOut))-1):
-                                            0x0000FFFFFFFFFFFF-((*((uint64_t*)CommonVars.pPosHighOut))-(*((uint64_t*)CommonVars.pPosLowOut))-1);
-            
-            if(UF_OF != 0) (*((uint64_t*)CommonVars.pPosRange)) = ((~(*((uint64_t*)CommonVars.pPosRange))+1) & 0x0000FFFFFFFFFFFF);
-            break;
+        (*((uint16_t*)CommonVars.pPosRange)) = ((*((uint16_t*)CommonVars.pPosHighOut))<=(*((uint16_t*)CommonVars.pPosLowOut))) ?
+                        (*((uint16_t*)CommonVars.pPosLowOut))-(*((uint16_t*)CommonVars.pPosHighOut)):
+                        (*((uint16_t*)CommonVars.pPosHighOut))-(*((uint16_t*)CommonVars.pPosLowOut));
+        if(UF_OF != 0) (*((uint16_t*)CommonVars.pPosRange)) = (~(*((uint16_t*)CommonVars.pPosRange))+1);
     }
-    //new-------
-    
+    else if(ResoMT<=16)
+    {
+        (*((uint32_t*)CommonVars.pPosRange)) = ((*((uint32_t*)CommonVars.pPosHighOut))<=(*((uint32_t*)CommonVars.pPosLowOut))) ?
+                        (*((uint32_t*)CommonVars.pPosLowOut))-(*((uint32_t*)CommonVars.pPosHighOut)):
+                        (*((uint32_t*)CommonVars.pPosHighOut))-(*((uint32_t*)CommonVars.pPosLowOut));
+        if(UF_OF != 0) (*((uint32_t*)CommonVars.pPosRange)) = (~(*((uint32_t*)CommonVars.pPosRange))+1);
+    }
+    else
+    {
+        (*((uint64_t*)CommonVars.pPosRange)) = ((*((uint64_t*)CommonVars.pPosHighOut))<=(*((uint64_t*)CommonVars.pPosLowOut))) ?
+                        0x0000FFFFFFFFFFFF-((*((uint64_t*)CommonVars.pPosLowOut))-(*((uint64_t*)CommonVars.pPosHighOut))-1):
+                        0x0000FFFFFFFFFFFF-((*((uint64_t*)CommonVars.pPosHighOut))-(*((uint64_t*)CommonVars.pPosLowOut))-1);
+        if(UF_OF != 0) (*((uint64_t*)CommonVars.pPosRange)) = ((~(*((uint64_t*)CommonVars.pPosRange))+1) & 0x0000FFFFFFFFFFFF);
+    }
 }
 
 uint8_t CheckUserScaling()
