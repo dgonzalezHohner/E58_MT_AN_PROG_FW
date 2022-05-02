@@ -124,7 +124,7 @@ typedef enum
     DEFAULT_SCALE
 }UsedScaleType;
 
-#define DEFAULT_RESOMT	0
+#define DEFAULT_RESOMT	0 // from 0 to 32
 
 #if DEFAULT_RESOMT > 7
 	#error "Default MT resolution 'DEFAULT_RESOMT' must be between 0 and 7"
@@ -181,11 +181,7 @@ bool IC_MHMAccessFree;
 #define USR_SCL_UF_OF_SET			CommonVars.UserSclCfg[0] |= (USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)
 #define USR_SCL_UF_OF_CLR			CommonVars.UserSclCfg[0] &= (~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))
 
-#define USR_SCL_RESOMT_POS          ((uint8_t)3)
-#define USR_SCL_RESOMT_MSK          ((uint8_t)7)
-#define USR_SCL_RESOMT	            ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
-
-#define USR_SCL_FRACT_RNG_USE_POS   ((uint8_t)6)
+#define USR_SCL_FRACT_RNG_USE_POS   ((uint8_t)3)
 #define USR_SCL_FRACT_RNG_USE_MSK   ((uint8_t)1)
 #define USR_SCL_FRACT_RNG_USE       ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_FRACT_RNG_USE_MSK<<USR_SCL_FRACT_RNG_USE_POS))>>USR_SCL_FRACT_RNG_USE_POS))
 
@@ -203,10 +199,14 @@ bool IC_MHMAccessFree;
 #define USR_SCL_MHM_RESOST			((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOST_MSK<<USR_SCL_MHM_RESOST_POS))>>USR_SCL_MHM_RESOST_POS))
 
 //UserSclCfg[2]
-#define USR_SCL_DAC_RESO_POS	    ((uint8_t)0)
-#define USR_SCL_DAC_RESO_MSK	    ((uint8_t)7)
-#define USR_SCL_DAC_RESO			((uint8_t)((CommonVars.UserSclCfg[2]&(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS))>>USR_SCL_DAC_RESO_POS))
-#define USR_SCL_DAC_RESO_WR(val)	CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS)))|((val&USR_SCL_DAC_RESO_MSK)<<USR_SCL_DAC_RESO_POS)
+#define USR_SCL_RESOMT_POS          ((uint8_t)0)
+#define USR_SCL_RESOMT_MSK          ((uint8_t)0x3F)
+#define USR_SCL_RESOMT	            ((uint8_t)((CommonVars.UserSclCfg[2]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+
+//#define USR_SCL_DAC_RESO_POS	    ((uint8_t)0)
+//#define USR_SCL_DAC_RESO_MSK	    ((uint8_t)7)
+//#define USR_SCL_DAC_RESO			((uint8_t)((CommonVars.UserSclCfg[2]&(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS))>>USR_SCL_DAC_RESO_POS))
+//#define USR_SCL_DAC_RESO_WR(val)	CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS)))|((val&USR_SCL_DAC_RESO_MSK)<<USR_SCL_DAC_RESO_POS)
 
 //ResoAndDir
 #define RESDIR_RESO_MT_POS			((uint8_t)0)
@@ -573,6 +573,7 @@ void CopyPosition (uint8_t* Source, uint8_t* Dest);
 void BuildPosition (UsedScaleType Scaling);
 void pPosSetUp (uint8_t ResoMT);
 void SetScale(UsedScaleType Scaling);
+uint8_t CalcMTResCode (uint8_t MHM_MT_Res);
 void IC_MHM_BISS_Detection();
 void IC_MHM_Task();
 

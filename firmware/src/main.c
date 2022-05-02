@@ -50,13 +50,13 @@ int main ( void )
         SYS_Tasks ( );
         if(BISS_MASTER_Get())
         {
-//            IC_MHM_BISS_Detection();
-//            PB_BISS_Detection();
+            IC_MHM_BISS_Detection();
+            PB_BISS_Detection();
         }
         else
         {
-//            PushButtonsTask();
-//            IC_MHM_Task();
+            PushButtonsTask();
+            IC_MHM_Task();
         }
         
     }
