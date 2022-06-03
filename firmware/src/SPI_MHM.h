@@ -157,6 +157,9 @@ typedef struct
 	uint8_t* pLastPos;
 	uint8_t* pPosRange;
 	uint8_t* pROverRange;
+	uint8_t* pNormPos;
+	uint8_t MultFactor;
+	uint8_t	ShiftFactor;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 	uint8_t ExchgFlags;
 	int8_t	UF_OF_Cnt;
@@ -199,9 +202,9 @@ bool IC_MHMAccessFree;
 #define USR_SCL_MHM_RESOST			((uint8_t)((CommonVars.UserSclCfg[1]&(USR_SCL_MHM_RESOST_MSK<<USR_SCL_MHM_RESOST_POS))>>USR_SCL_MHM_RESOST_POS))
 
 //UserSclCfg[2]
-#define USR_SCL_RESOMT_POS          ((uint8_t)0)
-#define USR_SCL_RESOMT_MSK          ((uint8_t)0x3F)
-#define USR_SCL_RESOMT	            ((uint8_t)((CommonVars.UserSclCfg[2]&(USR_SCL_RESOMT_MSK<<USR_SCL_RESOMT_POS))>>USR_SCL_RESOMT_POS))
+#define FACTORY_RESOMT_POS          ((uint8_t)0)
+#define FACTORY_RESOMT_MSK          ((uint8_t)0x3F)
+#define FACTORY_RESOMT	            ((uint8_t)((CommonVars.UserSclCfg[2]&(FACTORY_RESOMT_MSK<<FACTORY_RESOMT_POS))>>FACTORY_RESOMT_POS))
 
 //#define USR_SCL_DAC_RESO_POS	    ((uint8_t)0)
 //#define USR_SCL_DAC_RESO_MSK	    ((uint8_t)7)
@@ -569,7 +572,7 @@ void CalcROverRange(uint8_t ResoMT);
 void CalcPosRange(uint8_t ResoMT, int8_t UF_OF);
 uint8_t CheckUserScaling(void);
 void ComparePosition(uint8_t* pNewPos, uint8_t* pOldPos);
-void CopyPosition (uint8_t* Source, uint8_t* Dest);
+void CopyPosition (uint8_t* Source , uint8_t* Dest);
 void BuildPosition (UsedScaleType Scaling);
 void pPosSetUp (uint8_t ResoMT);
 void SetScale(UsedScaleType Scaling);

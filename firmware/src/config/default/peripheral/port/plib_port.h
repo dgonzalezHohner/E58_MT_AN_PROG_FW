@@ -175,6 +175,11 @@
 #define SCK_DAC_PIN                  PORT_PIN_PA17
 
 /*** Macros for NCS_DAC pin ***/
+#define NCS_DAC_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 18U))
+#define NCS_DAC_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 18U))
+#define NCS_DAC_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 18U))
+#define NCS_DAC_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 18U))
+#define NCS_DAC_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 18U))
 #define NCS_DAC_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 18U)) & 0x01U)
 #define NCS_DAC_PIN                  PORT_PIN_PA18
 

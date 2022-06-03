@@ -1330,6 +1330,13 @@ children:
       - type: Dynamic
         attributes: {id: core, value: '17'}
   - type: String
+    attributes: {id: PIN_19_DIR}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: Out}
+  - type: String
     attributes: {id: PIN_19_FUNCTION_NAME}
     children:
     - type: Values
@@ -1342,7 +1349,7 @@ children:
     - type: Values
       children:
       - type: User
-        attributes: {value: SERCOM1_PAD2}
+        attributes: {value: GPIO}
   - type: Integer
     attributes: {id: PIN_19_GROUP}
     children:
@@ -1350,6 +1357,20 @@ children:
       children:
       - type: Dynamic
         attributes: {id: core, value: '0'}
+  - type: String
+    attributes: {id: PIN_19_INEN}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: ''}
+  - type: String
+    attributes: {id: PIN_19_LAT}
+    children:
+    - type: Values
+      children:
+      - type: User
+        attributes: {value: High}
   - type: String
     attributes: {id: PIN_19_MODE}
     children:
@@ -1363,7 +1384,7 @@ children:
     - type: Values
       children:
       - type: User
-        attributes: {value: C}
+        attributes: {value: GPIO}
   - type: String
     attributes: {id: PIN_19_PORT_GROUP}
     children:
@@ -2560,14 +2581,14 @@ children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: '0x4020'}
+        attributes: {id: core, value: '0x44020'}
   - type: String
     attributes: {id: PORT_GROUP_0_OUT}
     children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: '0xc0000020'}
+        attributes: {id: core, value: '0xc0040020'}
   - type: String
     attributes: {id: PORT_GROUP_0_PAD_10}
     children:
@@ -2770,7 +2791,7 @@ children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: '0x1'}
+        attributes: {id: core, value: '0x0'}
   - type: String
     attributes: {id: PORT_GROUP_0_PINCFG19}
     children:
@@ -3106,7 +3127,7 @@ children:
     - type: Values
       children:
       - type: Dynamic
-        attributes: {id: core, value: '0x22'}
+        attributes: {id: core, value: '0x20'}
   - type: Boolean
     attributes: {id: PORT_GROUP_1}
     children:
