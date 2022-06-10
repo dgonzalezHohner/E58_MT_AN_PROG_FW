@@ -158,6 +158,7 @@ typedef struct
 	uint8_t* pPosRange;
 	uint8_t* pROverRange;
 	uint8_t* pNormPos;
+	uint8_t* pTransition;
 	uint8_t MultFactor;
 	uint8_t	ShiftFactor;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
@@ -568,6 +569,8 @@ uint8_t IC_MHM_SetFIO(uint8_t Data);
 uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
+void CalcDACsVal (void);
+void CalcPosTransition(uint8_t ResoMT);
 void CalcROverRange(uint8_t ResoMT);
 void CalcPosRange(uint8_t ResoMT, int8_t UF_OF);
 uint8_t CheckUserScaling(void);
