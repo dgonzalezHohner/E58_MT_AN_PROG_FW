@@ -159,12 +159,14 @@ typedef struct
 	uint8_t* pROverRange;
 	uint8_t* pNormPos;
 	uint8_t* pTransition;
-	uint8_t MultFactor;
-	uint8_t	ShiftFactor;
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 	uint8_t ExchgFlags;
 	int8_t	UF_OF_Cnt;
-	
+	uint16_t ExtDACMax;
+	uint16_t IntDACLow;
+	uint16_t IntDACLowLS;
+	uint16_t IntDACHihgh;
+	uint16_t IntDACHighLS;
 }CommonVarsType;
 
 CommonVarsType CommonVars;
@@ -173,21 +175,43 @@ bool IC_MHMAccessFree;
 //UserSclCfg[0]
 #define USR_SCL_EN_POS              ((uint8_t)0)
 #define USR_SCL_EN_MSK              ((uint8_t)1)
-#define USR_SCL_EN                  ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
+#define USR_SCL_EN_RD               ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
+#define USR_SCL_EN_WR(val)			(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_EN_MSK<<USR_SCL_EN_POS)))|((((uint8_t)val)&USR_SCL_EN_MSK)<<USR_SCL_EN_POS))
 
 #define USR_SCL_AVAIL_POS           ((uint8_t)1)
 #define USR_SCL_AVAIL_MSK           ((uint8_t)1)
-#define USR_SCL_AVAIL               ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+#define USR_SCL_AVAIL_RD            ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+#define ENC_CFG_AVAIL				((uint8_t)0)
+#define ENC_CFG_NOT_AVAIL			((uint8_t)1)
+#define USR_SCL_AVAIL_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS)))|((val&USR_SCL_AVAIL_MSK)<<USR_SCL_AVAIL_POS))
 
 #define USR_SCL_UF_OF_POS			((uint8_t)2)
 #define USR_SCL_UF_OF_MSK			((uint8_t)1)
-#define USR_SCL_UF_OF				((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))>>USR_SCL_UF_OF_POS))
-#define USR_SCL_UF_OF_SET			CommonVars.UserSclCfg[0] |= (USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)
-#define USR_SCL_UF_OF_CLR			CommonVars.UserSclCfg[0] &= (~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))
+#define USR_SCL_UF_OF_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))>>USR_SCL_UF_OF_POS))
+#define USR_SCL_OVFLW				((uint8_t)1)
+#define USR_SCL_NOT_OVFLW			((uint8_t)0)
+#define USR_SCL_UF_OF_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)))|((val&USR_SCL_UF_OF_MSK)<<USR_SCL_UF_OF_POS))
 
-#define USR_SCL_FRACT_RNG_USE_POS   ((uint8_t)3)
-#define USR_SCL_FRACT_RNG_USE_MSK   ((uint8_t)1)
-#define USR_SCL_FRACT_RNG_USE       ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_FRACT_RNG_USE_MSK<<USR_SCL_FRACT_RNG_USE_POS))>>USR_SCL_FRACT_RNG_USE_POS))
+#define USR_SCL_FRACT_RNG_POS		((uint8_t)3)
+#define USR_SCL_FRACT_RNG_MSK		((uint8_t)1)
+#define USR_SCL_FRACT_RNG_RD		((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_FRACT_RNG_MSK<<USR_SCL_FRACT_RNG_POS))>>USR_SCL_FRACT_RNG_POS))
+#define USR_SCL_FRACT_RNG_USED		((uint8_t)1)
+#define USR_SCL_FRACT_RNG_UNUSED	((uint8_t)0)
+#define USR_SCL_FRACT_RNG_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_FRACT_RNG_MSK<<USR_SCL_FRACT_RNG_POS)))|((val&USR_SCL_FRACT_RNG_MSK)<<USR_SCL_FRACT_RNG_POS))
+
+#define USR_SCL_ROLL_OVER_POS		((uint8_t)4)
+#define USR_SCL_ROLL_OVER_MSK		((uint8_t)1)
+#define USR_SCL_ROLL_OVER_RD		((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS))>>USR_SCL_ROLL_OVER_POS))
+#define USR_SCL_ROLL_OVER_USED		((uint8_t)1)
+#define USR_SCL_ROLL_OVER_UNUSED	((uint8_t)0)
+#define USR_SCL_ROLL_OVER_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((val&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
+
+#define USR_SCL_LIMIT_SW_POS		((uint8_t)4)
+#define USR_SCL_LIMIT_SW_MSK		((uint8_t)1)
+#define USR_SCL_LIMIT_SW_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS))>>USR_SCL_ROLL_OVER_POS))
+#define USR_SCL_LIMIT_SW_USED		((uint8_t)1)
+#define USR_SCL_LIMIT_SW_UNUSED		((uint8_t)0)
+#define USR_SCL_LIMIT_SW_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((val&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
 
 //UserSclCfg[1]
 #define USR_SCL_MHM_RESOMT_POS      ((uint8_t)0)
@@ -206,11 +230,7 @@ bool IC_MHMAccessFree;
 #define FACTORY_RESOMT_POS          ((uint8_t)0)
 #define FACTORY_RESOMT_MSK          ((uint8_t)0x3F)
 #define FACTORY_RESOMT	            ((uint8_t)((CommonVars.UserSclCfg[2]&(FACTORY_RESOMT_MSK<<FACTORY_RESOMT_POS))>>FACTORY_RESOMT_POS))
-
-//#define USR_SCL_DAC_RESO_POS	    ((uint8_t)0)
-//#define USR_SCL_DAC_RESO_MSK	    ((uint8_t)7)
-//#define USR_SCL_DAC_RESO			((uint8_t)((CommonVars.UserSclCfg[2]&(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS))>>USR_SCL_DAC_RESO_POS))
-//#define USR_SCL_DAC_RESO_WR(val)	CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(USR_SCL_DAC_RESO_MSK<<USR_SCL_DAC_RESO_POS)))|((val&USR_SCL_DAC_RESO_MSK)<<USR_SCL_DAC_RESO_POS)
+#define FACTORY_RESOMT_WR(val)		(CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(FACTORY_RESOMT_MSK<<FACTORY_RESOMT_POS)))|((val&FACTORY_RESOMT_MSK)<<FACTORY_RESOMT_POS))
 
 //ResoAndDir
 #define RESDIR_RESO_MT_POS			((uint8_t)0)
@@ -471,11 +491,9 @@ typedef struct __IntRWWEEWrType
 
 #define RWWEE_ENC_CFG_ADDR          ((uint32_t)(RWWEE_PV_MHM_CFG_OK_ADDR+RWWEE_PV_MHM_CFG_OK_LEN))
 #define RWWEE_ENC_CFG_LEN           ((uint8_t)(sizeof(CommonVars.UserSclCfg)))
-#define RWWEE_ENC_CFG_AVAIL         ((uint8_t)1)
 
 #define RWWEE_FRACT_RANGE_ADDR      ((uint32_t)(RWWEE_ENC_CFG_ADDR+RWWEE_ENC_CFG_LEN))
 #define RWWEE_FRACT_RANGE_LEN       ((uint8_t)(sizeof(uint16_t)))
-#define RWWEE_FRACT_RANGE_USE       ((uint8_t)1)
 
 #define RWWEE_SCL_POS_L_H_ADDR      ((uint32_t)(RWWEE_FRACT_RANGE_ADDR+RWWEE_FRACT_RANGE_LEN))
 #define RWWEE_SCL_POS_L_H_LEN       ((uint8_t)16)
@@ -569,7 +587,7 @@ uint8_t IC_MHM_SetFIO(uint8_t Data);
 uint8_t IC_MHM_ClrFIO(uint8_t Data);
 uint8_t IC_MHM_PresetPV();
 
-void CalcDACsVal (void);
+void CalcDACsVal(void);
 void CalcPosTransition(uint8_t ResoMT);
 void CalcROverRange(uint8_t ResoMT);
 void CalcPosRange(uint8_t ResoMT, int8_t UF_OF);

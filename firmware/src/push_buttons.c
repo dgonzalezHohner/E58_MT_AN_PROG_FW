@@ -220,7 +220,7 @@ void PushButtonsTask()
             }
         }
     }
-    if(USR_SCL_EN == SCALABLE)
+    if(USR_SCL_EN_RD == SCALABLE)
     {
         switch (PBfsm)
         {
