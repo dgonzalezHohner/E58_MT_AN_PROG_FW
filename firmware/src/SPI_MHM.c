@@ -71,7 +71,7 @@ static uint8_t ExtDACData[3] = {0,0,0};
 static uint8_t* pExtDACData = NULL;
 
 static uint16_t ExtDACVal = 0;
-//static uint16_t IntDACVal = 0;
+static uint16_t IntDACVal = 0;
 
 //External EEPROM variables and pointers
 static ExtEEpromDataType* pExtEEpromData = NULL;
@@ -620,6 +620,7 @@ void CalcDACsVal(void)
                 ExtDACVal = (uint16_t)(((*((uint64_t*)(CommonVars.pNormPos)))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint64_t*)(CommonVars.pPosRange))));
             }
             break;
+            
         default:
             if(!ResoMT)
             {
@@ -631,14 +632,17 @@ void CalcDACsVal(void)
                         if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = (uint16_t)((((uint32_t)(*((uint16_t*)(CommonVars.pNormPos))))*((uint32_t)(CommonVars.ExtDACMax)))/(*((uint16_t*)(CommonVars.pPosRange))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                         else
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                     }
                     else
@@ -647,14 +651,17 @@ void CalcDACsVal(void)
                         if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = ~((uint16_t)((((uint32_t)(*((uint16_t*)(CommonVars.pNormPos))))*((uint32_t)(CommonVars.ExtDACMax)))/(*((uint16_t*)(CommonVars.pPosRange)))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                         else
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                     }
                 }
@@ -666,14 +673,17 @@ void CalcDACsVal(void)
                         if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = (uint16_t)((((uint32_t)(*((uint16_t*)(CommonVars.pNormPos))))*((uint32_t)(CommonVars.ExtDACMax)))/(*((uint16_t*)(CommonVars.pPosRange))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                         else
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                     }
                     else
@@ -682,14 +692,17 @@ void CalcDACsVal(void)
                         if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = ~((uint16_t)((((uint32_t)(*((uint16_t*)(CommonVars.pNormPos))))*((uint32_t)(CommonVars.ExtDACMax)))/(*((uint16_t*)(CommonVars.pPosRange)))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint16_t*)(CommonVars.pNormPos))) <= (*((uint16_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                         else
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                     }
                 }
@@ -704,14 +717,17 @@ void CalcDACsVal(void)
                         if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = (uint16_t)((((uint64_t)(*((uint32_t*)(CommonVars.pNormPos))))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint32_t*)(CommonVars.pPosRange))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                         else
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                     }
                     else
@@ -720,14 +736,17 @@ void CalcDACsVal(void)
                         if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = ~((uint16_t)((((uint64_t)(*((uint32_t*)(CommonVars.pNormPos))))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint32_t*)(CommonVars.pPosRange)))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                         else
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                     }
                 }
@@ -739,14 +758,17 @@ void CalcDACsVal(void)
                         if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = (uint16_t)((((uint64_t)(*((uint32_t*)(CommonVars.pNormPos))))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint32_t*)(CommonVars.pPosRange))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                         else
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                     }
                     else
@@ -755,14 +777,17 @@ void CalcDACsVal(void)
                         if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = ~((uint16_t)((((uint64_t)(*((uint32_t*)(CommonVars.pNormPos))))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint32_t*)(CommonVars.pPosRange)))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint32_t*)(CommonVars.pNormPos))) <= (*((uint32_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                         else
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                     }
                 }
@@ -777,14 +802,17 @@ void CalcDACsVal(void)
                         if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = (uint16_t)(((*((uint64_t*)(CommonVars.pNormPos)))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint64_t*)(CommonVars.pPosRange))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                         else
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                     }
                     else
@@ -793,14 +821,17 @@ void CalcDACsVal(void)
                         if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = ~((uint16_t)(((*((uint64_t*)(CommonVars.pNormPos)))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint64_t*)(CommonVars.pPosRange)))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                         else
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                     }
                 }
@@ -812,14 +843,17 @@ void CalcDACsVal(void)
                         if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = (uint16_t)(((*((uint64_t*)(CommonVars.pNormPos)))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint64_t*)(CommonVars.pPosRange))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                         else
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                     }
                     else
@@ -828,14 +862,17 @@ void CalcDACsVal(void)
                         if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pPosRange))))
                         {
                             ExtDACVal = ~((uint16_t)(((*((uint64_t*)(CommonVars.pNormPos)))*((uint64_t)(CommonVars.ExtDACMax)))/(*((uint64_t*)(CommonVars.pPosRange)))));
+                            IntDACVal = CommonVars.IntDACLow;
                         }
                         else if((*((uint64_t*)(CommonVars.pNormPos))) <= (*((uint64_t*)(CommonVars.pTransition))))
                         {
                             ExtDACVal = 0x0000;
+                            IntDACVal = CommonVars.IntDACLowLS;
                         }
                         else
                         {
                             ExtDACVal = CommonVars.ExtDACMax;
+                            IntDACVal = CommonVars.IntDACHighLS;
                         }
                     }
                 }
@@ -870,21 +907,35 @@ void CalcROverRange(uint8_t ResoMT)
     }
     else if(ResoMT<=16)
     {
-        for(i=(16-ResoMT);i<=16;i++)
+        if(USR_SCL_LIMIT_SW_RD == USR_SCL_LIMIT_SW_USED)
         {
-            if((0xFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint32_t*)CommonVars.pPosRange))) break;
+            for(i=(16-ResoMT);i<=16;i++)
+            {
+                if((0xFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint32_t*)CommonVars.pPosRange))) break;
+            }
+            if(i<=16) (*((uint32_t*)CommonVars.pROverRange)) = (0xFFFFFFFF >> (i-1+RESDIR_RESO_ST));
+            else (*((uint32_t*)CommonVars.pROverRange)) = 0x0000FFFF >> RESDIR_RESO_ST;
         }
-        if(i<=16) (*((uint32_t*)CommonVars.pROverRange)) = (0xFFFFFFFF >> (i-1+RESDIR_RESO_ST));
-        else (*((uint32_t*)CommonVars.pROverRange)) = 0x0000FFFF >> RESDIR_RESO_ST;
+        else
+        {
+            *((uint32_t*)(CommonVars.pROverRange)) = ((uint32_t)0xFFFFFFFF)>>((16-ResoMT)+RESDIR_RESO_ST);
+        }
     }
     else
     {
-        for(i=(32-ResoMT);i<=32;i++)
+        if(USR_SCL_LIMIT_SW_RD == USR_SCL_LIMIT_SW_USED)
         {
-            if((0x0000FFFFFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint64_t*)CommonVars.pPosRange))) break;
+            for(i=(32-ResoMT);i<=32;i++)
+            {
+                if((0x0000FFFFFFFFFFFF >> (i+RESDIR_RESO_ST)) < (*((uint64_t*)CommonVars.pPosRange))) break;
+            }
+            if(i<=32) (*((uint64_t*)CommonVars.pROverRange)) = (0x0000FFFFFFFFFFFF >> (i-1+RESDIR_RESO_ST));
+            else (*((uint64_t*)CommonVars.pROverRange)) = 0x000000000000FFFF >> RESDIR_RESO_ST;
         }
-        if(i<=32) (*((uint64_t*)CommonVars.pROverRange)) = (0x0000FFFFFFFFFFFF >> (i-1+RESDIR_RESO_ST));
-        else (*((uint64_t*)CommonVars.pROverRange)) = 0x000000000000FFFF >> RESDIR_RESO_ST;
+        else
+        {
+            *((uint64_t*)(CommonVars.pROverRange)) = ((uint64_t)0x0000FFFFFFFFFFFF)>>((32-ResoMT)+RESDIR_RESO_ST);
+        }
     }
 }
 
@@ -1240,6 +1291,9 @@ void SetScale(UsedScaleType Scaling)
                     *((uint64_t*)(CommonVars.pTransition)) = (*((uint64_t*)(CommonVars.pPosHighOut)));
                 }
             }
+            
+            CommonVars.IntDACLow = (*((uint16_t*)RWWEE_INTDAC_LOW_ADDR));
+            IntDACVal = CommonVars.IntDACLow;
             break;
             
         case DEFAULT_SCALE:
@@ -1271,6 +1325,8 @@ void SetScale(UsedScaleType Scaling)
                 *((uint64_t*)(CommonVars.pROverRange)) = (*((uint64_t*)(CommonVars.pPosHighOut)));
                 *((uint64_t*)(CommonVars.pTransition)) = (*((uint64_t*)(CommonVars.pPosHighOut)));
             }
+            
+            IntDACVal = 0;
             break;
             
         default:
@@ -1287,6 +1343,18 @@ void SetScale(UsedScaleType Scaling)
             else
             {
                 *((uint64_t*)(CommonVars.pPosOffset)) = ((uint64_t)0x0000800000000000)>>((32-ResoMT)+RESDIR_RESO_ST);
+            }
+            
+            CommonVars.IntDACLow = (*((uint16_t*)RWWEE_INTDAC_LOW_ADDR));
+            if(USR_SCL_LIMIT_SW_RD == USR_SCL_LIMIT_SW_USED)
+            {
+                CommonVars.IntDACLowLS = (*((uint16_t*)RWWEE_INTDAC_LOWLS_ADDR));
+                CommonVars.IntDACHighLS = (*((uint16_t*)RWWEE_INTDAC_HIGHLS_ADDR));
+            }
+            else
+            {
+                CommonVars.IntDACLowLS = CommonVars.IntDACLow;
+                CommonVars.IntDACHighLS = CommonVars.IntDACLow;
             }
             break;
     }

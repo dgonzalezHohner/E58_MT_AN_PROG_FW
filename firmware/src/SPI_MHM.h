@@ -165,7 +165,6 @@ typedef struct
 	uint16_t ExtDACMax;
 	uint16_t IntDACLow;
 	uint16_t IntDACLowLS;
-	uint16_t IntDACHihgh;
 	uint16_t IntDACHighLS;
 }CommonVarsType;
 
@@ -206,7 +205,7 @@ bool IC_MHMAccessFree;
 #define USR_SCL_ROLL_OVER_UNUSED	((uint8_t)0)
 #define USR_SCL_ROLL_OVER_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((val&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
 
-#define USR_SCL_LIMIT_SW_POS		((uint8_t)4)
+#define USR_SCL_LIMIT_SW_POS		((uint8_t)5)
 #define USR_SCL_LIMIT_SW_MSK		((uint8_t)1)
 #define USR_SCL_LIMIT_SW_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS))>>USR_SCL_ROLL_OVER_POS))
 #define USR_SCL_LIMIT_SW_USED		((uint8_t)1)
@@ -502,7 +501,16 @@ typedef struct __IntRWWEEWrType
 #define RWWEE_FACT_OFFSET_LEN		((uint8_t)1)
 #define RWWEE_FACT_OFFSET_MAX		((uint8_t)199)
 
-#define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_FACT_OFFSET_ADDR+RWWEE_FACT_OFFSET_LEN))
+#define RWWEE_INTDAC_LOW_ADDR		((uint32_t)(RWWEE_FACT_OFFSET_ADDR+RWWEE_FACT_OFFSET_LEN))
+#define RWWEE_INTDAC_LOW_LEN		((uint8_t)(sizeof(uint16_t)))
+
+#define RWWEE_INTDAC_LOWLS_ADDR		((uint32_t)(RWWEE_INTDAC_LOW_ADDR+RWWEE_INTDAC_LOW_LEN))
+#define RWWEE_INTDAC_LOWLS_LEN		((uint8_t)(sizeof(uint16_t)))
+
+#define RWWEE_INTDAC_HIGHLS_ADDR	((uint32_t)(RWWEE_INTDAC_LOWLS_ADDR+RWWEE_INTDAC_LOWLS_LEN))
+#define RWWEE_INTDAC_LOWLS_LEN		((uint8_t)(sizeof(uint16_t)))
+
+#define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_INTDAC_HIGHLS_ADDR+RWWEE_INTDAC_LOWLS_LEN))
 #define RWWEE_CFG_CRC_LEN           ((uint8_t)1)
 
 #define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_CFG_CRC_ADDR-RWWEE_ENC_CFG_ADDR)
