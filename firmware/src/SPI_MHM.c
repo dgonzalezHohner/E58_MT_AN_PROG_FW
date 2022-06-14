@@ -1148,22 +1148,20 @@ void BuildPosition (UsedScaleType Scaling)
     }
     if(!ResoMT)
     {
+        *((uint16_t*)(CommonVars.pPosition)) >>= RESDIR_RESO_ST;
         *((uint16_t*)(CommonVars.pPosition)) += (*((uint16_t*)(CommonVars.pPosOffset)));
-//        *((uint16_t*)(CommonVars.pPosition)) &= (*((uint16_t*)(CommonVars.pROverRange)));
     }
     else if (ResoMT<=16)
     {
-        *((uint16_t*)(CommonVars.pPosition)) <<= RESDIR_RESO_ST;
+//        *((uint16_t*)(CommonVars.pPosition)) <<= RESDIR_RESO_ST;
         *((uint32_t*)(CommonVars.pPosition)) >>= RESDIR_RESO_ST;
         *((uint32_t*)(CommonVars.pPosition)) += (*((uint32_t*)(CommonVars.pPosOffset)));
-//        *((uint32_t*)(CommonVars.pPosition)) &= (*((uint32_t*)(CommonVars.pROverRange)));
     }
     else
     {
-        *((uint16_t*)(CommonVars.pPosition)) <<= RESDIR_RESO_ST;
+//        *((uint16_t*)(CommonVars.pPosition)) <<= RESDIR_RESO_ST;
         *((uint64_t*)(CommonVars.pPosition)) >>= RESDIR_RESO_ST;
         *((uint64_t*)(CommonVars.pPosition)) += (*((uint64_t*)(CommonVars.pPosOffset)));
-//        *((uint64_t*)(CommonVars.pPosition)) &= (*((uint64_t*)(CommonVars.pROverRange)));
     }
 }
 
@@ -1541,6 +1539,7 @@ void IC_MHM_Task()
                     else
                     {   
                         BuildPosition(SCALE_ACTIVE_RD);
+                        CalcDACsVal();
                         EXCHG_FLAG_NEWPOS_SET;
                     }
                     IC_MHMAccessFree = 1;
