@@ -83,6 +83,8 @@ static uint8_t StatusReg[4];
 static uint8_t IC_MHMCmdfsm = 0;
 static uint8_t IC_MHMProcFsm = 0;
 
+static uint8_t ExtDACTaskfsm = 0;
+
 //Internal EEPROM, RWWEEprom variables and pointers
 static IntRWWEEWrType* pIntRWWEEWr = NULL;
 /* ************************************************************************** */
@@ -290,7 +292,11 @@ uint8_t IC_MHM_RegAccesTask()
                     else
                     {
                         RegAccessfsm = 0;
-                        RetVal = pSPIMHM->RxData[1];
+                        if(pMHMRegAccData->RxData[0] == POS_READ_OPC)
+                        {
+                            RetVal = IC_MHM_STAT_VALID_Msk;
+                        }
+                        else RetVal = pSPIMHM->RxData[1];
                     }
                 }
                 IC_MHM_SPIBufferFree(&pSPIMHM);
@@ -329,7 +335,7 @@ uint8_t IC_MHM_ReadPos(uint8_t* Data, uint8_t RxLength)
     RetVal = IC_MHM_RegAccesTask();
     if(!(RetVal & IC_MHM_STAT_BUSY_Msk))
     {
-        memcpy(Data, &pMHMRegAccData->RxData[1], 7);
+        memcpy(Data, &pMHMRegAccData->RxData[1], RxLength);
         MHMRegAccBufferFree(&pMHMRegAccData);
     }
     return RetVal;
@@ -1126,8 +1132,10 @@ void CopyPosition (uint8_t* Source , uint8_t* Dest)
 void BuildPosition (UsedScaleType Scaling)
 {
     uint8_t ResoMT;
+    uint8_t test;
     
-    for (uint8_t i=0;i<((CommonVars.SPIPosByteLen-1)>=CommonVars.PosByteLen)?CommonVars.PosByteLen:(CommonVars.SPIPosByteLen-1);i++)
+    test = ((CommonVars.SPIPosByteLen-1) >= CommonVars.PosByteLen)? CommonVars.PosByteLen:(CommonVars.SPIPosByteLen-1);
+    for (uint8_t i=0;i<test;i++)
     {
         //pSPIPosition contains data MSB first, BIG endian
         //MCU works in Little endian, swap bytes required
@@ -1310,7 +1318,7 @@ void SetScale(UsedScaleType Scaling)
             else if(ResoMT<=16)
             {
                 *((uint32_t*)(CommonVars.pPosHighOut)) = ((uint32_t)0xFFFFFFFF)>>((16-ResoMT)+RESDIR_RESO_ST);
-                *((uint32_t*)(CommonVars.pPosOffset)) = ((uint16_t)0x80000000)>>((16-ResoMT)+RESDIR_RESO_ST);
+                *((uint32_t*)(CommonVars.pPosOffset)) = ((uint32_t)0x80000000)>>((16-ResoMT)+RESDIR_RESO_ST);
                 *((uint32_t*)(CommonVars.pPosRange)) = (*((uint32_t*)(CommonVars.pPosHighOut)));
                 *((uint32_t*)(CommonVars.pROverRange)) = (*((uint32_t*)(CommonVars.pPosHighOut)));
                 *((uint32_t*)(CommonVars.pTransition)) = (*((uint32_t*)(CommonVars.pPosHighOut)));
@@ -1323,7 +1331,6 @@ void SetScale(UsedScaleType Scaling)
                 *((uint64_t*)(CommonVars.pROverRange)) = (*((uint64_t*)(CommonVars.pPosHighOut)));
                 *((uint64_t*)(CommonVars.pTransition)) = (*((uint64_t*)(CommonVars.pPosHighOut)));
             }
-            
             IntDACVal = 0;
             break;
             
@@ -1364,7 +1371,7 @@ uint8_t CalcMTResCode (uint8_t MHM_MT_Res)
     return (MHM_MT_Res > 6)? 32:(4*MHM_MT_Res);
 }
 
-void IC_MHM_BISS_Detection()
+void IC_MHM_BISS_Detection(void)
 {
     IC_MHMfsm = MHM_STARTUP_1;
     IC_MHMAccessFree = 0;
@@ -1379,11 +1386,11 @@ void IC_MHM_BISS_Detection()
     CommonVars.ExchgFlags &= ~EXCHG_FLAG_PRESETON;
 }
 
-void IC_MHM_Task()
+void IC_MHM_Task(void)
 {
-    uint8_t TempResult = 0;
+    uint8_t TempResult;
     uint8_t* pTemp = NULL;
-
+    
     switch (IC_MHMfsm)
     {
         case MHM_STARTUP_1:
@@ -1397,8 +1404,10 @@ void IC_MHM_Task()
             {
                 if(NERR_Get())
                 {
-                    if(EXCHG_FLAG_PRESETON) IC_MHMfsm = PV_PRESET;
-                    else IC_MHMfsm = (!EXCHG_FLAG_PRESET)?READ_RESO_DIR:READ_POS_1;
+                    if(EXCHG_FLAG_PRESETON)
+                        IC_MHMfsm = PV_PRESET;
+                    else 
+                        IC_MHMfsm = (!EXCHG_FLAG_PRESET)?READ_RESO_DIR:READ_POS_1;
                 }
                 else IC_MHMfsm = MHM_STARTUP_1;
             }
@@ -1410,9 +1419,9 @@ void IC_MHM_Task()
             TempResult = IC_MHM_RegRdCtd(IC_MHM_REG0_ADDR, pTemp, IC_MHM_INTRPLTR_LEN);
             if(TempResult & IC_MHM_STAT_VALID_Msk)
             {
-                CommonVars.ResoAndDir = 0x00 | (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_MHM_DIR_POS);
-                pTemp++;
-                CommonVars.ResoAndDir |= (*pTemp & 0x77);
+                CommonVars.ResoAndDir = 0;
+                CommonVars.ResoAndDir |= (((*pTemp >> IC_MHM_REG0_DIR_POS)&IC_MHM_REG0_DIR_MSK)<<USR_SCL_MHM_DIR_POS);
+                CommonVars.ResoAndDir |= (*(pTemp+1) & 0x77);
                 if(CommonVars.pSPIPosition != NULL)
                 {
                     free(CommonVars.pSPIPosition);
@@ -1450,28 +1459,30 @@ void IC_MHM_Task()
             break;
 
         case READ_CFG:
-            pTemp = (uint8_t*)RWWEE_ENC_CFG_ADDR;
-            if(pTemp[RWWEE_ENC_CFG_TOTAL_LEN-1] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_TOTAL_LEN-1))
+            pTemp = (uint8_t*)malloc(RWWEE_ENC_CFG_TOTAL_LEN);
+            NVMCTRL_RWWEEPROM_Read(((uint32_t*)(pTemp)), RWWEE_ENC_CFG_TOTAL_LEN, RWWEE_ENC_CFG_ADDR);
+            if(pTemp[RWWEE_ENC_CFG_TOTAL_LEN-RWWEE_CFG_CRC_LEN] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_TOTAL_LEN-RWWEE_CFG_CRC_LEN))
             {    
-                memcpy((uint8_t*)(CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
-                if((USR_SCL_EN_RD == SCALABLE)&&(USR_SCL_AVAIL_RD == ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
-                {
-                    SetScale(USR_SCALE);
-                    memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
-                    memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
-                    CalcPosRange(CalcMTResCode(RESDIR_RESO_MT), USR_SCL_UF_OF_RD);
-                    CalcROverRange(CalcMTResCode(RESDIR_RESO_MT));
-                    CalcPosTransition(RESDIR_RESO_MT);
-                }
-                else
-                {
-                    SetScale(FACTORY_SCALE);
-                }
+//                memcpy((uint8_t*)(CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
+//                if((USR_SCL_EN_RD == SCALABLE)&&(USR_SCL_AVAIL_RD == ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
+//                {
+//                    SetScale(USR_SCALE);
+//                    memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
+//                    memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
+//                    CalcPosRange(CalcMTResCode(RESDIR_RESO_MT), USR_SCL_UF_OF_RD);
+//                    CalcROverRange(CalcMTResCode(RESDIR_RESO_MT));
+//                    CalcPosTransition(RESDIR_RESO_MT);
+//                }
+//                else
+//                {
+//                    SetScale(FACTORY_SCALE);
+//                }
             }
             else
             {
                 SetScale(DEFAULT_SCALE);
             }
+            free(pTemp);
             IC_MHMfsm = READ_POS_1;
             break;
 
@@ -1492,14 +1503,14 @@ void IC_MHM_Task()
                     IC_MHMfsm = READ_POS_3;
                 }
             }
-            else if(IC_MHMAccessFree)
-            {
-                if(EXCHG_FLAG_PRESET)
-                {
-                    IC_MHMAccessFree = 0;
-                    IC_MHMfsm = PV_PRESET;
-                }
-            }
+//            else if(IC_MHMAccessFree)
+//            {
+//                if(EXCHG_FLAG_PRESET)
+//                {
+//                    IC_MHMAccessFree = 0;
+//                    IC_MHMfsm = PV_PRESET;
+//                }
+//            }
             break;
 
         case READ_POS_3:
@@ -1517,24 +1528,24 @@ void IC_MHM_Task()
                     //Check for nWARN bit
                     if(!(CommonVars.pSPIPosition[CommonVars.SPIPosByteLen-1] & IC_MHM_SPI_nWARN_Msk))
                     {
-                        //nWARN bit detectec, excessive rotor speed
+                        //nWARN bit detected, excessive rotor speed
                     }
 
                     if(SCALE_ACTIVE_RD == USR_SCALE)
                     {
-                        BuildPosition(SCALE_ACTIVE_RD);
-                        if(EXCHG_FLAG_1STREAD)
-                        {
-
-                            ComparePosition(CommonVars.pPosition, CommonVars.pLastPos);
-                            EXCHG_FLAG_NEWPOS_SET;
-                        }
-                        else
-                        {
-                            EXCHG_FLAG_1STREAD_SET;
-                            //CommonVars.UF_OF_Cnt = 0;
-                        }
-                        CopyPosition (CommonVars.pPosition, CommonVars.pLastPos);
+//                        BuildPosition(SCALE_ACTIVE_RD);
+//                        if(EXCHG_FLAG_1STREAD)
+//                        {
+//
+//                            ComparePosition(CommonVars.pPosition, CommonVars.pLastPos);
+//                            EXCHG_FLAG_NEWPOS_SET;
+//                        }
+//                        else
+//                        {
+//                            EXCHG_FLAG_1STREAD_SET;
+//                            //CommonVars.UF_OF_Cnt = 0;
+//                        }
+//                        CopyPosition (CommonVars.pPosition, CommonVars.pLastPos);
                     }
                     else
                     {   
@@ -1548,54 +1559,55 @@ void IC_MHM_Task()
             }
             else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
             {
-                IC_MHMfsm = READ_POS_2;                
+                IC_MHMAccessFree = 1;
+                IC_MHMfsm = READ_POS_2;              
             }
             break;
 
         case READ_STATUS_1:
-            TempResult = IC_MHM_RdStatus(StatusReg);
-            if(TempResult & IC_MHM_STAT_VALID_Msk)
-            {
-                //Check Status Register 1, address 0x70
-                if(StatusReg[0])
-                {
-                    //error detected
-                }
-                IC_MHMAccessFree = 1;
-                IC_MHMfsm = READ_POS_2;
-            }
-            else if (TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
-            {
-                IC_MHMfsm = READ_STATUS_1;
-            }
+//            TempResult = IC_MHM_RdStatus(StatusReg);
+//            if(TempResult & IC_MHM_STAT_VALID_Msk)
+//            {
+//                //Check Status Register 1, address 0x70
+//                if(StatusReg[0])
+//                {
+//                    //error detected
+//                }
+//                IC_MHMAccessFree = 1;
+//                IC_MHMfsm = READ_POS_2;
+//            }
+//            else if (TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+//            {
+//                IC_MHMfsm = READ_STATUS_1;
+//            }
             break;
 
         case PV_PRESET:
-            EXCHG_FLAG_PRESETON_SET;
-            TempResult = IC_MHM_PresetPV();
-            if(TempResult & IC_MHM_STAT_VALID_Msk)
-            {
-                IC_MHMfsm = MHM_PRESET;
-            }
-            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
-            {
-                IC_MHMAccessFree = 1;
-                IC_MHMfsm = READ_POS_2;
-            }
+//            EXCHG_FLAG_PRESETON_SET;
+//            TempResult = IC_MHM_PresetPV();
+//            if(TempResult & IC_MHM_STAT_VALID_Msk)
+//            {
+//                IC_MHMfsm = MHM_PRESET;
+//            }
+//            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+//            {
+//                IC_MHMAccessFree = 1;
+//                IC_MHMfsm = READ_POS_2;
+//            }
             break;
 
         case MHM_PRESET:
-            TempResult = IC_MHM_RegWr(IC_MHM_PRES_RES_REG, IC_MHM_0x74_PRESET_Msk);
-            if(TempResult & IC_MHM_STAT_VALID_Msk)
-            {
-                IC_MHMfsm = MHM_STARTUP_1;
-                EXCHG_FLAG_PRESETON_CLR;
-            }
-            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
-            {
-                IC_MHMAccessFree = 1;
-                IC_MHMfsm = READ_POS_2;
-            }
+//            TempResult = IC_MHM_RegWr(IC_MHM_PRES_RES_REG, IC_MHM_0x74_PRESET_Msk);
+//            if(TempResult & IC_MHM_STAT_VALID_Msk)
+//            {
+//                IC_MHMfsm = MHM_STARTUP_1;
+//                EXCHG_FLAG_PRESETON_CLR;
+//            }
+//            else if(TempResult & (IC_MHM_STAT_FAIL_Msk | IC_MHM_STAT_DISMISS_Msk |IC_MHM_STAT_ERROR_Msk))
+//            {
+//                IC_MHMAccessFree = 1;
+//                IC_MHMfsm = READ_POS_2;
+//            }
             break;
     }
 }
@@ -1614,8 +1626,6 @@ uint8_t* ExtDACWrite (uint8_t Command, uint8_t Data)
 
 void ExtDACTask ()
 {
-    static uint8_t ExtDACTaskfsm = 0;
-    
     //Chekc whether SPI1 is not busy and pointer to External DAC is initialized
     if(!SERCOM1_SPI_IsBusy() && pExtDACData != NULL)
     {
@@ -1640,11 +1650,11 @@ void ExtDACTask ()
 
 uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length)
 {
-    uint8_t i=0,ucDataStream=0,ucCRC=StartVal;
+    uint8_t ireg=0,i=0,ucDataStream=0,ucCRC=StartVal;
 
-    for (i=0;i<Length;i++)
+    for (ireg=0;ireg<Length;ireg++)
     {
-        ucDataStream = pData[i];
+        ucDataStream = pData[ireg];
         for (i=0;i<8;i++)
         {
             if ((ucCRC & 0x80) != (ucDataStream & 0x80))

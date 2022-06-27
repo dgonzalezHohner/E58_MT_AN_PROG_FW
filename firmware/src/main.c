@@ -41,24 +41,25 @@ int main ( void )
     PBInit (&pPushButtons , NUMBER_PUSH_BUTTONS);
     
     MHMTimer = 0;
-    WDT_Enable();
+    //WDT_Enable();
+    //SYSTICK_TimerPeriodSet (((uint32_t)240000));
+    SYSTICK_TimerPeriodSet (SYSTYCK_PERIOD);
     SYSTICK_TimerRestart();
     while ( true )
     {
-        WDT_Clear();
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
+        //WDT_Clear();
         if(BISS_MASTER_Get())
         {
-            IC_MHM_BISS_Detection();
-            PB_BISS_Detection();
+            //IC_MHM_BISS_Detection();
+            //PB_BISS_Detection();
         }
         else
         {
-            PushButtonsTask();
+            //PushButtonsTask();
             IC_MHM_Task();
         }
-        
     }
 
     /* Execution should not come here during normal operation */

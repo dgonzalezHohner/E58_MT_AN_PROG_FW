@@ -124,10 +124,10 @@ typedef enum
     DEFAULT_SCALE
 }UsedScaleType;
 
-#define DEFAULT_RESOMT	0 // from 0 to 32
+#define DEFAULT_RESOMT	32 // from 0 to 32
 
-#if DEFAULT_RESOMT > 7
-	#error "Default MT resolution 'DEFAULT_RESOMT' must be between 0 and 7"
+#if DEFAULT_RESOMT > 32
+	#error "Default MT resolution 'DEFAULT_RESOMT' must be between 0 and 32"
 #endif
 
 typedef enum
@@ -142,7 +142,8 @@ typedef enum
     CW = (uint8_t)1
 }CSenseType;
 
-#define USER_SCL_CFG_LEN (uint8_t)3
+#define USER_SCL_CFG_LEN ((uint8_t)3)
+
 typedef struct
 {
     uint8_t UserSclCfg[USER_SCL_CFG_LEN];
@@ -342,51 +343,51 @@ enum SPI0_STATUS
     SPI0_CMD_SENT
 };
 
-#define IC_MHM_STAT_VALID_Msk       (uint8_t)0x01   //Data Valid
-#define IC_MHM_STAT_BUSY_Msk        (uint8_t)0x02   //Slave Busy
-#define IC_MHM_STAT_FAIL_Msk        (uint8_t)0x04   //Data Request Failed
-#define IC_MHM_STAT_DISMISS_Msk     (uint8_t)0x08   //Illegal Address
-#define IC_MHM_STAT_ERROR_Msk       (uint8_t)0x80   //Invalid opcode
+#define IC_MHM_STAT_VALID_Msk       ((uint8_t)0x01)   //Data Valid
+#define IC_MHM_STAT_BUSY_Msk        ((uint8_t)0x02)   //Slave Busy
+#define IC_MHM_STAT_FAIL_Msk        ((uint8_t)0x04)   //Data Request Failed
+#define IC_MHM_STAT_DISMISS_Msk     ((uint8_t)0x08)   //Illegal Address
+#define IC_MHM_STAT_ERROR_Msk       ((uint8_t)0x80)   //Invalid opcode
                 
-#define IC_MHM_INTRPLTR_LEN			(uint8_t)2
+#define IC_MHM_INTRPLTR_LEN			((uint8_t)2)
 
-#define IC_MHM_REG0_ADDR            (uint8_t)0x00
-#define IC_MHM_REG0_DIR_POS         (uint8_t)5
-#define IC_MHM_REG0_DIR_MSK         (uint8_t)1
+#define IC_MHM_REG0_ADDR            ((uint8_t)0)
+#define IC_MHM_REG0_DIR_POS         ((uint8_t)5)
+#define IC_MHM_REG0_DIR_MSK         ((uint8_t)1)
 
-#define IC_MHM_RESO_REG             (uint8_t)0x01
-#define IC_MHM_RESO_MT_POS          (uint8_t)0
-#define IC_MHM_RESO_MT_MSK          (uint8_t)7
-#define IC_MHM_RESO_ST_POS          (uint8_t)4
-#define IC_MHM_RESO_ST_MSK          (uint8_t)7
+#define IC_MHM_RESO_REG             ((uint8_t)1)
+#define IC_MHM_RESO_MT_POS          ((uint8_t)0)
+#define IC_MHM_RESO_MT_MSK          ((uint8_t)7)
+#define IC_MHM_RESO_ST_POS          ((uint8_t)4)
+#define IC_MHM_RESO_ST_MSK          ((uint8_t)7)
 
-#define IC_MHM_ERROR_REG            (uint8_t)0x70
-#define IC_MHM_0x70_ERR_CFG_Msk     (uint8_t)0x01
-#define IC_MHM_0x70_ERR_OFFS_Msk    (uint8_t)0x02
-#define IC_MHM_0x70_ERR_POS_Msk     (uint8_t)0x04
-#define IC_MHM_0x70_ERR_EXT_Msk     (uint8_t)0x08
-#define IC_MHM_0x70_ERR_AMIN_Msk    (uint8_t)0x10
-#define IC_MHM_0x70_ERR_AMAX_Msk    (uint8_t)0x20
-#define IC_MHM_0x70_ERR_MTI_Msk     (uint8_t)0x40
-#define IC_MHM_0x70_ERR_MT_Msk      (uint8_t)0x80
+#define IC_MHM_ERROR_REG            ((uint8_t)0x70)
+#define IC_MHM_0x70_ERR_CFG_Msk     ((uint8_t)0x01)
+#define IC_MHM_0x70_ERR_OFFS_Msk    ((uint8_t)0x02)
+#define IC_MHM_0x70_ERR_POS_Msk     ((uint8_t)0x04)
+#define IC_MHM_0x70_ERR_EXT_Msk     ((uint8_t)0x08)
+#define IC_MHM_0x70_ERR_AMIN_Msk    ((uint8_t)0x10)
+#define IC_MHM_0x70_ERR_AMAX_Msk    ((uint8_t)0x20)
+#define IC_MHM_0x70_ERR_MTI_Msk     ((uint8_t)0x40)
+#define IC_MHM_0x70_ERR_MT_Msk      ((uint8_t)0x80)
 
-#define IC_MHM_SPI_nERR_Msk         (uint8_t)0x80
-#define IC_MHM_SPI_nWARN_Msk        (uint8_t)0x40
+#define IC_MHM_SPI_nERR_Msk         ((uint8_t)0x80)
+#define IC_MHM_SPI_nWARN_Msk        ((uint8_t)0x40)
 
-#define IC_MHM_PRES_RES_REG         (uint8_t)0x74
-#define IC_MHM_0x74_RESET_Msk       (uint8_t)0x01
-#define IC_MHM_0x74_PRESET_Msk      (uint8_t)0x02
+#define IC_MHM_PRES_RES_REG         ((uint8_t)0x74)
+#define IC_MHM_0x74_RESET_Msk       ((uint8_t)0x01)
+#define IC_MHM_0x74_PRESET_Msk      ((uint8_t)0x02)
 
-#define IC_MHM_FIO_REG_ADDR         (uint8_t)0x75
-#define IC_MHM_0x75_FIO_0_Msk       (uint8_t)0x01
-#define IC_MHM_0x75_FIO_1_Msk       (uint8_t)0x02
-#define IC_MHM_0x75_FIO_2_Msk       (uint8_t)0x04
-#define IC_MHM_0x75_FIO_3_Msk       (uint8_t)0x08
+#define IC_MHM_FIO_REG_ADDR         ((uint8_t)0x75)
+#define IC_MHM_0x75_FIO_0_Msk       ((uint8_t)0x01)
+#define IC_MHM_0x75_FIO_1_Msk       ((uint8_t)0x02)
+#define IC_MHM_0x75_FIO_2_Msk       ((uint8_t)0x04)
+#define IC_MHM_0x75_FIO_3_Msk       ((uint8_t)0x08)
 
 #define START_UP_T_ms               200
 #define START_UP_TIMER_SET          (((START_UP_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
-#define READ_POS_T_ms               20
+#define READ_POS_T_ms               10
 #define READ_POS_TIMER_SET          (((READ_POS_T_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
 
 #define PV_PRESET_PULSE_T_ms        30
@@ -513,7 +514,7 @@ typedef struct __IntRWWEEWrType
 #define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_INTDAC_HIGHLS_ADDR+RWWEE_INTDAC_LOWLS_LEN))
 #define RWWEE_CFG_CRC_LEN           ((uint8_t)1)
 
-#define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_CFG_CRC_ADDR-RWWEE_ENC_CFG_ADDR)
+#define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_CFG_CRC_ADDR-RWWEE_ENC_CFG_ADDR+RWWEE_CFG_CRC_LEN)
 
     // *****************************************************************************
     // *****************************************************************************
@@ -606,8 +607,8 @@ void BuildPosition (UsedScaleType Scaling);
 void pPosSetUp (uint8_t ResoMT);
 void SetScale(UsedScaleType Scaling);
 uint8_t CalcMTResCode (uint8_t MHM_MT_Res);
-void IC_MHM_BISS_Detection();
-void IC_MHM_Task();
+void IC_MHM_BISS_Detection(void);
+void IC_MHM_Task(void);
 
 uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length);
 

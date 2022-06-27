@@ -58,7 +58,8 @@
 #define SYSTICK_FREQ   48000000U
 
 #define SYSTICK_INTERRUPT_PERIOD_IN_US  (5000U)
-
+#define SYSTYCK_PERIOD					((uint32_t)(SYSTICK_INTERRUPT_PERIOD_IN_US*(SYSTICK_FREQ/1000000)))
+		
 typedef void (*SYSTICK_CALLBACK)(uintptr_t context);
 
 typedef struct
