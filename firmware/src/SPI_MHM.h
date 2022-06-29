@@ -124,7 +124,7 @@ typedef enum
     DEFAULT_SCALE
 }UsedScaleType;
 
-#define DEFAULT_RESOMT	32 // from 0 to 32
+#define DEFAULT_RESOMT	16 // from 0 to 32
 
 #if DEFAULT_RESOMT > 32
 	#error "Default MT resolution 'DEFAULT_RESOMT' must be between 0 and 32"
@@ -516,6 +516,15 @@ typedef struct __IntRWWEEWrType
 
 #define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_CFG_CRC_ADDR-RWWEE_ENC_CFG_ADDR+RWWEE_CFG_CRC_LEN)
 
+//DAC60501 registers defines
+#define DAC_REG_NOOP				((uint8_t)0)
+#define DAC_REG_DEVID				((uint8_t)1)
+#define DAC_REG_SYNC				((uint8_t)2)
+#define DAC_REG_CONFIG				((uint8_t)3)
+#define DAC_REG_GAIN				((uint8_t)4)
+#define DAC_REG_TRIGGER				((uint8_t)5)
+#define DAC_REG_STATUS				((uint8_t)7)
+#define DAC_REG_DACVAL				((uint8_t)8)
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -609,6 +618,10 @@ void SetScale(UsedScaleType Scaling);
 uint8_t CalcMTResCode (uint8_t MHM_MT_Res);
 void IC_MHM_BISS_Detection(void);
 void IC_MHM_Task(void);
+
+void ExtDACWrite(uint8_t Command, uint16_t* Data);
+void ExtDACInit(void);
+void ExtDACTask(void);
 
 uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length);
 

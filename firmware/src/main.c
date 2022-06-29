@@ -41,10 +41,10 @@ int main ( void )
     PBInit (&pPushButtons , NUMBER_PUSH_BUTTONS);
     
     MHMTimer = 0;
-    //WDT_Enable();
-    //SYSTICK_TimerPeriodSet (((uint32_t)240000));
     SYSTICK_TimerPeriodSet (SYSTYCK_PERIOD);
     SYSTICK_TimerRestart();
+    ExtDACInit();
+    //WDT_Enable();
     while ( true )
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
@@ -59,6 +59,7 @@ int main ( void )
         {
             //PushButtonsTask();
             IC_MHM_Task();
+            ExtDACTask();
         }
     }
 
