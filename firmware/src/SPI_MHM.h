@@ -124,7 +124,7 @@ typedef enum
     DEFAULT_SCALE
 }UsedScaleType;
 
-#define DEFAULT_RESOMT	16 // from 0 to 32
+#define DEFAULT_RESOMT	2 // from 0 to 32
 
 #if DEFAULT_RESOMT > 32
 	#error "Default MT resolution 'DEFAULT_RESOMT' must be between 0 and 32"
@@ -281,6 +281,11 @@ bool IC_MHMAccessFree;
 #define EXCHG_FLAG_PRESETON_SET		CommonVars.ExchgFlags |= (EXCHG_FLAG_PRESETON_MSK<<EXCHG_FLAG_PRESETON_POS)
 #define EXCHG_FLAG_PRESETON_CLR		CommonVars.ExchgFlags &= (~(EXCHG_FLAG_PRESETON_MSK<<EXCHG_FLAG_PRESETON_POS))
 
+#define EXCHG_FLAG_EXTDACINIT_POS	((uint8_t)4)
+#define EXCHG_FLAG_EXTDACINIT_MSK	((uint8_t)1)
+#define EXCHG_FLAG_EXTDACINIT		((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_EXTDACINIT_MSK<<EXCHG_FLAG_EXTDACINIT_POS))>>EXCHG_FLAG_EXTDACINIT_POS))
+#define EXCHG_FLAG_EXTDACINIT_SET	CommonVars.ExchgFlags |= (EXCHG_FLAG_EXTDACINIT_MSK<<EXCHG_FLAG_EXTDACINIT_POS)
+#define EXCHG_FLAG_EXTDACINIT_CLR	CommonVars.ExchgFlags &= (~(EXCHG_FLAG_EXTDACINIT_MSK<<EXCHG_FLAG_EXTDACINIT_POS))
 //UF_OF_Cnt
 #define UF_OV_MAX					(100)
 #define UF_OV_MIN					((-1)*UF_OV_MAX)
@@ -525,6 +530,12 @@ typedef struct __IntRWWEEWrType
 #define DAC_REG_TRIGGER				((uint8_t)5)
 #define DAC_REG_STATUS				((uint8_t)7)
 #define DAC_REG_DACVAL				((uint8_t)8)
+
+typedef struct
+{
+	uint8_t Cmd;
+	uint16_t Data;
+}ExtDACType;
     // *****************************************************************************
     // *****************************************************************************
     // Section: Interface Functions
@@ -619,7 +630,7 @@ uint8_t CalcMTResCode (uint8_t MHM_MT_Res);
 void IC_MHM_BISS_Detection(void);
 void IC_MHM_Task(void);
 
-void ExtDACWrite(uint8_t Command, uint16_t* Data);
+void ExtDACWrite(ExtDACType* ExtDacFrame);
 void ExtDACInit(void);
 void ExtDACTask(void);
 

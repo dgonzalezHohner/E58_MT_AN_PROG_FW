@@ -1584,6 +1584,8 @@
         <property key="memories.programmemory.ranges" value="0-1ffff"/>
         <property key="memories.rww" value="true"/>
         <property key="poweroptions.powerenable" value="false"/>
+        <property key="programmerToGoFilePath"
+                  value="C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/E58_MT_AN_PROG_FW.X/debug/default/E58_MT_AN_PROG_FW_ptg"/>
         <property key="programmerToGoImageName" value="E58_MT_AN_PROG_FW_ptg"/>
         <property key="programoptions.donoteraseauxmem" value="false"/>
         <property key="programoptions.eraseb4program" value="true"/>

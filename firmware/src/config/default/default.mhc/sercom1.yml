@@ -112,7 +112,7 @@ children:
       - type: String
         attributes: {id: text}
         children:
-        - {type: Value, value: '***SPI Transfer Mode 1 is Selected***'}
+        - {type: Value, value: '***SPI Transfer Mode 0 is Selected***'}
       - type: Boolean
         attributes: {id: visible}
         children:
@@ -129,7 +129,7 @@ children:
     - type: Values
       children:
       - type: User
-        attributes: {value: '1'}
+        attributes: {value: '0'}
   - type: KeyValueSet
     attributes: {id: SPI_CLOCK_POLARITY}
     children:
@@ -378,4 +378,4 @@ children:
         children:
         - {type: Value, value: 'false'}
 - type: ElementPosition
-  attributes: {x: '21', y: '232', id: sercom1}
+  attributes: {x: '24', y: '233', id: sercom1}

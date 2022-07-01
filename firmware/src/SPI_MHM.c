@@ -69,6 +69,7 @@ static SPI_IC_MHMType* pSPIMHM = NULL;
 //External DAC variables and pointers.
 static uint8_t ExtDACData[3] = {0,0,0};
 static uint8_t* pExtDACData = NULL;
+static ExtDACType ExtDACFrame;
 
 static uint16_t ExtDACVal = 0;
 static uint16_t IntDACVal = 0;
@@ -1612,14 +1613,14 @@ void IC_MHM_Task(void)
     }
 }
 
-void ExtDACWrite(uint8_t Command, uint16_t* Data)
+void ExtDACWrite(ExtDACType* ExtDacFrame)
 {
-    ExtDACData[0] = Command;
+    ExtDACData[0] = ExtDacFrame->Cmd;
 #if defined(LITTLE_ENDIAN)
-//Value is little endian, take MSB
-    ExtDACData[1] = (*(((uint8_t*)Data)+1));
+    //Value is little endian, take MSB
+    ExtDACData[1] = (*(((uint8_t*)(&ExtDacFrame->Data))+1));
     //Value is little endian, take LSB
-    ExtDACData[2] = (*((uint8_t*)Data));
+    ExtDACData[2] = (*((uint8_t*)(&ExtDacFrame->Data)));
 #elif defined(BIG_ENDIAN)
     *((uint8_t*)(&ExtDACData[1])) = *Data;
 #else
@@ -1627,28 +1628,43 @@ void ExtDACWrite(uint8_t Command, uint16_t* Data)
 #endif
     //initializes pointer to external DAC Data
     pExtDACData = ExtDACData;
-//    return pExtDACData;
 }
 
 void ExtDACInit(void)
 {
-    uint16_t DACInitVal;
+    EXCHG_FLAG_EXTDACINIT_SET;
     //Write Trigger register with soft reset code, Ensure DAC Reset.
-    DACInitVal = 0x000A;
-    ExtDACWrite(DAC_REG_TRIGGER,&DACInitVal);
+    ExtDACFrame.Cmd = DAC_REG_TRIGGER;
+    ExtDACFrame.Data = 0x000A;
+    do ExtDACTask();
     while(pExtDACData != NULL);
+    SYSTICK_DelayUs (500);
     //Write Gain register with REF_DIV = 0 (Ref Voltage not divided) and BUFF-GAIN = 0 (Buff Gain = 1)
-    DACInitVal = 0x0000;
-    ExtDACWrite(DAC_REG_GAIN,&DACInitVal);
+    ExtDACFrame.Cmd = DAC_REG_GAIN;
+    ExtDACFrame.Data = 0x0101;
+    do ExtDACTask();
     while(pExtDACData != NULL);
+    EXCHG_FLAG_EXTDACINIT_CLR;
 }
 
 void ExtDACTask(void)
 {
-    //Check whether SPI1 is not busy and pointer to External DAC is initialized
-    if(!SERCOM1_SPI_IsBusy() && pExtDACData != NULL)
+    if(pExtDACData == NULL)
     {
-        ExtDACWrite(DAC_REG_DACVAL,&ExtDACVal);
+        if(EXCHG_FLAG_EXTDACINIT)
+        {
+            ExtDACWrite(&ExtDACFrame);
+        }
+        else
+        {
+            ExtDACFrame.Cmd = DAC_REG_DACVAL;
+            ExtDACFrame.Data = ExtDACVal;
+            ExtDACWrite(&ExtDACFrame);
+        }
+    }
+    //Check whether SPI1 is not busy and pointer to External DAC is initialized
+    else if(!SERCOM1_SPI_IsBusy())
+    {
         switch (ExtDACTaskfsm)
         {
             case 0:
