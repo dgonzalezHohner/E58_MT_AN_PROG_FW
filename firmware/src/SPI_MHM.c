@@ -28,6 +28,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "SPI_MHM.h"
+#include "UART_COM.h"
 /* TODO:  Include other files here if needed. */
 
 
@@ -251,6 +252,7 @@ void TimerTask()
      if( MHMTimer > 1)  MHMTimer--;
      if( MHMProcTimer > 1)  MHMProcTimer--;
      if( ExtEEpromTimer > 1) ExtEEpromTimer--;
+     if( UART3RxBuffer.RxTimeout > 1) UART3RxBuffer.RxTimeout--;
 }
 
 uint8_t IC_MHM_RegAccesTask()
@@ -1391,7 +1393,7 @@ void IC_MHM_Task(void)
 {
     uint8_t TempResult;
     uint8_t* pTemp = NULL;
-    
+        
     switch (IC_MHMfsm)
     {
         case MHM_STARTUP_1:
@@ -1464,20 +1466,26 @@ void IC_MHM_Task(void)
             NVMCTRL_RWWEEPROM_Read(((uint32_t*)(pTemp)), RWWEE_ENC_CFG_TOTAL_LEN, RWWEE_ENC_CFG_ADDR);
             if(pTemp[RWWEE_ENC_CFG_TOTAL_LEN-RWWEE_CFG_CRC_LEN] == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, pTemp, RWWEE_ENC_CFG_TOTAL_LEN-RWWEE_CFG_CRC_LEN))
             {    
-//                memcpy((uint8_t*)(CommonVars.UserSclCfg),pTemp,sizeof(CommonVars.UserSclCfg));
-//                if((USR_SCL_EN_RD == SCALABLE)&&(USR_SCL_AVAIL_RD == ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
-//                {
-//                    SetScale(USR_SCALE);
-//                    memcpy(CommonVars.pPosLowOut, (uint8_t*)RWWEE_SCL_POS_L_H_ADDR, CommonVars.PosByteLen);
-//                    memcpy(CommonVars.pPosHighOut, (uint8_t*)(RWWEE_SCL_POS_L_H_ADDR+CommonVars.PosByteLen), CommonVars.PosByteLen);
-//                    CalcPosRange(CalcMTResCode(RESDIR_RESO_MT), USR_SCL_UF_OF_RD);
-//                    CalcROverRange(CalcMTResCode(RESDIR_RESO_MT));
-//                    CalcPosTransition(RESDIR_RESO_MT);
-//                }
-//                else
-//                {
-//                    SetScale(FACTORY_SCALE);
-//                }
+                memcpy((uint8_t*)(CommonVars.UserSclCfg),pTemp,USER_SCL_CFG_LEN);
+                if((USR_SCL_EN_RD == SCALABLE)&&(USR_SCL_AVAIL_RD == ENC_CFG_AVAIL)&&(CommonVars.UserSclCfg[1] == CommonVars.ResoAndDir))
+                {
+                    SetScale(USR_SCALE);
+                    memcpy(&CommonVars.ExtDACMax, &pTemp[RWWEE_EXTDAC_MAX_ADDR-RWWEE_ENC_CFG_ADDR],RWWEE_EXTDAC_MAX_LEN);
+                    memcpy(&CommonVars.IntDACLow, &pTemp[RWWEE_INTDAC_LOW_ADDR-RWWEE_ENC_CFG_ADDR],RWWEE_INTDAC_LOW_LEN);
+                    memcpy(&CommonVars.IntDACLowLS, &pTemp[RWWEE_INTDAC_LOWLS_ADDR-RWWEE_ENC_CFG_ADDR],RWWEE_INTDAC_LOWLS_LEN);
+                    memcpy(&CommonVars.IntDACHighLS, &pTemp[RWWEE_INTDAC_HIGHLS_ADDR-RWWEE_ENC_CFG_ADDR],RWWEE_INTDAC_HIGHLS_LEN);
+                    memcpy(&CommonVars.FractRange, &pTemp[RWWEE_FRACT_RANGE_ADDR-RWWEE_ENC_CFG_ADDR],RWWEE_FRACT_RANGE_LEN);
+                    memcpy(&CommonVars.FactOffset, &pTemp[RWWEE_FACT_OFFSET_ADDR-RWWEE_ENC_CFG_ADDR],RWWEE_FACT_OFFSET_LEN);
+                    memcpy(CommonVars.pPosLowOut, &pTemp[RWWEE_SCL_POS_L_ADDR-RWWEE_ENC_CFG_ADDR],CommonVars.PosByteLen);
+                    memcpy(CommonVars.pPosHighOut, &pTemp[RWWEE_SCL_POS_H_ADDR-RWWEE_ENC_CFG_ADDR],CommonVars.PosByteLen);
+                    CalcPosRange(CalcMTResCode(RESDIR_RESO_MT), USR_SCL_UF_OF_RD);
+                    CalcROverRange(CalcMTResCode(RESDIR_RESO_MT));
+                    CalcPosTransition(RESDIR_RESO_MT);
+                }
+                else
+                {
+                    SetScale(FACTORY_SCALE);
+                }
             }
             else
             {
@@ -1684,9 +1692,10 @@ void ExtDACTask(void)
     }
 }
 
-uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length)
+uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint16_t Length)
 {
-    uint8_t ireg=0,i=0,ucDataStream=0,ucCRC=StartVal;
+    uint16_t ireg=0; 
+    uint8_t i=0,ucDataStream=0,ucCRC=StartVal;
 
     for (ireg=0;ireg<Length;ireg++)
     {

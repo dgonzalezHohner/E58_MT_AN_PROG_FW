@@ -28,7 +28,9 @@
 #include "definitions.h"                // SYS function prototypes
 #include "push_buttons.h"
 #include "SPI_MHM.h"
+#include "UART_COM.h"
 
+extern SERCOM_USART_OBJECT sercomtest;
 // *****************************************************************************
 // *****************************************************************************
 // Section: Main Entry Point
@@ -44,6 +46,11 @@ int main ( void )
     SYSTICK_TimerPeriodSet (SYSTYCK_PERIOD);
     SYSTICK_TimerRestart();
     ExtDACInit();
+    
+    UARTRxBufferInit((UARTRxBuffType*)&UART3RxBuffer);
+    UARTRxCmdBufferInit((UARTRxCmdBuffType*) &UART3RxCmdBuffer);
+    SERCOM3_USART_ReadCallbackRegister(UARTRxDataBufferAdd,(uintptr_t)((void*)&Sercom3RxData));
+    SERCOM3_USART_Read((void*)&Sercom3RxData, SERCOM3_RXDATA_LENGTH);
     //WDT_Enable();
     while ( true )
     {

@@ -146,7 +146,13 @@ typedef enum
 
 typedef struct
 {
-    uint8_t UserSclCfg[USER_SCL_CFG_LEN];
+	uint8_t UserSclCfg[USER_SCL_CFG_LEN];
+	uint16_t ExtDACMax;
+	uint16_t IntDACLow;
+	uint16_t IntDACLowLS;
+	uint16_t IntDACHighLS;
+	uint16_t FractRange;
+	uint8_t FactOffset;
     uint8_t Scaling;
     uint8_t ResoAndDir;
     uint8_t* pSPIPosition;
@@ -163,10 +169,7 @@ typedef struct
     uint8_t PosByteLen;     // includes ST and MT both in Little Endian, LSB first
 	uint8_t ExchgFlags;
 	int8_t	UF_OF_Cnt;
-	uint16_t ExtDACMax;
-	uint16_t IntDACLow;
-	uint16_t IntDACLowLS;
-	uint16_t IntDACHighLS;
+
 }CommonVarsType;
 
 CommonVarsType CommonVars;
@@ -178,40 +181,40 @@ bool IC_MHMAccessFree;
 #define USR_SCL_EN_RD               ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
 #define USR_SCL_EN_WR(val)			(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_EN_MSK<<USR_SCL_EN_POS)))|((((uint8_t)val)&USR_SCL_EN_MSK)<<USR_SCL_EN_POS))
 
-#define USR_SCL_AVAIL_POS           ((uint8_t)1)
-#define USR_SCL_AVAIL_MSK           ((uint8_t)1)
-#define USR_SCL_AVAIL_RD            ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
-#define ENC_CFG_AVAIL				((uint8_t)0)
-#define ENC_CFG_NOT_AVAIL			((uint8_t)1)
-#define USR_SCL_AVAIL_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS)))|((val&USR_SCL_AVAIL_MSK)<<USR_SCL_AVAIL_POS))
-
-#define USR_SCL_UF_OF_POS			((uint8_t)2)
-#define USR_SCL_UF_OF_MSK			((uint8_t)1)
-#define USR_SCL_UF_OF_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))>>USR_SCL_UF_OF_POS))
-#define USR_SCL_OVFLW				((uint8_t)1)
-#define USR_SCL_NOT_OVFLW			((uint8_t)0)
-#define USR_SCL_UF_OF_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)))|((val&USR_SCL_UF_OF_MSK)<<USR_SCL_UF_OF_POS))
-
-#define USR_SCL_FRACT_RNG_POS		((uint8_t)3)
+#define USR_SCL_FRACT_RNG_POS		((uint8_t)1)
 #define USR_SCL_FRACT_RNG_MSK		((uint8_t)1)
 #define USR_SCL_FRACT_RNG_RD		((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_FRACT_RNG_MSK<<USR_SCL_FRACT_RNG_POS))>>USR_SCL_FRACT_RNG_POS))
 #define USR_SCL_FRACT_RNG_USED		((uint8_t)1)
 #define USR_SCL_FRACT_RNG_UNUSED	((uint8_t)0)
 #define USR_SCL_FRACT_RNG_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_FRACT_RNG_MSK<<USR_SCL_FRACT_RNG_POS)))|((val&USR_SCL_FRACT_RNG_MSK)<<USR_SCL_FRACT_RNG_POS))
 
-#define USR_SCL_ROLL_OVER_POS		((uint8_t)4)
+#define USR_SCL_ROLL_OVER_POS		((uint8_t)2)
 #define USR_SCL_ROLL_OVER_MSK		((uint8_t)1)
 #define USR_SCL_ROLL_OVER_RD		((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS))>>USR_SCL_ROLL_OVER_POS))
 #define USR_SCL_ROLL_OVER_USED		((uint8_t)1)
 #define USR_SCL_ROLL_OVER_UNUSED	((uint8_t)0)
 #define USR_SCL_ROLL_OVER_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((val&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
 
-#define USR_SCL_LIMIT_SW_POS		((uint8_t)5)
+#define USR_SCL_LIMIT_SW_POS		((uint8_t)3)
 #define USR_SCL_LIMIT_SW_MSK		((uint8_t)1)
 #define USR_SCL_LIMIT_SW_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS))>>USR_SCL_ROLL_OVER_POS))
 #define USR_SCL_LIMIT_SW_USED		((uint8_t)1)
 #define USR_SCL_LIMIT_SW_UNUSED		((uint8_t)0)
 #define USR_SCL_LIMIT_SW_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((val&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
+
+#define USR_SCL_AVAIL_POS           ((uint8_t)4)
+#define USR_SCL_AVAIL_MSK           ((uint8_t)1)
+#define USR_SCL_AVAIL_RD            ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
+#define ENC_CFG_AVAIL				((uint8_t)0)
+#define ENC_CFG_NOT_AVAIL			((uint8_t)1)
+#define USR_SCL_AVAIL_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS)))|((val&USR_SCL_AVAIL_MSK)<<USR_SCL_AVAIL_POS))
+
+#define USR_SCL_UF_OF_POS			((uint8_t)5)
+#define USR_SCL_UF_OF_MSK			((uint8_t)1)
+#define USR_SCL_UF_OF_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))>>USR_SCL_UF_OF_POS))
+#define USR_SCL_OVFLW				((uint8_t)1)
+#define USR_SCL_NOT_OVFLW			((uint8_t)0)
+#define USR_SCL_UF_OF_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)))|((val&USR_SCL_UF_OF_MSK)<<USR_SCL_UF_OF_POS))
 
 //UserSclCfg[1]
 #define USR_SCL_MHM_RESOMT_POS      ((uint8_t)0)
@@ -497,26 +500,32 @@ typedef struct __IntRWWEEWrType
 #define RWWEE_ENC_CFG_ADDR          ((uint32_t)(RWWEE_PV_MHM_CFG_OK_ADDR+RWWEE_PV_MHM_CFG_OK_LEN))
 #define RWWEE_ENC_CFG_LEN           ((uint8_t)(sizeof(CommonVars.UserSclCfg)))
 
-#define RWWEE_FRACT_RANGE_ADDR      ((uint32_t)(RWWEE_ENC_CFG_ADDR+RWWEE_ENC_CFG_LEN))
-#define RWWEE_FRACT_RANGE_LEN       ((uint8_t)(sizeof(uint16_t)))
+#define RWWEE_EXTDAC_MAX_ADDR		((uint32_t)(RWWEE_ENC_CFG_ADDR+RWWEE_ENC_CFG_LEN))
+#define RWWEE_EXTDAC_MAX_LEN		((uint8_t)(sizeof(uint16_t)))
 
-#define RWWEE_SCL_POS_L_H_ADDR      ((uint32_t)(RWWEE_FRACT_RANGE_ADDR+RWWEE_FRACT_RANGE_LEN))
-#define RWWEE_SCL_POS_L_H_LEN       ((uint8_t)16)
-
-#define RWWEE_FACT_OFFSET_ADDR		((uint32_t)(RWWEE_SCL_POS_L_H_ADDR+RWWEE_SCL_POS_L_H_LEN))
-#define RWWEE_FACT_OFFSET_LEN		((uint8_t)1)
-#define RWWEE_FACT_OFFSET_MAX		((uint8_t)199)
-
-#define RWWEE_INTDAC_LOW_ADDR		((uint32_t)(RWWEE_FACT_OFFSET_ADDR+RWWEE_FACT_OFFSET_LEN))
+#define RWWEE_INTDAC_LOW_ADDR		((uint32_t)(RWWEE_EXTDAC_MAX_ADDR+RWWEE_EXTDAC_MAX_LEN))
 #define RWWEE_INTDAC_LOW_LEN		((uint8_t)(sizeof(uint16_t)))
 
 #define RWWEE_INTDAC_LOWLS_ADDR		((uint32_t)(RWWEE_INTDAC_LOW_ADDR+RWWEE_INTDAC_LOW_LEN))
 #define RWWEE_INTDAC_LOWLS_LEN		((uint8_t)(sizeof(uint16_t)))
 
 #define RWWEE_INTDAC_HIGHLS_ADDR	((uint32_t)(RWWEE_INTDAC_LOWLS_ADDR+RWWEE_INTDAC_LOWLS_LEN))
-#define RWWEE_INTDAC_LOWLS_LEN		((uint8_t)(sizeof(uint16_t)))
+#define RWWEE_INTDAC_HIGHLS_LEN		((uint8_t)(sizeof(uint16_t)))
 
-#define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_INTDAC_HIGHLS_ADDR+RWWEE_INTDAC_LOWLS_LEN))
+#define RWWEE_FRACT_RANGE_ADDR      ((uint32_t)(RWWEE_INTDAC_HIGHLS_ADDR+RWWEE_INTDAC_HIGHLS_LEN))
+#define RWWEE_FRACT_RANGE_LEN       ((uint8_t)(sizeof(uint16_t)))
+
+#define RWWEE_FACT_OFFSET_ADDR		((uint32_t)(RWWEE_FRACT_RANGE_ADDR+RWWEE_FRACT_RANGE_LEN))
+#define RWWEE_FACT_OFFSET_LEN		((uint8_t)1)
+#define RWWEE_FACT_OFFSET_MAX		((uint8_t)199)
+
+#define RWWEE_SCL_POS_L_ADDR		((uint32_t)(RWWEE_FACT_OFFSET_ADDR+RWWEE_FACT_OFFSET_LEN))
+#define RWWEE_SCL_POS_L_LEN			((uint8_t)8)
+
+#define RWWEE_SCL_POS_H_ADDR		((uint32_t)(RWWEE_SCL_POS_L_ADDR+RWWEE_SCL_POS_L_LEN))
+#define RWWEE_SCL_POS_H_LEN			((uint8_t)8)
+
+#define RWWEE_CFG_CRC_ADDR          ((uint32_t)(RWWEE_SCL_POS_H_ADDR+RWWEE_SCL_POS_H_LEN))
 #define RWWEE_CFG_CRC_LEN           ((uint8_t)1)
 
 #define RWWEE_ENC_CFG_TOTAL_LEN     (RWWEE_CFG_CRC_ADDR-RWWEE_ENC_CFG_ADDR+RWWEE_CFG_CRC_LEN)
@@ -634,7 +643,7 @@ void ExtDACWrite(ExtDACType* ExtDacFrame);
 void ExtDACInit(void);
 void ExtDACTask(void);
 
-uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint8_t Length);
+uint8_t CalcCRC (uint16_t CRCPoly, uint8_t StartVal, uint8_t* pData, uint16_t Length);
 
 bool InitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
 void DeInitExtEEpromData(ExtEEpromDataType* pExtEEpromData);
@@ -647,7 +656,7 @@ void DeInitRWWEEWrData(IntRWWEEWrType* ptr);
 bool RWWEEWrInit (IntRWWEEWrType** pIntRWWEEWr, uint32_t Address, uint16_t length);
 void RWWEEWRfree (IntRWWEEWrType** pIntRWWEEWr);
 uint8_t IntEEpromWrite(void);
-    /* Provide C++ Compatibility */
+/* Provide C++ Compatibility */
 #ifdef __cplusplus
 }
 #endif
