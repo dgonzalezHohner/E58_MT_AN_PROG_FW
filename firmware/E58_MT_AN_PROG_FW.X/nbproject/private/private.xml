@@ -8,9 +8,9 @@
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/main.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/push_buttons.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/SPI_MHM.c</file>
-            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/nvmctrl/plib_nvmctrl.c</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/push_buttons.h</file>
             <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/UART_COM.c</file>
+            <file>file:/C:/Mplab_WS/P147/E58_MT_AN_PROG_FW/firmware/src/config/default/peripheral/systick/plib_systick.h</file>
         </group>
     </open-files>
 </project-private>
