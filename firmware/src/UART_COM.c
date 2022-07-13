@@ -302,20 +302,27 @@ void UART3Task(void)
             for (CmdNum=0;CmdNum<RX3_CMD_NUMBER;CmdNum++)
             {
                 CmdPtr = strstr(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex],UART3Cmd[CmdNum]);
-                if(CmdPtr != NULL)break;
+                if(CmdPtr != NULL)
+                {
+                    CmdPtr += strlen(UART3Cmd[CmdNum]);
+                    break;
+                }
             }
+            pLastData = (UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]+strlen((char*)UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex])-UART_RX3_END_SIZE);
             switch(CmdNum)
             {
                 case 0:
                     for (RegNum=0;RegNum<RX3_REG_NUMBER;RegNum++)
                     {
-                        CmdPtr = strstr(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex],UART3Cmd[RegNum]);
-                        if(CmdPtr != NULL) break;
+                        if(strstr(CmdPtr,UARTRegName[RegNum]) != NULL)
+                        {
+                            CmdPtr = strstr(CmdPtr,UARTRegName[RegNum])+strlen(UARTRegName[RegNum]);
+                            break;
+                        }
                     }
                     if(RegNum < RX3_REG_NUMBER)
                     {
-                        pLastData = (UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]+strlen((char*)UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex])-UART_RX3_END_SIZE);
-                        if(UART3CmdWRParse(CmdPtr+strlen(UART3Cmd[RegNum]),pLastData,&TempVal))
+                        if(UART3CmdWRParse(CmdPtr,pLastData,&TempVal))
                         {
                             switch(RegNum)
                             {
@@ -369,7 +376,69 @@ void UART3Task(void)
                     else{}//Register not found
                     break;
                 case 1:
-                    
+                    if(strstr(CmdPtr,"ALL") != NULL)
+                    {
+                        if(strstr(CmdPtr,"ALL")+strlen("ALL") == pLastData){}//Read All configurations
+                        else{}//Wrong read all configurations Cmd format
+                    }
+                    else
+                    {
+                        for (RegNum=0;RegNum<RX3_REG_NUMBER;RegNum++)
+                        {
+                            if(strstr(CmdPtr,UARTRegName[RegNum]) != NULL)
+                            {
+                                CmdPtr = strstr(CmdPtr,UARTRegName[RegNum])+strlen(UARTRegName[RegNum]);
+                                break;
+                            }
+                        }
+                        if(RegNum < RX3_REG_NUMBER)
+                        {
+                            if(CmdPtr == pLastData)
+                            {
+                                switch(RegNum)
+                                {
+                                    case 0:
+                                        //send RegNum 0
+                                        break;
+                                    case 1:
+                                        //send RegNum 0
+                                        break;
+                                    case 2:
+                                        //send RegNum 0
+                                        break;
+                                    case 3:
+                                        //send RegNum 0
+                                        break;
+                                    case 4:
+                                        //send RegNum 0
+                                        break;
+                                    case 5:
+                                        //send RegNum 0
+                                        break;
+                                    case 6:
+                                        //send RegNum 0
+                                        break;
+                                    case 7:
+                                        //send RegNum 0
+                                        break;
+                                    case 8:
+                                        //send RegNum 0
+                                        break;
+                                    case 9:
+                                        //send RegNum 0
+                                        break;
+                                    case 10:
+                                        //send RegNum 0
+                                        break;
+                                    case 11:
+                                        //send RegNum 0
+                                        break;
+                                }
+                            }
+                            else{};//Cmd parse failed
+                        }
+                        else{};//Register not found
+                    }
                     break;
                 case 2:
                     
