@@ -32,21 +32,22 @@
 /* TODO:  Include other files here if needed. */
 const char UART3Cmd[RX3_CMD_NUMBER][RX3_CMD_LENGTH] = 
 {
-    {"WR"},
-    {"RD"},
-    {"ST"}
+    {"WR "},
+    {"RD "},
+    {"SVC"}
 };
 const char UARTRegName[RX3_REG_NUMBER][RX3_REG_LENGTH]=
 {
-    {"USR_SCL"},
-    {"FRACTRG"},
-    {"ROLOVER"},
-    {"LIMITSW"},
-    {"F_MTRES"},
+    {"USRSCEN"},
+    {"FRCRGEN"},
+    {"ROVEREN"},
+    {"LIMSWEN"},
+    {"FYRESMT"},
     {"EDACMAX"},
     {"IDACLOW"},
     {"IDACLLS"},
     {"IDACHLS"},
+    ("FRACRNG"),
     {"FOFFSET"}
 };
 /* ************************************************************************** */
@@ -172,22 +173,22 @@ void UARTRxCmdBufferInit(UARTRxCmdBuffType* Buff)
 //    return 0;
 //}
 
-uint8_t UARTRxCmdBufferAdd (uint8_t* RxCmdPtr)
+bool UARTRxCmdBufferAdd (char* RxCmdPtr)
 {
     if(UART3RxCmdBuffer.CmdCnt < RX3_CMD_BUFF_LEN)
     {
         UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.WrIndex++] = RxCmdPtr;
         UART3RxCmdBuffer.WrIndex %= RX3_CMD_BUFF_LEN;
         UART3RxCmdBuffer.CmdCnt++;
-        return 1;
+        return (bool)1;
     }
-    return 0;
+    return (bool)0;
 }
 
 void UARTRxDataBufferAdd(uintptr_t testparam)
 {
-    uint8_t ConvStr[RX3_MAX_REG_DIGIT_POS];
-    uint8_t* CmdPtr = NULL;
+    char ConvStr[RX3_MAX_REG_DIGIT_POS];
+    char* CmdPtr = NULL;
 
     if (UART3RxBuffer.RxTimeout != 1)
     {
@@ -214,8 +215,8 @@ void UARTRxDataBufferAdd(uintptr_t testparam)
                         {
                             if((UART3RxBuffer.WrIndex > 1)&&(UART3RxBuffer.WrIndex <= RX3_MAX_REG_DIGIT_POS))
                             {
-                                memcpy(ConvStr,(uint8_t*)&UART3RxBuffer.Data[1],UART3RxBuffer.WrIndex-1);
-                                UART3RxBuffer.RxCnt = (uint8_t)atoi((char*)ConvStr);
+                                memcpy(ConvStr,(char*)&UART3RxBuffer.Data[1],UART3RxBuffer.WrIndex-1);
+                                UART3RxBuffer.RxCnt = (uint8_t)atoi(ConvStr);
                                 if(UART3RxBuffer.RxCnt < 1) UARTRxBufferInit((UARTRxBuffType*)&UART3RxBuffer);
                                 else UART3RxBuffer.Data[UART3RxBuffer.WrIndex++] = (*((uint8_t*)testparam));
                             }
@@ -228,7 +229,7 @@ void UARTRxDataBufferAdd(uintptr_t testparam)
                         CmdPtr = calloc(UART3RxBuffer.WrIndex+1, sizeof(uint8_t));
                         if(CmdPtr != NULL)
                         {
-                            if(UARTRxCmdBufferAdd(CmdPtr)) memcpy(CmdPtr,(uint8_t*)UART3RxBuffer.Data,UART3RxBuffer.WrIndex);
+                            if(UARTRxCmdBufferAdd(CmdPtr)) memcpy(CmdPtr,(char*)UART3RxBuffer.Data,UART3RxBuffer.WrIndex);
                             else free(CmdPtr);
                         }
                         UARTRxBufferInit((UARTRxBuffType*)&UART3RxBuffer);
@@ -243,11 +244,49 @@ void UARTRxDataBufferAdd(uintptr_t testparam)
     SERCOM3_USART_Read((void*)&Sercom3RxData, SERCOM3_RXDATA_LENGTH);
 }
 
+bool UART3CmdWRParse(char *pFirst,char *pLast,int* RegVal)
+{
+    char ConvStr[RX3_MAX_VAL_DIGIT_POS];
+    uint8_t i=0;
+    
+    while ((pFirst+i)<pLast)
+    {
+        if(*(pFirst+i) == ' ') i++;
+        else break;
+    }
+    if(*(pFirst+i) == '=')
+    {
+        i++;
+        while ((pFirst+i)<pLast)
+        {
+            if(*(pFirst+i) == ' ') i++;
+            else break;
+        }
+        pFirst+=i;
+        i=0;
+        while ((pFirst+i)<pLast)
+        {
+            if(isdigit(*(pFirst+i)))
+            {
+                ConvStr[i]= (*(pFirst+i));
+                i++;
+            }
+            else break;
+        }
+        if((pFirst+i) >= pLast)
+        {
+            *RegVal = atoi(ConvStr);
+            return true;
+        }
+        else return false;
+    }
+    else return false;
+}
+
 void UART3Task(void)
 {
-    uint8_t* CmdPtr;
-    uint8_t CmdNum,RegNum,i;
-    uint8_t ConvStr[RX3_MAX_VAL_DIGIT_POS];
+    char *CmdPtr,*pLastData;
+    uint8_t CmdNum,RegNum;
     int TempVal;
     
     if (UART3RxBuffer.RxTimeout == 1) 
@@ -262,7 +301,7 @@ void UART3Task(void)
         {
             for (CmdNum=0;CmdNum<RX3_CMD_NUMBER;CmdNum++)
             {
-                CmdPtr = (uint8_t*)strstr((char*)UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex],UART3Cmd[CmdNum]);
+                CmdPtr = strstr(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex],UART3Cmd[CmdNum]);
                 if(CmdPtr != NULL)break;
             }
             switch(CmdNum)
@@ -270,56 +309,64 @@ void UART3Task(void)
                 case 0:
                     for (RegNum=0;RegNum<RX3_REG_NUMBER;RegNum++)
                     {
-                        CmdPtr = (uint8_t*)strstr((char*)UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex],UART3Cmd[RegNum]);
-                        if(CmdPtr != NULL)break;
+                        CmdPtr = strstr(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex],UART3Cmd[RegNum]);
+                        if(CmdPtr != NULL) break;
                     }
-                    CmdPtr += strlen(UART3Cmd[RegNum]);
-                    if(*CmdPtr == '=')
+                    if(RegNum < RX3_REG_NUMBER)
                     {
-                        CmdPtr++;
-                        i=0;
-                        while ((CmdPtr+i) < (UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]+strlen((char*)(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]))-1))
+                        pLastData = (UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]+strlen((char*)UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex])-UART_RX3_END_SIZE);
+                        if(UART3CmdWRParse(CmdPtr+strlen(UART3Cmd[RegNum]),pLastData,&TempVal))
                         {
-                            if(isdigit(*(CmdPtr+i)))
+                            switch(RegNum)
                             {
-                                ConvStr[i]= (*(CmdPtr+i));
-                                i++;
+                                case 0:
+                                    if((uint16_t)TempVal <= 1) {USR_SCL_EN_WR(TempVal);}
+                                    else{}//invalid setting value
+                                    break;
+                                case 1:
+                                    if((uint16_t)TempVal <= 1) {USR_SCL_FRACT_RNG_WR(TempVal);}
+                                    else{}//invalid setting value
+                                    break;
+                                case 3:
+                                    if((uint16_t)TempVal <= 1) {USR_SCL_ROLL_OVER_WR(TempVal);}
+                                    else{}//invalid setting value
+                                    break;
+                                case 4:
+                                    if((uint16_t)TempVal <= 1) {USR_SCL_LIMIT_SW_WR(TempVal);}
+                                    else{}//invalid setting value
+                                    break;
+                                case 5:
+                                    if((uint16_t)TempVal <= FACTORY_RESOMT_MAX) {FACTORY_RESOMT_WR(TempVal);}
+                                    else{}//invalid setting value
+                                    break;
+                                case 6:
+                                    CommonVars.ExtDACMax = (uint16_t)TempVal;
+                                    break;
+                                case 7:
+                                    if((uint16_t)TempVal <= INT_DAC_MAX) CommonVars.IntDACLow = (uint16_t)TempVal;
+                                    else{}//invalid setting value
+                                    break;
+                                case 8:
+                                    if((uint16_t)TempVal <= INT_DAC_MAX) CommonVars.IntDACLowLS = (uint16_t)TempVal;
+                                    else{}//invalid setting value
+                                    break;
+                                case 9:
+                                    if((uint16_t)TempVal <= INT_DAC_MAX) CommonVars.IntDACHighLS = (uint16_t)TempVal;
+                                    else{}//invalid setting value
+                                    break;
+                                case 10:
+                                    if(((uint16_t)TempVal >= FRACT_RANGE_MIN)&&((uint16_t)TempVal <= FRACT_RANGE_MAX))
+                                        CommonVars.FractRange = (uint16_t)TempVal;
+                                    else{}//invalid setting value
+                                    break;
+                                case 11:
+                                    if((uint16_t)TempVal <= FACT_OFFSET_MAX) CommonVars.FactOffset = (uint16_t)TempVal;
+                                    break;
                             }
-                            else break;
                         }
-                        if((CmdPtr+i) >= (UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]+strlen((char*)(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]))-1))
-                        {
-                            if(i)
-                            {
-                                TempVal = atoi((char*)ConvStr);
-                                switch (RegNum)
-                                {
-                                    case 0:
-                                        if(TempVal < 2) USR_SCL_EN_WR(TempVal);
-//                                        else
-//                                        {
-//                                            //invalid setting value
-//                                        }
-                                        break;
-                                    default:
-                                    
-                                        break;
-                                }
-                            }
-//                            else
-//                            {
-//                                //cmd size error, wrong cmd format
-//                            }
-                        }
-//                        else
-//                        {
-//                            //non digit found in register value, wrong cmd format
-//                        }
+                        else{}//Cmd parse failed
                     }
-//                    else
-//                    {
-//                        //= character not found, wrong cmd format
-//                    }
+                    else{}//Register not found
                     break;
                 case 1:
                     
@@ -328,7 +375,7 @@ void UART3Task(void)
                     
                     break;
                 default:
-                    //command not found
+                    //Command not found
                     break;
             }
             free(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]);

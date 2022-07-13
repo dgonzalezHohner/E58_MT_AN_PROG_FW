@@ -88,18 +88,25 @@ volatile UARTRxBuffType UART3RxBuffer;
 
 #define RX3_CMD_NUMBER		3
 #define RX3_CMD_LENGTH		4
-#define RX3_REG_NUMBER		10
+#define RX3_REG_NUMBER		11
 #define RX3_REG_LENGTH		8
 
 #define RX3_CMD_BUFF_LEN	((uint8_t)5)
 typedef struct __UARTRxCmdBuffType
 {
-	uint8_t* CmdPtr[RX3_CMD_BUFF_LEN];
+	char* CmdPtr[RX3_CMD_BUFF_LEN];
 	uint8_t	WrIndex;
 	uint8_t RdIndex;
 	uint8_t CmdCnt;
 }UARTRxCmdBuffType;
 volatile UARTRxCmdBuffType UART3RxCmdBuffer;
+
+//#define UART_RX3_WITH_CRC
+#ifdef UART_RX3_WITH_CRC
+	#define UART_RX3_END_SIZE	2
+#else
+	#define UART_RX3_END_SIZE	1
+#endif
 	// *****************************************************************************
 	// *****************************************************************************
 	// Section: Data Types
@@ -197,9 +204,14 @@ volatile UARTRxCmdBuffType UART3RxCmdBuffer;
 		}
 	 */
 //	int ExampleFunction(int param1, int param2);
-void UARTRxDataBufferAdd(uintptr_t testparam);
+
+
+
 void UARTRxBufferInit(UARTRxBuffType* Buff);
 void UARTRxCmdBufferInit(UARTRxCmdBuffType* Buff);
+bool UARTRxCmdBufferAdd (char* RxCmdPtr);
+void UARTRxDataBufferAdd(uintptr_t testparam);
+bool UART3CmdWRParse(char *pFirst,char *pLast,int* RegVal);
 void UART3Task(void);
 	/* Provide C++ Compatibility */
 #ifdef __cplusplus

@@ -1274,7 +1274,11 @@ void SetScale(UsedScaleType Scaling)
                 {
                     *((uint16_t*)(CommonVars.pPosHighOut)) = 0xFFFF >> RESDIR_RESO_ST;
                 }
-                *((uint16_t*)(CommonVars.pPosOffset)) = (uint16_t)((((*((uint16_t*)(CommonVars.pPosHighOut)))*((uint32_t)(*((uint8_t*)RWWEE_FACT_OFFSET_ADDR))))/200)+1);
+
+                if((*((uint16_t*)(CommonVars.pPosHighOut))) == (0xFFFF >> RESDIR_RESO_ST))
+                    *((uint16_t*)(CommonVars.pPosOffset)) = 0x8000>> RESDIR_RESO_ST;
+                else
+                    *((uint16_t*)(CommonVars.pPosOffset)) = (uint16_t)((((*((uint16_t*)(CommonVars.pPosHighOut)))+1)*((uint32_t)(*((uint8_t*)RWWEE_FACT_OFFSET_ADDR))))/200);
                 *((uint16_t*)(CommonVars.pPosRange)) = (*((uint16_t*)(CommonVars.pPosHighOut)));
                 *((uint16_t*)(CommonVars.pROverRange)) = 0xFFFF >> RESDIR_RESO_ST;
                 *((uint16_t*)(CommonVars.pTransition)) = (*((uint16_t*)(CommonVars.pPosRange)))+(((*((uint16_t*)(CommonVars.pROverRange)))-(*((uint16_t*)(CommonVars.pPosRange))))>>1);

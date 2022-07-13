@@ -125,7 +125,6 @@ typedef enum
 }UsedScaleType;
 
 #define DEFAULT_RESOMT	2 // from 0 to 32
-
 #if DEFAULT_RESOMT > 32
 	#error "Default MT resolution 'DEFAULT_RESOMT' must be between 0 and 32"
 #endif
@@ -180,41 +179,40 @@ bool IC_MHMAccessFree;
 #define USR_SCL_EN_MSK              ((uint8_t)1)
 #define USR_SCL_EN_RD               ((ScalabilityType)((CommonVars.UserSclCfg[0]&(USR_SCL_EN_MSK<<USR_SCL_EN_POS))>>USR_SCL_EN_POS))
 #define USR_SCL_EN_WR(val)			(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_EN_MSK<<USR_SCL_EN_POS)))|((((uint8_t)val)&USR_SCL_EN_MSK)<<USR_SCL_EN_POS))
-
 #define USR_SCL_FRACT_RNG_POS		((uint8_t)1)
 #define USR_SCL_FRACT_RNG_MSK		((uint8_t)1)
 #define USR_SCL_FRACT_RNG_RD		((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_FRACT_RNG_MSK<<USR_SCL_FRACT_RNG_POS))>>USR_SCL_FRACT_RNG_POS))
 #define USR_SCL_FRACT_RNG_USED		((uint8_t)1)
 #define USR_SCL_FRACT_RNG_UNUSED	((uint8_t)0)
-#define USR_SCL_FRACT_RNG_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_FRACT_RNG_MSK<<USR_SCL_FRACT_RNG_POS)))|((val&USR_SCL_FRACT_RNG_MSK)<<USR_SCL_FRACT_RNG_POS))
+#define USR_SCL_FRACT_RNG_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_FRACT_RNG_MSK<<USR_SCL_FRACT_RNG_POS)))|((((uint8_t)val)&USR_SCL_FRACT_RNG_MSK)<<USR_SCL_FRACT_RNG_POS))
 
 #define USR_SCL_ROLL_OVER_POS		((uint8_t)2)
 #define USR_SCL_ROLL_OVER_MSK		((uint8_t)1)
 #define USR_SCL_ROLL_OVER_RD		((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS))>>USR_SCL_ROLL_OVER_POS))
 #define USR_SCL_ROLL_OVER_USED		((uint8_t)1)
 #define USR_SCL_ROLL_OVER_UNUSED	((uint8_t)0)
-#define USR_SCL_ROLL_OVER_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((val&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
+#define USR_SCL_ROLL_OVER_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((((uint8_t)val)&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
 
 #define USR_SCL_LIMIT_SW_POS		((uint8_t)3)
 #define USR_SCL_LIMIT_SW_MSK		((uint8_t)1)
 #define USR_SCL_LIMIT_SW_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS))>>USR_SCL_ROLL_OVER_POS))
 #define USR_SCL_LIMIT_SW_USED		((uint8_t)1)
 #define USR_SCL_LIMIT_SW_UNUSED		((uint8_t)0)
-#define USR_SCL_LIMIT_SW_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((val&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
+#define USR_SCL_LIMIT_SW_WR(val)	(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_ROLL_OVER_MSK<<USR_SCL_ROLL_OVER_POS)))|((((uint8_t)val)&USR_SCL_ROLL_OVER_MSK)<<USR_SCL_ROLL_OVER_POS))
 
 #define USR_SCL_AVAIL_POS           ((uint8_t)4)
 #define USR_SCL_AVAIL_MSK           ((uint8_t)1)
 #define USR_SCL_AVAIL_RD            ((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS))>>USR_SCL_AVAIL_POS))
 #define ENC_CFG_AVAIL				((uint8_t)0)
 #define ENC_CFG_NOT_AVAIL			((uint8_t)1)
-#define USR_SCL_AVAIL_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS)))|((val&USR_SCL_AVAIL_MSK)<<USR_SCL_AVAIL_POS))
+#define USR_SCL_AVAIL_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_AVAIL_MSK<<USR_SCL_AVAIL_POS)))|((((uint8_t)val)&USR_SCL_AVAIL_MSK)<<USR_SCL_AVAIL_POS))
 
 #define USR_SCL_UF_OF_POS			((uint8_t)5)
 #define USR_SCL_UF_OF_MSK			((uint8_t)1)
 #define USR_SCL_UF_OF_RD			((uint8_t)((CommonVars.UserSclCfg[0]&(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS))>>USR_SCL_UF_OF_POS))
 #define USR_SCL_OVFLW				((uint8_t)1)
 #define USR_SCL_NOT_OVFLW			((uint8_t)0)
-#define USR_SCL_UF_OF_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)))|((val&USR_SCL_UF_OF_MSK)<<USR_SCL_UF_OF_POS))
+#define USR_SCL_UF_OF_WR(val)		(CommonVars.UserSclCfg[0] = (CommonVars.UserSclCfg[0]&(~(USR_SCL_UF_OF_MSK<<USR_SCL_UF_OF_POS)))|((((uint8_t)val)&USR_SCL_UF_OF_MSK)<<USR_SCL_UF_OF_POS))
 
 //UserSclCfg[1]
 #define USR_SCL_MHM_RESOMT_POS      ((uint8_t)0)
@@ -233,7 +231,17 @@ bool IC_MHMAccessFree;
 #define FACTORY_RESOMT_POS          ((uint8_t)0)
 #define FACTORY_RESOMT_MSK          ((uint8_t)0x3F)
 #define FACTORY_RESOMT	            ((uint8_t)((CommonVars.UserSclCfg[2]&(FACTORY_RESOMT_MSK<<FACTORY_RESOMT_POS))>>FACTORY_RESOMT_POS))
-#define FACTORY_RESOMT_WR(val)		(CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(FACTORY_RESOMT_MSK<<FACTORY_RESOMT_POS)))|((val&FACTORY_RESOMT_MSK)<<FACTORY_RESOMT_POS))
+#define FACTORY_RESOMT_WR(val)		(CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(FACTORY_RESOMT_MSK<<FACTORY_RESOMT_POS)))|((((uint8_t)val)&FACTORY_RESOMT_MSK)<<FACTORY_RESOMT_POS))
+#define FACTORY_RESOMT_MAX			((uint8_t)32)
+
+
+//Internal DAC defines
+#define INT_DAC_MAX					((uint16_t)0x03FF)
+//Fractional Range defines
+#define FRACT_RANGE_MAX				((uint16_t)3600)
+#define FRACT_RANGE_MIN				((uint16_t)225)
+//Factory Offset defines
+#define FACT_OFFSET_MAX				((uint8_t)200)
 
 //ResoAndDir
 #define RESDIR_RESO_MT_POS			((uint8_t)0)
@@ -517,7 +525,6 @@ typedef struct __IntRWWEEWrType
 
 #define RWWEE_FACT_OFFSET_ADDR		((uint32_t)(RWWEE_FRACT_RANGE_ADDR+RWWEE_FRACT_RANGE_LEN))
 #define RWWEE_FACT_OFFSET_LEN		((uint8_t)1)
-#define RWWEE_FACT_OFFSET_MAX		((uint8_t)199)
 
 #define RWWEE_SCL_POS_L_ADDR		((uint32_t)(RWWEE_FACT_OFFSET_ADDR+RWWEE_FACT_OFFSET_LEN))
 #define RWWEE_SCL_POS_L_LEN			((uint8_t)8)
