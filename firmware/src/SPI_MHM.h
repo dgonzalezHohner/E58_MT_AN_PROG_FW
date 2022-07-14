@@ -234,7 +234,6 @@ bool IC_MHMAccessFree;
 #define FACTORY_RESOMT_WR(val)		(CommonVars.UserSclCfg[2] = (CommonVars.UserSclCfg[2]&(~(FACTORY_RESOMT_MSK<<FACTORY_RESOMT_POS)))|((((uint8_t)val)&FACTORY_RESOMT_MSK)<<FACTORY_RESOMT_POS))
 #define FACTORY_RESOMT_MAX			((uint8_t)32)
 
-
 //Internal DAC defines
 #define INT_DAC_MAX					((uint16_t)0x03FF)
 //Fractional Range defines
@@ -297,6 +296,7 @@ bool IC_MHMAccessFree;
 #define EXCHG_FLAG_EXTDACINIT		((uint8_t)((CommonVars.ExchgFlags&(EXCHG_FLAG_EXTDACINIT_MSK<<EXCHG_FLAG_EXTDACINIT_POS))>>EXCHG_FLAG_EXTDACINIT_POS))
 #define EXCHG_FLAG_EXTDACINIT_SET	CommonVars.ExchgFlags |= (EXCHG_FLAG_EXTDACINIT_MSK<<EXCHG_FLAG_EXTDACINIT_POS)
 #define EXCHG_FLAG_EXTDACINIT_CLR	CommonVars.ExchgFlags &= (~(EXCHG_FLAG_EXTDACINIT_MSK<<EXCHG_FLAG_EXTDACINIT_POS))
+
 //UF_OF_Cnt
 #define UF_OV_MAX					(100)
 #define UF_OV_MIN					((-1)*UF_OV_MAX)

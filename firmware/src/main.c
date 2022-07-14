@@ -52,7 +52,7 @@ int main ( void )
     SERCOM3_USART_ReadCallbackRegister(UARTRxDataBufferAdd,(uintptr_t)((void*)&Sercom3RxData));
     SERCOM3_USART_Read((void*)&Sercom3RxData, SERCOM3_RXDATA_LENGTH);
     //WDT_Enable();
-    while ( true )
+    while (true)
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
@@ -65,9 +65,10 @@ int main ( void )
         else
         {
             //PushButtonsTask();
-            IC_MHM_Task();
-            ExtDACTask();
+            //IC_MHM_Task();
         }
+        UART3Task();
+//        ExtDACTask();
     }
 
     /* Execution should not come here during normal operation */

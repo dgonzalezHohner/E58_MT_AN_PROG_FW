@@ -69,27 +69,17 @@ extern "C" {
 volatile uint8_t Sercom3RxData;
 //volatile uint8_t Sercom3TxData;
 
-#define RX3_BUFF_LEN			((uint8_t)20)
+#define RX3_BUFF_LEN			((uint8_t)32)
 #define RX3_FRAME_TOUT_ms		500
 #define RX3_FRAME_TOUT_SET		(((RX3_FRAME_TOUT_ms*1000)/(SYSTICK_INTERRUPT_PERIOD_IN_US))+1)
-#define RX3_MAX_REG_DIGIT		((uint8_t)3)
-#define RX3_MAX_REG_DIGIT_POS	((uint8_t)RX3_MAX_REG_DIGIT+1)
-
-#define RX3_MAX_VAL_DIGIT		((uint8_t)5)
-#define RX3_MAX_VAL_DIGIT_POS	((uint8_t)RX3_MAX_VAL_DIGIT+1)
 typedef struct _UARTRxBuffType
 {
 	uint8_t Data[RX3_BUFF_LEN];
-	uint8_t RxCnt;
+//	uint8_t RxCnt;
 	uint8_t WrIndex;
 	uint8_t RxTimeout;
 }UARTRxBuffType;
 volatile UARTRxBuffType UART3RxBuffer;
-
-#define RX3_CMD_NUMBER		3
-#define RX3_CMD_LENGTH		4
-#define RX3_REG_NUMBER		11
-#define RX3_REG_LENGTH		8
 
 #define RX3_CMD_BUFF_LEN	((uint8_t)5)
 typedef struct __UARTRxCmdBuffType
@@ -211,7 +201,7 @@ void UARTRxBufferInit(UARTRxBuffType* Buff);
 void UARTRxCmdBufferInit(UARTRxCmdBuffType* Buff);
 bool UARTRxCmdBufferAdd (char* RxCmdPtr);
 void UARTRxDataBufferAdd(uintptr_t testparam);
-bool UART3CmdWRParse(char *pFirst,char *pLast,int* RegVal);
+bool UART3CmdValParse(char *pFirst,uint8_t DigitLen,int* RegVal);
 void UART3Task(void);
 	/* Provide C++ Compatibility */
 #ifdef __cplusplus
