@@ -209,29 +209,30 @@ void UARTRxDataBufferAdd(uintptr_t testparam)
     SERCOM3_USART_Read((void*)&Sercom3RxData, SERCOM3_RXDATA_LENGTH);
 }
 
-bool UART3CmdValParse(char *pFirst,uint8_t DigitLen,int* RegVal)
+bool UART3CmdValParse(char *pRxFrame,uint8_t CmdLen, int* RegVal)
 {
+    uint8_t DigitLen = strlen(pRxFrame)-CmdLen-UART_RX3_CRC_BYTES;
     char ConvStr[DigitLen+1];
     uint8_t i = 0;
 
     memset(ConvStr,0,DigitLen+1);
+    pRxFrame += CmdLen;
     for (i=0;i<DigitLen;i++)
     {
-        if(isdigit(*(pFirst+i))) ConvStr[i]= (*(pFirst+i));
+        if(isdigit(*(pRxFrame+i))) ConvStr[i]= (*(pRxFrame+i));
         else break;
     }
-    if(i < DigitLen)
+    if(i < DigitLen)return false;
+    else
     {
         *RegVal = atoi(ConvStr);
-       return true;
+        return true;
     }
-    else return false;    
 }
 
 void UART3Task(void)
 {
     char *CmdPtr;
-    uint8_t ValueLen = 0;
     int TempVal;
     
     if (UART3RxBuffer.RxTimeout == 1) 
@@ -254,13 +255,18 @@ void UART3Task(void)
             else if(!strncmp(CmdPtr, "LimitSW OFF", strlen("LimitSW OFF")))         USR_SCL_LIMIT_SW_WR(0);
             else if(!strncmp(CmdPtr, "FractRng = ", strlen("FractRng = ")))
             {
-                CmdPtr += strlen("FractRng = ");
+                if(UART3CmdValParse(CmdPtr,strlen("FractRng = "),&TempVal))
+                {
+                    if(((uint16_t)TempVal >= FRACT_RANGE_MIN)&&((uint16_t)TempVal <= FRACT_RANGE_MAX))
+                        CommonVars.FractRange = (uint16_t)TempVal;
+                    else{}//Value out of range
+                }
+                else{}//invalid value
+                
             }
             else if(!strncmp(CmdPtr, "Factory MT Res = ", strlen("Factory MT Res = ")))
             {
-                CmdPtr += strlen("Factory MT Res = ");
-                ValueLen = strlen(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex])-strlen("Factory MT Res = ");
-                if(UART3CmdValParse(CmdPtr,ValueLen,&TempVal))
+                if(UART3CmdValParse(CmdPtr,strlen("Factory MT Res = "),&TempVal))
                 {
                     if((uint16_t)TempVal <= FACTORY_RESOMT_MAX) FACTORY_RESOMT_WR(TempVal);
                     else{}//Value too high
@@ -269,66 +275,76 @@ void UART3Task(void)
             }
             else if(!strncmp(CmdPtr, "Factory OFFSET = ", strlen("Factory OFFSET = ")))
             {
-                //
-                //if((uint16_t)TempVal <= FACT_OFFSET_MAX) CommonVars.FactOffset = (uint16_t)TempVal;
-                CmdPtr += strlen("Factory OFFSET = ");
+                if(UART3CmdValParse(CmdPtr,strlen("Factory OFFSET = "),&TempVal))
+                {
+                    if((uint16_t)TempVal <= FACT_OFFSET_MAX) CommonVars.FactOffset = (uint16_t)TempVal;
+                    else{}//Value too high
+                }
+                else{}//invalid value
             }
             else if(!strncmp(CmdPtr, "IntDACLowLS = ", strlen("IntDACLowLS = ")))
             {
-                CmdPtr += strlen("IntDACLowLS = ");
-                //
-//                if((uint16_t)TempVal <= INT_DAC_MAX)
-//                {
-//                    //Activar flag per traslladar el valor a la sortida
-//                    CommonVars.IntDACLowLS = (uint16_t)TempVal;
-//                }
-//                else{}//invalid setting value
+                if(UART3CmdValParse(CmdPtr,strlen("IntDACLowLS = "),&TempVal))
+                {
+                    if((uint16_t)TempVal <= INT_DAC_MAX)
+                    {
+                        //Activar flag per traslladar el valor a la sortida
+                        CommonVars.IntDACLowLS = (uint16_t)TempVal;
+                    }
+                    else{}//Value too high
+                }
+                else{}//invalid value
             }
             else if(!strncmp(CmdPtr, "IntDACLow = ", strlen("IntDACLow = ")))
             {
-                CmdPtr += strlen("IntDACLow = ");
-                //
-//                if((uint16_t)TempVal <= INT_DAC_MAX)
-//                {
-//                    //Activar flag per traslladar el valor a la sortida
-//                    CommonVars.IntDACLow = (uint16_t)TempVal;
-//                }
-//                else{}//invalid setting value
+                if(UART3CmdValParse(CmdPtr,strlen("IntDACLow = "),&TempVal))
+                {
+                    if((uint16_t)TempVal <= INT_DAC_MAX)
+                    {
+                        //Activar flag per traslladar el valor a la sortida
+                        CommonVars.IntDACLow = (uint16_t)TempVal;
+                    }
+                    else{}//Value too high
+                }
+                else{}//invalid value
             }
             else if(!strncmp(CmdPtr, "ExtDACMAx = ", strlen("ExtDACMAx = ")))
             {
-                CmdPtr += strlen("ExtDACMAx = ");
-                //
-//                //Activar flag per traslladar el valor a la sortida
-//                CommonVars.ExtDACMax = (uint16_t)TempVal;
-                
+                if(UART3CmdValParse(CmdPtr,strlen("ExtDACMAx = "),&TempVal))
+                {
+                    //Activar flag per traslladar el valor a la sortida
+                    CommonVars.ExtDACMax = (uint16_t)TempVal;
+                }
+                else{}//invalid value
             }
             else if(!strncmp(CmdPtr, "IntDACHighLS = ", strlen("IntDACHighLS = ")))
             {
-                CmdPtr += strlen("IntDACHighLS = ");
-                //
-//                if((uint16_t)TempVal <= INT_DAC_MAX)
-//                {
-//                    //Activar flag per traslladar el valor a la sortida
-//                    CommonVars.IntDACHighLS = (uint16_t)TempVal;
-//                }
-//                else{}//invalid setting value
+               if(UART3CmdValParse(CmdPtr,strlen("IntDACHighLS = "),&TempVal))
+                {
+                    if((uint16_t)TempVal <= INT_DAC_MAX)
+                    {
+                        //Activar flag per traslladar el valor a la sortida
+                        CommonVars.IntDACHighLS = (uint16_t)TempVal;
+                    }
+                    else{}//Value too high
+                }
+                else{}//invalid value
             }
             else if(!strncmp(CmdPtr, "SaveCfg", strlen("SaveCfg")))
             {
-                CmdPtr += strlen("SaveCfg");
+
             }
             else if(!strncmp(CmdPtr, "CancelCfg", strlen("CancelCfg")))
             {
-                CmdPtr += strlen("CancelCfg");
+
             }
             else if(!strncmp(CmdPtr, "ReadCfgRAM", strlen("ReadCfgRAM")))
             {
-                CmdPtr += strlen("ReadCfgRAM");
+
             }
             else if(!strncmp(CmdPtr, "ReadCfgEE", strlen("ReadCfgEE")))
             {
-                CmdPtr += strlen("ReadCfgEE");
+
             }
             else {}            
             free(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]);

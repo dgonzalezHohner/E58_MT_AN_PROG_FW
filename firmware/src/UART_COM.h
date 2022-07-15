@@ -93,9 +93,9 @@ volatile UARTRxCmdBuffType UART3RxCmdBuffer;
 
 //#define UART_RX3_WITH_CRC
 #ifdef UART_RX3_WITH_CRC
-	#define UART_RX3_END_SIZE	2
+	#define UART_RX3_CRC_BYTES	1
 #else
-	#define UART_RX3_END_SIZE	1
+	#define UART_RX3_CRC_BYTES	0
 #endif
 	// *****************************************************************************
 	// *****************************************************************************
@@ -201,7 +201,7 @@ void UARTRxBufferInit(UARTRxBuffType* Buff);
 void UARTRxCmdBufferInit(UARTRxCmdBuffType* Buff);
 bool UARTRxCmdBufferAdd (char* RxCmdPtr);
 void UARTRxDataBufferAdd(uintptr_t testparam);
-bool UART3CmdValParse(char *pFirst,uint8_t DigitLen,int* RegVal);
+bool UART3CmdValParse(char *pRxFrame,uint8_t CmdLen, int* RegVal);
 void UART3Task(void);
 	/* Provide C++ Compatibility */
 #ifdef __cplusplus
