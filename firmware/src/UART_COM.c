@@ -59,7 +59,7 @@
     Any additional remarks
  */
 //int global_data;
-
+static UARTTxCmdBuffType UART3TxCmdBuffer;
 /* ************************************************************************** */
 /* ************************************************************************** */
 // Section: Local Functions                                                   */
@@ -153,6 +153,17 @@ void UARTRxCmdBufferInit(UARTRxCmdBuffType* Buff)
 //int ExampleInterfaceFunction(int param1, int param2) {
 //    return 0;
 //}
+bool UARTTxCmdBufferAdd (char* TxCmdPtr)
+{
+    if(UART3TxCmdBuffer.CmdCnt < TX3_CMD_BUFF_LEN)
+    {
+        UART3TxCmdBuffer.CmdPtr[UART3TxCmdBuffer.WrIndex++] = TxCmdPtr;
+        UART3TxCmdBuffer.WrIndex %= TX3_CMD_BUFF_LEN;
+        UART3TxCmdBuffer.CmdCnt++;
+        return (bool)1;
+    }
+    return (bool)0;
+}
 
 bool UARTRxCmdBufferAdd (char* RxCmdPtr)
 {
@@ -237,7 +248,6 @@ void UART3Task(void)
     
     if (UART3RxBuffer.RxTimeout == 1) 
     {
-        //Rx timeout expired
         UARTRxBufferInit((UARTRxBuffType*)&UART3RxBuffer);
     }
     if(UART3RxCmdBuffer.CmdCnt)
@@ -258,11 +268,15 @@ void UART3Task(void)
                 if(UART3CmdValParse(CmdPtr,strlen("FractRng = "),&TempVal))
                 {
                     if(((uint16_t)TempVal >= FRACT_RANGE_MIN)&&((uint16_t)TempVal <= FRACT_RANGE_MAX))
-                        CommonVars.FractRange = (uint16_t)TempVal;
-                    else{}//Value out of range
+                    {
+                        if(UARTTxCmdBufferAdd ("\2FractRng ACK\3")) CommonVars.FractRange = (uint16_t)TempVal;
+//                        SERCOM3_USART_Write("\2FractRng ACK\3",strlen("\2FractRng ACK\3"));
+                    }
+//                    else SERCOM3_USART_Write("\2FractRng NAK\3",strlen("\2FractRng NAK\3"));
+                    else UARTTxCmdBufferAdd ("\2FractRng NAK\3");
                 }
-                else{}//invalid value
-                
+//                else SERCOM3_USART_Write("\2FractRng Illegal\3",strlen("\2FractRng Illegal\3"));
+                else UARTTxCmdBufferAdd ("\2FractRng Illegal\3");
             }
             else if(!strncmp(CmdPtr, "Factory MT Res = ", strlen("Factory MT Res = ")))
             {
@@ -352,6 +366,20 @@ void UART3Task(void)
         UART3RxCmdBuffer.RdIndex++;
         UART3RxCmdBuffer.RdIndex %= RX3_CMD_BUFF_LEN;
         UART3RxCmdBuffer.CmdCnt--;
+    }
+    
+    if(UART3TxCmdBuffer.CmdCnt)
+    {
+        if(UART3TxCmdBuffer.CmdPtr[UART3TxCmdBuffer.RdIndex] != NULL)
+        {
+            if(!SERCOM3_USART_WriteIsBusy())
+            {
+                SERCOM3_USART_Write(UART3TxCmdBuffer.CmdPtr[UART3TxCmdBuffer.RdIndex],strlen(UART3TxCmdBuffer.CmdPtr[UART3TxCmdBuffer.RdIndex]));
+                UART3TxCmdBuffer.RdIndex++;
+                UART3TxCmdBuffer.RdIndex %= TX3_CMD_BUFF_LEN;
+                UART3TxCmdBuffer.CmdCnt--;
+            }
+        }
     }
 }
 /* *****************************************************************************

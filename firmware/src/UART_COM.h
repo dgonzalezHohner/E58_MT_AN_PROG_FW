@@ -91,6 +91,14 @@ typedef struct __UARTRxCmdBuffType
 }UARTRxCmdBuffType;
 volatile UARTRxCmdBuffType UART3RxCmdBuffer;
 
+#define TX3_CMD_BUFF_LEN	((uint8_t)5)
+typedef struct __UARTTxCmdBuffType
+{
+	char* CmdPtr[TX3_CMD_BUFF_LEN];
+	uint8_t	WrIndex;
+	uint8_t RdIndex;
+	uint8_t CmdCnt;
+}UARTTxCmdBuffType;
 //#define UART_RX3_WITH_CRC
 #ifdef UART_RX3_WITH_CRC
 	#define UART_RX3_CRC_BYTES	1
@@ -198,6 +206,7 @@ volatile UARTRxCmdBuffType UART3RxCmdBuffer;
 
 
 void UARTRxBufferInit(UARTRxBuffType* Buff);
+bool UARTTxCmdBufferAdd (char* TxCmdPtr);
 void UARTRxCmdBufferInit(UARTRxCmdBuffType* Buff);
 bool UARTRxCmdBufferAdd (char* RxCmdPtr);
 void UARTRxDataBufferAdd(uintptr_t testparam);
