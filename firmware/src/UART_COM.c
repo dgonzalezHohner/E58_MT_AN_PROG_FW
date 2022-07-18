@@ -257,61 +257,72 @@ void UART3Task(void)
             CmdPtr = UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex];
             if(!strncmp(CmdPtr, "UserProg ON", strlen("UserProg ON")))
             {
-                if(UARTTxCmdBufferAdd ("\2UserProg ON ACK\3")) USR_SCL_EN_WR(1);
+                if(UARTTxCmdBufferAdd ("\2UserProg ON ACK\3")) USR_SCL_EN_WR(SCALABLE);
             }
             else if(!strncmp(CmdPtr, "UserProg OFF", strlen("UserProg OFF")))
             {
-                if(UARTTxCmdBufferAdd ("\2UserProg OFF ACK\3")) USR_SCL_EN_WR(0);
+                if(UARTTxCmdBufferAdd ("\2UserProg OFF ACK\3")) USR_SCL_EN_WR(NO_SCALABLE);
             }
             else if(!strncmp(CmdPtr, "FractRange ON", strlen("FractRange ON")))
             {
-                if(UARTTxCmdBufferAdd ("\2FractRange ON ACK\3")) USR_SCL_FRACT_RNG_WR(1);
+                if(UARTTxCmdBufferAdd ("\2FractRange ON ACK\3")) USR_SCL_FRACT_RNG_WR(USR_SCL_FRACT_RNG_USED);
             }
-            else if(!strncmp(CmdPtr, "FractRange OFF", strlen("FractRange OFF")))   USR_SCL_FRACT_RNG_WR(0);
-            else if(!strncmp(CmdPtr, "RollOver ON", strlen("RollOver ON")))         USR_SCL_ROLL_OVER_WR(1);
-            else if(!strncmp(CmdPtr, "RollOver OFF", strlen("RollOver OFF")))       USR_SCL_ROLL_OVER_WR(0);
-            else if(!strncmp(CmdPtr, "LimitSW ON", strlen("LimitSW ON")))           USR_SCL_LIMIT_SW_WR(1);
-            else if(!strncmp(CmdPtr, "LimitSW OFF", strlen("LimitSW OFF")))         USR_SCL_LIMIT_SW_WR(0);
-            
+            else if(!strncmp(CmdPtr, "FractRange OFF", strlen("FractRange OFF")))
+            {
+                if(UARTTxCmdBufferAdd ("\2FractRange OFF ACK\3")) USR_SCL_FRACT_RNG_WR(USR_SCL_FRACT_RNG_UNUSED);
+            }
+            else if(!strncmp(CmdPtr, "RollOver ON", strlen("RollOver ON")))
+            {
+                if(UARTTxCmdBufferAdd ("\2RollOver ON ACK\3")) USR_SCL_ROLL_OVER_WR(USR_SCL_ROLL_OVER_USED);
+            }
+            else if(!strncmp(CmdPtr, "RollOver OFF", strlen("RollOver OFF")))
+            {
+                if(UARTTxCmdBufferAdd ("\2RollOver OFF ACK\3")) USR_SCL_ROLL_OVER_WR(USR_SCL_ROLL_OVER_UNUSED);
+            }
+            else if(!strncmp(CmdPtr, "LimitSW ON", strlen("LimitSW ON")))
+            {
+                if(UARTTxCmdBufferAdd ("\2LimitSW ON ACK\3")) USR_SCL_LIMIT_SW_WR(USR_SCL_LIMIT_SW_USED);
+            }
+            else if(!strncmp(CmdPtr, "LimitSW OFF", strlen("LimitSW OFF")))
+            {
+                if(UARTTxCmdBufferAdd ("\2LimitSW OFF ACK\3")) USR_SCL_LIMIT_SW_WR(USR_SCL_LIMIT_SW_UNUSED);
+            }           
             else if(!strncmp(CmdPtr, "FractRng = ", strlen("FractRng = ")))
             {
                 if(UART3CmdValParse(CmdPtr,strlen("FractRng = "),&TempVal))
                 {
                     if(((uint16_t)TempVal >= FRACT_RANGE_MIN)&&((uint16_t)TempVal <= FRACT_RANGE_MAX))
                     {
-                        if(UARTTxCmdBufferAdd ("\2FractRng ACK\3")) CommonVars.FractRange = (uint16_t)TempVal;
+                        if(UARTTxCmdBufferAdd ("\2FractRng ACK\3")) EncCfg.FractRange = (uint16_t)TempVal;
                     }
                     else UARTTxCmdBufferAdd ("\2FractRng NAK\3");
                 }
                 else UARTTxCmdBufferAdd ("\2FractRng Illegal\3");
             }
-            
             else if(!strncmp(CmdPtr, "Factory MT Res = ", strlen("Factory MT Res = ")))
             {
                 if(UART3CmdValParse(CmdPtr,strlen("Factory MT Res = "),&TempVal))
                 {
                     if((uint16_t)TempVal <= FACTORY_RESOMT_MAX)
                     {
-                        if(UARTTxCmdBufferAdd ("\2Factory MT Res ACK\3")) FACTORY_RESOMT_WR(TempVal);
+                        if(UARTTxCmdBufferAdd ("\2Factory MT Res ACK\3")) EncCfg.UserSclCfg[1] = (uint8_t)TempVal;
                     }
                     else UARTTxCmdBufferAdd ("\2Factory MT Res NAK\3");
                 }
                 else UARTTxCmdBufferAdd ("\2Factory MT Res Illegal\3");
             }
-            
             else if(!strncmp(CmdPtr, "Factory OFFSET = ", strlen("Factory OFFSET = ")))
             {
                 if(UART3CmdValParse(CmdPtr,strlen("Factory OFFSET = "),&TempVal))
                 {
                     if((uint16_t)TempVal <= FACT_OFFSET_MAX)
                     {
-                        if(UARTTxCmdBufferAdd ("\2Factoru OFFSET ACK\3")) CommonVars.FactOffset = (uint16_t)TempVal;
+                        if(UARTTxCmdBufferAdd ("\2Factoru OFFSET ACK\3")) EncCfg.FactOffset = (uint16_t)TempVal;
                     }
                     else UARTTxCmdBufferAdd ("\2Factory OFFSET NAK\3");
                 }
                 else UARTTxCmdBufferAdd ("\2Factory OFFSET Illegal\3");
             }
-            
             else if(!strncmp(CmdPtr, "IntDACLowLS = ", strlen("IntDACLowLS = ")))
             {
                 if(UART3CmdValParse(CmdPtr,strlen("IntDACLowLS = "),&TempVal))
@@ -321,31 +332,31 @@ void UART3Task(void)
                         if(UARTTxCmdBufferAdd ("\2IntDACLowLS ACK\3"))
                         {
                             //Activar flag per traslladar el valor a la sortida
-                            CommonVars.IntDACLowLS = (uint16_t)TempVal;
+                            DACAdjust = 1;
+                            EncCfg.IntDACLowLS = (uint16_t)TempVal;
                         }
                     }
                     else UARTTxCmdBufferAdd ("\2IntDACLowLS NAK\3");
                 }
                 else UARTTxCmdBufferAdd ("\2IntDACLowLS Illegal\3");
             }
-            
             else if(!strncmp(CmdPtr, "IntDACLow = ", strlen("IntDACLow = ")))
             {
                 if(UART3CmdValParse(CmdPtr,strlen("IntDACLow = "),&TempVal))
                 {
-                    if((uint16_t)TempVal <= INT_DAC_MAX)
+                    if( ((uint16_t)TempVal <= INT_DAC_MAX)&&((uint16_t)TempVal >= EncCfg.IntDACLowLS))
                     {
                         if(UARTTxCmdBufferAdd ("\2IntDACLow ACK\3"))
                         {
                             //Activar flag per traslladar el valor a la sortida
-                            CommonVars.IntDACLow = (uint16_t)TempVal;
+                            DACAdjust = 2;
+                            EncCfg.IntDACLow = (uint16_t)TempVal;
                         }
                     }
                     else UARTTxCmdBufferAdd ("\2IntDACLow NAK\3");
                 }
                 else UARTTxCmdBufferAdd ("\2IntDACLow Illegal\3");
             }
-            
             else if(!strncmp(CmdPtr, "ExtDACMAx = ", strlen("ExtDACMAx = ")))
             {
                 if(UART3CmdValParse(CmdPtr,strlen("ExtDACMAx = "),&TempVal))
@@ -353,22 +364,23 @@ void UART3Task(void)
                     if(UARTTxCmdBufferAdd ("\2ExtDACMax ACK\3"))
                     {
                         //Activar flag per traslladar el valor a la sortida
-                        CommonVars.ExtDACMax = (uint16_t)TempVal;
+                        EncCfg.ExtDACMax = (uint16_t)TempVal;
+                        DACAdjust = 3;
                     }
                 }
                 else UARTTxCmdBufferAdd ("\2ExtDACMax Illegal\3");
             }
-            
             else if(!strncmp(CmdPtr, "IntDACHighLS = ", strlen("IntDACHighLS = ")))
             {
-               if(UART3CmdValParse(CmdPtr,strlen("IntDACHighLS = "),&TempVal))
+                if(UART3CmdValParse(CmdPtr,strlen("IntDACHighLS = "),&TempVal))
                 {
-                    if((uint16_t)TempVal <= INT_DAC_MAX)
+                    if(((uint16_t)TempVal <= INT_DAC_MAX)&&((uint16_t)TempVal >= EncCfg.IntDACLow))
                     {
                         if(UARTTxCmdBufferAdd ("\2IntDACHighLS ACK\3"))
                         {
                             //Activar flag per traslladar el valor a la sortida
-                            CommonVars.IntDACHighLS = (uint16_t)TempVal;
+                            EncCfg.IntDACHighLS = (uint16_t)TempVal;
+                            DACAdjust = 4;
                         }
                     }
                     else UARTTxCmdBufferAdd ("\2IntDACHighLS NAK\3");
@@ -378,19 +390,19 @@ void UART3Task(void)
             
             else if(!strncmp(CmdPtr, "SaveCfg", strlen("SaveCfg")))
             {
-
+                DACAdjust = 0;
             }
             else if(!strncmp(CmdPtr, "CancelCfg", strlen("CancelCfg")))
             {
-
+                DACAdjust = 0;
             }
             else if(!strncmp(CmdPtr, "ReadCfgRAM", strlen("ReadCfgRAM")))
             {
-
+                DACAdjust = 0;
             }
             else if(!strncmp(CmdPtr, "ReadCfgEE", strlen("ReadCfgEE")))
             {
-
+                DACAdjust = 0;
             }
             else {}            
             free(UART3RxCmdBuffer.CmdPtr[UART3RxCmdBuffer.RdIndex]);
