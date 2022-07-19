@@ -68,6 +68,7 @@ extern "C" {
 #define SERCOM3_RXDATA_LENGTH	((uint8_t)1)
 volatile uint8_t Sercom3RxData;
 //volatile uint8_t Sercom3TxData;
+#define RX3_CMD_NUMBER			((uint8_t)15)
 
 #define RX3_BUFF_LEN			((uint8_t)32)
 #define RX3_FRAME_TOUT_ms		500
@@ -105,6 +106,14 @@ typedef struct __UARTTxCmdBuffType
 #else
 	#define UART_RX3_CRC_BYTES	0
 #endif
+enum RX_CMD_RUN_ENUM
+{
+	NO_CMD = (uint8_t)0,
+	SAVE_CMD,
+	CANCEL_CMD,
+	READ_CFG_RAM,
+	READ_CFG_EE
+};
 	// *****************************************************************************
 	// *****************************************************************************
 	// Section: Data Types
@@ -212,6 +221,7 @@ bool UARTRxCmdBufferAdd (char* RxCmdPtr);
 void UARTRxDataBufferAdd(uintptr_t testparam);
 bool UART3CmdValParse(char *pRxFrame,uint8_t CmdLen, int* RegVal);
 void UART3Task(void);
+void UARTTxCmdSent(uintptr_t Flag);
 	/* Provide C++ Compatibility */
 #ifdef __cplusplus
 }
