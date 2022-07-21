@@ -86,7 +86,7 @@ const struct _RxMsg RxMsg = {
                                 {RxMsg00,RxMsg01,RxMsg02,RxMsg03,RxMsg04,RxMsg05,RxMsg06,RxMsg07,RxMsg08,RxMsg09,RxMsg10,RxMsg11,RxMsg12,RxMsg13,RxMsg14},
                                 {strlen(RxMsg00),strlen(RxMsg01),strlen(RxMsg02),strlen(RxMsg03),strlen(RxMsg04),strlen(RxMsg05),strlen(RxMsg06),strlen(RxMsg07),strlen(RxMsg08),strlen(RxMsg09),strlen(RxMsg10),strlen(RxMsg11),strlen(RxMsg12),strlen(RxMsg13),strlen(RxMsg14)}
                             };
-
+volatile UARTRxCmdBuffType UART3RxCmdBuffer;
 static UARTTxCmdBuffType UART3TxCmdBuffer;
 static uint8_t RxCmdRun = NO_CMD;
 static uint8_t TxCmdCnt = 0;
@@ -160,6 +160,14 @@ volatile uint8_t TxCmdSent = 0;
 /*  A brief description of a section can be given directly below the section
     banner.
  */
+void UART3RxInit(void)
+{
+    UARTRxBufferInit((UARTRxBuffType*)&UART3RxBuffer);
+    UARTRxCmdBufferInit((UARTRxCmdBuffType*) &UART3RxCmdBuffer);
+    SERCOM3_USART_ReadCallbackRegister(UARTRxDataBufferAdd,(uintptr_t)((void*)&Sercom3RxData));
+    SERCOM3_USART_Read((void*)&Sercom3RxData, SERCOM3_RXDATA_LENGTH);
+}
+
 void UARTRxBufferInit(UARTRxBuffType* Buff)
 {
     memset((uint8_t*)Buff,0,sizeof(UARTRxBuffType));

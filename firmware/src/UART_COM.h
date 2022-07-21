@@ -90,7 +90,6 @@ typedef struct __UARTRxCmdBuffType
 	uint8_t RdIndex;
 	uint8_t CmdCnt;
 }UARTRxCmdBuffType;
-volatile UARTRxCmdBuffType UART3RxCmdBuffer;
 
 #define TX3_CMD_BUFF_LEN	((uint8_t)5)
 typedef struct __UARTTxCmdBuffType
@@ -213,7 +212,7 @@ enum RX_CMD_RUN_ENUM
 //	int ExampleFunction(int param1, int param2);
 
 
-
+void UART3RxInit(void);
 void UARTRxBufferInit(UARTRxBuffType* Buff);
 bool UARTTxCmdBufferAdd (char* TxCmdPtr);
 void UARTRxCmdBufferInit(UARTRxCmdBuffType* Buff);

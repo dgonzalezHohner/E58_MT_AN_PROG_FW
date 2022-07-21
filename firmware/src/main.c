@@ -30,7 +30,6 @@
 #include "SPI_MHM.h"
 #include "UART_COM.h"
 
-extern SERCOM_USART_OBJECT sercomtest;
 // *****************************************************************************
 // *****************************************************************************
 // Section: Main Entry Point
@@ -46,11 +45,7 @@ int main ( void )
     SYSTICK_TimerPeriodSet (SYSTYCK_PERIOD);
     SYSTICK_TimerRestart();
     ExtDACInit();
-    
-    UARTRxBufferInit((UARTRxBuffType*)&UART3RxBuffer);
-    UARTRxCmdBufferInit((UARTRxCmdBuffType*) &UART3RxCmdBuffer);
-    SERCOM3_USART_ReadCallbackRegister(UARTRxDataBufferAdd,(uintptr_t)((void*)&Sercom3RxData));
-    SERCOM3_USART_Read((void*)&Sercom3RxData, SERCOM3_RXDATA_LENGTH);
+    UART3RxInit();
     //WDT_Enable();
     while (true)
     {
@@ -65,9 +60,9 @@ int main ( void )
         else
         {
             //PushButtonsTask();
-            //IC_MHM_Task();
+            IC_MHM_Task();
         }
-        UART3Task();
+//        UART3Task();
 //        ExtDACTask();
     }
 
