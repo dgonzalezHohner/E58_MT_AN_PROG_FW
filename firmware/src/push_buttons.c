@@ -220,397 +220,421 @@ void PushButtonsTask()
             }
         }
     }
-    if(USR_SCL_EN_RD == SCALABLE)
+    /*Change External DAC MAX value according to SET inputs to test immunity*/
+    if(SET1_DEB_VAL)
     {
-        switch (PBfsm)
+        if(SET2_DEB_VAL)
         {
-            case WAIT_PB_CT:
-                SCALE_MODE_WR(NO_SCALE);
-                //Check both PBs are pressed, start timers
-                if(!PB1_DEB_VAL && !PB2_DEB_VAL)
-                {
-                    ScaleCfgTimer = PB_SCALE_CFG_T_set;
-                    DefCfgTimer = PB_DEF_CFG_T_set;
-                    PBfsm = BOTH_PBS_ON;
-                }
-                else
-                {
-                    if(SET1_DEB_VAL)
-                    {
-                        ScaleCfgTimer = CT_SET_CFG_T_set;
-                        PBfsm = CT1_ON_FIRST;
-                    }
-                    else if(SET2_DEB_VAL)
-                    {
-                        ScaleCfgTimer = CT_SET_CFG_T_set;
-                        PBfsm = CT2_ON_FIRST;
-                    }
-                    else
-                    {
-                        ScaleCfgTimer = 0;
-                        DefCfgTimer = 0;
-                    }
-                }
-                break;
-
-            case BOTH_PBS_ON:
-                SCALE_MODE_WR(PB_SCALE_SOLID);
-                //Check if Scale configuration timer not end
-                if(ScaleCfgTimer != 1)
-                {
-                    //Check if any PB is released
-                    if(PB1_DEB_VAL || PB2_DEB_VAL) PBfsm = WAIT_PB_CT;
-                }
-                //Scale configuration timer end
-                else
-                {
-                    //Check if both PBs are released
-                    if(PB1_DEB_VAL && PB2_DEB_VAL) PBfsm = BOTH_PBS_OFF;
-                    //Check if restore default config timer end
-                    else if(!PB1_DEB_VAL && !PB2_DEB_VAL && (DefCfgTimer == 1)) PBfsm = RESTORE_DEF_PB;
-                }
-                break;
-
-            case BOTH_PBS_OFF:
-                SCALE_MODE_WR(PB_SCALE_BLINK);
-                //Both leds blinking
-                if(!PB1_DEB_VAL)
-                {
-                    ScaleCfgTimer = PB_SET_CFG_T_set;
-                    PBfsm = PB1_ON_FIRST;
-                }
-                else if(!PB2_DEB_VAL)
-                {
-                    ScaleCfgTimer = PB_SET_CFG_T_set;
-                    PBfsm = PB2_ON_FIRST;
-                }
-                break;
-
-            case PB1_ON_FIRST:
-            case PB2_ON_FIRST:
-                SCALE_MODE_WR(PB_SCALE_BLINK);
-                //Before timer end
-                if(ScaleCfgTimer != 1)
-                {
-                    //Check abort conditiion
-                    if(!PB1_DEB_VAL && !PB2_DEB_VAL) PBfsm = WAIT_PB_CT;
-                    //Check PB1 pressed first and released or PB2 pressed first and released
-                    else if(((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL) || ((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL)) PBfsm = BOTH_PBS_OFF;
-                }
-                else
-                {
-                    if((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL) PBfsm = PB1_FIRST_RD_POS;
-                    else if((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL) PBfsm = PB2_FIRST_RD_POS;
-                    
-                    if((PBfsm == PB1_FIRST_RD_POS)||PBfsm == PB2_FIRST_RD_POS)
-                    {
-                        SetScale(USR_SCALE);
-                        EXCHG_FLAG_PRESET_SET;
-                        DefCfgTimer = PB_NEWPOS_TOUT_set;
-                    }
-                }
-                break;
-                
-            case PB1_FIRST_RD_POS:
-            case PB2_FIRST_RD_POS:
-                if(DefCfgTimer == 1)
-                {
-                    PBfsm = RESTORE_DEF_PB;
-                }
-                else if(!EXCHG_FLAG_PRESET && EXCHG_FLAG_NEWPOS)
-                {
-                    if(PBfsm == PB1_FIRST_RD_POS)
-                    {
-                        CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
-                        PBfsm = PB1_OFF_FIRST;
-                    }
-                    else
-                    {
-                        CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
-                        PBfsm = PB2_OFF_FIRST;
-                    }
-                }
-                EXCHG_FLAG_NEWPOS_CLR;
-                break;
-                
-            case PB1_OFF_FIRST:
-            case PB2_OFF_FIRST:
-                if(PBfsm == PB1_OFF_FIRST)
-                {
-                    //Green led solid, Yellow led blink
-                    SCALE_MODE_WR(SCALE_SET1);
-                    if(!PB2_DEB_VAL) PBfsm = PB2_ON_LAST;
-                }
-                else
-                {
-                    //Green led blink, Yellow led solid
-                    SCALE_MODE_WR(SCALE_SET2);
-                    if(!PB1_DEB_VAL) PBfsm = PB1_ON_LAST;
-                }
-                
-                if((PBfsm = PB2_ON_LAST)||(PBfsm = PB1_ON_LAST))
-                {
-                    ScaleCfgTimer = PB_SET_CFG_T_set;
-                    DefCfgTimer = PB_SET_CFG_T_set+PB_NEWPOS_TOUT_set;
-                    EXCHG_FLAG_NEWPOS_CLR;
-                }
-                break;
-
-            case PB2_ON_LAST:
-            case PB1_ON_LAST:
-                if(PBfsm == PB2_ON_LAST)
-                {
-                    if(ScaleCfgTimer != 1)
-                    {
-                        //Green led solid, Yellow led blink
-                        SCALE_MODE_WR(SCALE_SET1);
-                        if(PB2_DEB_VAL) PBfsm = PB1_OFF_FIRST;
-                    }
-                    else
-                    {
-                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_PB;
-                        else if(EXCHG_FLAG_NEWPOS)
-                        {
-                            DefCfgTimer = PB_NEWPOS_TOUT_set;
-                            EXCHG_FLAG_NEWPOS_CLR;
-                            //both leds solid
-                            SCALE_MODE_WR(PB_SCALE_SOLID);
-                            if(PB2_DEB_VAL)
-                            {
-                                CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
-                                if (CheckUserScaling())
-                                {
-                                    //Store new user scaling in RWWEEprom
-                                    ScaleCfgTimer = PB_SET_CFG_T_set;
-                                    PBfsm = PB2_OFF_LAST;
-                                }
-                                else
-                                    PBfsm = RESTORE_DEF_PB;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if(ScaleCfgTimer != 1)
-                    {
-                        //Green led blink, Yellow led solid
-                        SCALE_MODE_WR(SCALE_SET2);
-                        if(PB1_DEB_VAL) PBfsm = PB2_OFF_FIRST;
-                    }
-                    else
-                    {
-                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_PB;
-                        else if(EXCHG_FLAG_NEWPOS)
-                        {
-                            DefCfgTimer = PB_NEWPOS_TOUT_set;
-                            EXCHG_FLAG_NEWPOS_CLR;
-                            //both leds solid
-                            SCALE_MODE_WR(PB_SCALE_SOLID);
-                            if(PB1_DEB_VAL)
-                            {
-                                CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
-                                if (CheckUserScaling())
-                                {
-                                    //Store new user scaling in RWWEEprom
-                                    ScaleCfgTimer = PB_SET_CFG_T_set;
-                                    PBfsm = PB1_OFF_LAST;
-                                }
-                                else
-                                    PBfsm = RESTORE_DEF_PB;
-                            }
-                        }
-                    }
-                }
-                EXCHG_FLAG_NEWPOS_CLR;
-                break;
-
-            case PB2_OFF_LAST:
-            case PB1_OFF_LAST:
-                //both leds solid
-                SCALE_MODE_WR(PB_SCALE_SOLID);
-                if(ScaleCfgTimer == 1) PBfsm = WAIT_PB_CT;
-                break;
-
-            case CT1_ON_FIRST:
-            case CT2_ON_FIRST:
-                SCALE_MODE_WR(PB_SCALE_BLINK);
-                if(ScaleCfgTimer != 1)
-                {
-                    //Check if CT is released before validation time
-                    if(((PBfsm == CT1_ON_FIRST) && !SET1_DEB_VAL)||((PBfsm == CT2_ON_FIRST) && !SET2_DEB_VAL)) PBfsm = WAIT_BOTH_CTS_OFF;
-                    else if(SET2_DEB_VAL && SET1_DEB_VAL)
-                    {
-                        ScaleCfgTimer = 0;
-                        DefCfgTimer = CT_DEF_CFG_T_set;
-                        PBfsm = BOTH_CTS_ON;
-                    }
-                }
-                else
-                {
-                    if((PBfsm == CT1_ON_FIRST) && !SET1_DEB_VAL) PBfsm = CT1_FIRST_RD_POS;
-                    else if ((PBfsm == CT2_ON_FIRST) && !SET2_DEB_VAL) PBfsm = CT2_FIRST_RD_POS;
-                    
-                    if((PBfsm == CT1_FIRST_RD_POS) || (PBfsm == CT2_FIRST_RD_POS))
-                    {
-                        pPosSetUp(RESDIR_RESO_MT);
-                        EXCHG_FLAG_PRESET_SET;
-                        DefCfgTimer = CT_NEWPOS_TOUT_set;
-                    }
-                }
-                break;
-            
-            case CT1_FIRST_RD_POS:
-            case CT2_FIRST_RD_POS:
-                if(DefCfgTimer == 1)
-                {
-                    PBfsm = RESTORE_DEF_CT;
-                }
-                else if(!EXCHG_FLAG_PRESET && EXCHG_FLAG_NEWPOS)
-                {
-                    if(PBfsm == CT1_FIRST_RD_POS)
-                    {
-                        CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
-                        PBfsm = CT1_OFF_FIRST;
-                    }
-                    else
-                    {
-                        CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
-                        PBfsm = CT2_OFF_FIRST;
-                    }
-                }
-                EXCHG_FLAG_NEWPOS_CLR;
-                break;
-                
-            case CT1_OFF_FIRST:
-            case CT2_OFF_FIRST:
-                if(PBfsm == CT1_OFF_FIRST)
-                {
-                    //Green led solid, Yellow led blink
-                    SCALE_MODE_WR(SCALE_SET1);
-                    if(SET2_DEB_VAL) PBfsm = CT2_ON_LAST;
-                }
-                else
-                {
-                    //Green led blink, Yellow led solid
-                    SCALE_MODE_WR(SCALE_SET2);
-                    if(SET1_DEB_VAL) PBfsm = CT1_ON_LAST;
-                }
-                
-                if((PBfsm == CT2_ON_LAST)||(PBfsm == CT1_ON_LAST))
-                {
-                    ScaleCfgTimer = CT_SET_CFG_T_set;
-                    DefCfgTimer = CT_SET_CFG_T_set+CT_NEWPOS_TOUT_set;
-                }
-                break;
-                
-            case CT2_ON_LAST:
-            case CT1_ON_LAST:
-                if(PBfsm == CT2_ON_LAST)
-                {
-                    if(ScaleCfgTimer != 1)
-                    {
-                        //Green led solid, Yellow led blink
-                        SCALE_MODE_WR(SCALE_SET1);
-                        if(!SET2_DEB_VAL) PBfsm = CT1_OFF_FIRST;
-                    }
-                    else
-                    {
-                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_CT;
-                        else if(EXCHG_FLAG_NEWPOS)
-                        {
-                            DefCfgTimer = PB_NEWPOS_TOUT_set;
-                            //both leds solid
-                            SCALE_MODE_WR(PB_SCALE_SOLID);
-                            if(!SET2_DEB_VAL)
-                            {
-                                CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
-                                if (CheckUserScaling())
-                                {
-                                    //Store new user scaling in RWWEEprom
-                                    ScaleCfgTimer = CT_SET_CFG_T_set;
-                                    PBfsm = CT2_OFF_LAST;
-                                }
-                                else
-                                    PBfsm = RESTORE_DEF_CT;
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    if(ScaleCfgTimer != 1)
-                    {
-                        //Green led blink, Yellow led solid
-                        SCALE_MODE_WR(SCALE_SET2);
-                        if(!SET1_DEB_VAL) PBfsm = CT2_OFF_FIRST;
-                    }
-                    else
-                    {
-                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_CT;
-                        else if(EXCHG_FLAG_NEWPOS)
-                        {
-                            DefCfgTimer = PB_NEWPOS_TOUT_set;
-                            //both leds solid
-                            SCALE_MODE_WR(PB_SCALE_SOLID);
-                            if(!SET1_DEB_VAL)
-                            {
-                                CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
-                                if (CheckUserScaling())
-                                {
-                                    //Store new user scaling in RWWEEprom
-                                    ScaleCfgTimer = CT_SET_CFG_T_set;
-                                    PBfsm = CT1_OFF_LAST;
-                                }
-                                else
-                                    PBfsm = RESTORE_DEF_CT;
-                            }
-                        }
-                    }
-                }
-                EXCHG_FLAG_NEWPOS_CLR;
-                break;
-            
-            case CT2_OFF_LAST:
-            case CT1_OFF_LAST:
-                //both leds solid
-                SCALE_MODE_WR(PB_SCALE_SOLID);
-                if(ScaleCfgTimer == 1) PBfsm = WAIT_BOTH_CTS_OFF;
-                break;
-
-            case BOTH_CTS_ON:
-                if(DefCfgTimer != 1)
-                {
-                    if(!SET1_DEB_VAL || !SET2_DEB_VAL) PBfsm = WAIT_BOTH_CTS_OFF;
-                }
-                else
-                {
-                    if(!SET1_DEB_VAL && !SET2_DEB_VAL) PBfsm = RESTORE_DEF_CT;
-                }
-                break;
-
-            case WAIT_BOTH_CTS_OFF:
-                SCALE_MODE_WR(NO_SCALE);
-                if(!SET1_DEB_VAL && !SET2_DEB_VAL) PBfsm = WAIT_PB_CT;
-                break;
-
-            case RESTORE_DEF_PB:
-            case RESTORE_DEF_CT:
-                SCALE_MODE_WR(PB_SCALE_BLINK);
-                if(((PBfsm == RESTORE_DEF_PB) && PB1_DEB_VAL && PB2_DEB_VAL)||((PBfsm == RESTORE_DEF_CT) && !SET1_DEB_VAL && !SET2_DEB_VAL))
-                {
-                    SetScale(FACTORY_SCALE);
-                    PBfsm = WAIT_PB_CT;
-                }
-                break;
+            EncCfg.ExtDACMax = 0xFFFF>>3;
+        }
+        else
+        {
+            EncCfg.ExtDACMax = 0xFFFF>>2;
         }
     }
-    //Encoder not scalable, use SET1 as DIR input and SET2 as preset
     else
     {
-        SCALE_MODE_WR(NO_SCALE);
-        PBfsm = BOTH_PBS_ON;
+        if(SET2_DEB_VAL)
+        {
+            EncCfg.ExtDACMax = 0xFFFF>>1;
+        }
+        else
+        {
+            EncCfg.ExtDACMax = 0xFFFF;
+        }
     }
+    /*----------------------------------------------------------------------*/
+//    if(USR_SCL_EN_RD == SCALABLE)
+//    {
+//        switch (PBfsm)
+//        {
+//            case WAIT_PB_CT:
+//                SCALE_MODE_WR(NO_SCALE);
+//                //Check both PBs are pressed, start timers
+//                if(!PB1_DEB_VAL && !PB2_DEB_VAL)
+//                {
+//                    ScaleCfgTimer = PB_SCALE_CFG_T_set;
+//                    DefCfgTimer = PB_DEF_CFG_T_set;
+//                    PBfsm = BOTH_PBS_ON;
+//                }
+//                else
+//                {
+//                    if(SET1_DEB_VAL)
+//                    {
+//                        ScaleCfgTimer = CT_SET_CFG_T_set;
+//                        PBfsm = CT1_ON_FIRST;
+//                    }
+//                    else if(SET2_DEB_VAL)
+//                    {
+//                        ScaleCfgTimer = CT_SET_CFG_T_set;
+//                        PBfsm = CT2_ON_FIRST;
+//                    }
+//                    else
+//                    {
+//                        ScaleCfgTimer = 0;
+//                        DefCfgTimer = 0;
+//                    }
+//                }
+//                break;
+//
+//            case BOTH_PBS_ON:
+//                SCALE_MODE_WR(PB_SCALE_SOLID);
+//                //Check if Scale configuration timer not end
+//                if(ScaleCfgTimer != 1)
+//                {
+//                    //Check if any PB is released
+//                    if(PB1_DEB_VAL || PB2_DEB_VAL) PBfsm = WAIT_PB_CT;
+//                }
+//                //Scale configuration timer end
+//                else
+//                {
+//                    //Check if both PBs are released
+//                    if(PB1_DEB_VAL && PB2_DEB_VAL) PBfsm = BOTH_PBS_OFF;
+//                    //Check if restore default config timer end
+//                    else if(!PB1_DEB_VAL && !PB2_DEB_VAL && (DefCfgTimer == 1)) PBfsm = RESTORE_DEF_PB;
+//                }
+//                break;
+//
+//            case BOTH_PBS_OFF:
+//                SCALE_MODE_WR(PB_SCALE_BLINK);
+//                //Both leds blinking
+//                if(!PB1_DEB_VAL)
+//                {
+//                    ScaleCfgTimer = PB_SET_CFG_T_set;
+//                    PBfsm = PB1_ON_FIRST;
+//                }
+//                else if(!PB2_DEB_VAL)
+//                {
+//                    ScaleCfgTimer = PB_SET_CFG_T_set;
+//                    PBfsm = PB2_ON_FIRST;
+//                }
+//                break;
+//
+//            case PB1_ON_FIRST:
+//            case PB2_ON_FIRST:
+//                SCALE_MODE_WR(PB_SCALE_BLINK);
+//                //Before timer end
+//                if(ScaleCfgTimer != 1)
+//                {
+//                    //Check abort conditiion
+//                    if(!PB1_DEB_VAL && !PB2_DEB_VAL) PBfsm = WAIT_PB_CT;
+//                    //Check PB1 pressed first and released or PB2 pressed first and released
+//                    else if(((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL) || ((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL)) PBfsm = BOTH_PBS_OFF;
+//                }
+//                else
+//                {
+//                    if((PBfsm == PB1_ON_FIRST) && PB1_DEB_VAL) PBfsm = PB1_FIRST_RD_POS;
+//                    else if((PBfsm == PB2_ON_FIRST) && PB2_DEB_VAL) PBfsm = PB2_FIRST_RD_POS;
+//                    
+//                    if((PBfsm == PB1_FIRST_RD_POS)||PBfsm == PB2_FIRST_RD_POS)
+//                    {
+//                        SetScale(USR_SCALE);
+//                        EXCHG_FLAG_PRESET_SET;
+//                        DefCfgTimer = PB_NEWPOS_TOUT_set;
+//                    }
+//                }
+//                break;
+//                
+//            case PB1_FIRST_RD_POS:
+//            case PB2_FIRST_RD_POS:
+//                if(DefCfgTimer == 1)
+//                {
+//                    PBfsm = RESTORE_DEF_PB;
+//                }
+//                else if(!EXCHG_FLAG_PRESET && EXCHG_FLAG_NEWPOS)
+//                {
+//                    if(PBfsm == PB1_FIRST_RD_POS)
+//                    {
+//                        CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
+//                        PBfsm = PB1_OFF_FIRST;
+//                    }
+//                    else
+//                    {
+//                        CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
+//                        PBfsm = PB2_OFF_FIRST;
+//                    }
+//                }
+//                EXCHG_FLAG_NEWPOS_CLR;
+//                break;
+//                
+//            case PB1_OFF_FIRST:
+//            case PB2_OFF_FIRST:
+//                if(PBfsm == PB1_OFF_FIRST)
+//                {
+//                    //Green led solid, Yellow led blink
+//                    SCALE_MODE_WR(SCALE_SET1);
+//                    if(!PB2_DEB_VAL) PBfsm = PB2_ON_LAST;
+//                }
+//                else
+//                {
+//                    //Green led blink, Yellow led solid
+//                    SCALE_MODE_WR(SCALE_SET2);
+//                    if(!PB1_DEB_VAL) PBfsm = PB1_ON_LAST;
+//                }
+//                
+//                if((PBfsm = PB2_ON_LAST)||(PBfsm = PB1_ON_LAST))
+//                {
+//                    ScaleCfgTimer = PB_SET_CFG_T_set;
+//                    DefCfgTimer = PB_SET_CFG_T_set+PB_NEWPOS_TOUT_set;
+//                    EXCHG_FLAG_NEWPOS_CLR;
+//                }
+//                break;
+//
+//            case PB2_ON_LAST:
+//            case PB1_ON_LAST:
+//                if(PBfsm == PB2_ON_LAST)
+//                {
+//                    if(ScaleCfgTimer != 1)
+//                    {
+//                        //Green led solid, Yellow led blink
+//                        SCALE_MODE_WR(SCALE_SET1);
+//                        if(PB2_DEB_VAL) PBfsm = PB1_OFF_FIRST;
+//                    }
+//                    else
+//                    {
+//                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_PB;
+//                        else if(EXCHG_FLAG_NEWPOS)
+//                        {
+//                            DefCfgTimer = PB_NEWPOS_TOUT_set;
+//                            EXCHG_FLAG_NEWPOS_CLR;
+//                            //both leds solid
+//                            SCALE_MODE_WR(PB_SCALE_SOLID);
+//                            if(PB2_DEB_VAL)
+//                            {
+//                                CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
+//                                if (CheckUserScaling())
+//                                {
+//                                    //Store new user scaling in RWWEEprom
+//                                    ScaleCfgTimer = PB_SET_CFG_T_set;
+//                                    PBfsm = PB2_OFF_LAST;
+//                                }
+//                                else
+//                                    PBfsm = RESTORE_DEF_PB;
+//                            }
+//                        }
+//                    }
+//                }
+//                else
+//                {
+//                    if(ScaleCfgTimer != 1)
+//                    {
+//                        //Green led blink, Yellow led solid
+//                        SCALE_MODE_WR(SCALE_SET2);
+//                        if(PB1_DEB_VAL) PBfsm = PB2_OFF_FIRST;
+//                    }
+//                    else
+//                    {
+//                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_PB;
+//                        else if(EXCHG_FLAG_NEWPOS)
+//                        {
+//                            DefCfgTimer = PB_NEWPOS_TOUT_set;
+//                            EXCHG_FLAG_NEWPOS_CLR;
+//                            //both leds solid
+//                            SCALE_MODE_WR(PB_SCALE_SOLID);
+//                            if(PB1_DEB_VAL)
+//                            {
+//                                CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
+//                                if (CheckUserScaling())
+//                                {
+//                                    //Store new user scaling in RWWEEprom
+//                                    ScaleCfgTimer = PB_SET_CFG_T_set;
+//                                    PBfsm = PB1_OFF_LAST;
+//                                }
+//                                else
+//                                    PBfsm = RESTORE_DEF_PB;
+//                            }
+//                        }
+//                    }
+//                }
+//                EXCHG_FLAG_NEWPOS_CLR;
+//                break;
+//
+//            case PB2_OFF_LAST:
+//            case PB1_OFF_LAST:
+//                //both leds solid
+//                SCALE_MODE_WR(PB_SCALE_SOLID);
+//                if(ScaleCfgTimer == 1) PBfsm = WAIT_PB_CT;
+//                break;
+//
+//            case CT1_ON_FIRST:
+//            case CT2_ON_FIRST:
+//                SCALE_MODE_WR(PB_SCALE_BLINK);
+//                if(ScaleCfgTimer != 1)
+//                {
+//                    //Check if CT is released before validation time
+//                    if(((PBfsm == CT1_ON_FIRST) && !SET1_DEB_VAL)||((PBfsm == CT2_ON_FIRST) && !SET2_DEB_VAL)) PBfsm = WAIT_BOTH_CTS_OFF;
+//                    else if(SET2_DEB_VAL && SET1_DEB_VAL)
+//                    {
+//                        ScaleCfgTimer = 0;
+//                        DefCfgTimer = CT_DEF_CFG_T_set;
+//                        PBfsm = BOTH_CTS_ON;
+//                    }
+//                }
+//                else
+//                {
+//                    if((PBfsm == CT1_ON_FIRST) && !SET1_DEB_VAL) PBfsm = CT1_FIRST_RD_POS;
+//                    else if ((PBfsm == CT2_ON_FIRST) && !SET2_DEB_VAL) PBfsm = CT2_FIRST_RD_POS;
+//                    
+//                    if((PBfsm == CT1_FIRST_RD_POS) || (PBfsm == CT2_FIRST_RD_POS))
+//                    {
+//                        pPosSetUp(RESDIR_RESO_MT);
+//                        EXCHG_FLAG_PRESET_SET;
+//                        DefCfgTimer = CT_NEWPOS_TOUT_set;
+//                    }
+//                }
+//                break;
+//            
+//            case CT1_FIRST_RD_POS:
+//            case CT2_FIRST_RD_POS:
+//                if(DefCfgTimer == 1)
+//                {
+//                    PBfsm = RESTORE_DEF_CT;
+//                }
+//                else if(!EXCHG_FLAG_PRESET && EXCHG_FLAG_NEWPOS)
+//                {
+//                    if(PBfsm == CT1_FIRST_RD_POS)
+//                    {
+//                        CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
+//                        PBfsm = CT1_OFF_FIRST;
+//                    }
+//                    else
+//                    {
+//                        CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
+//                        PBfsm = CT2_OFF_FIRST;
+//                    }
+//                }
+//                EXCHG_FLAG_NEWPOS_CLR;
+//                break;
+//                
+//            case CT1_OFF_FIRST:
+//            case CT2_OFF_FIRST:
+//                if(PBfsm == CT1_OFF_FIRST)
+//                {
+//                    //Green led solid, Yellow led blink
+//                    SCALE_MODE_WR(SCALE_SET1);
+//                    if(SET2_DEB_VAL) PBfsm = CT2_ON_LAST;
+//                }
+//                else
+//                {
+//                    //Green led blink, Yellow led solid
+//                    SCALE_MODE_WR(SCALE_SET2);
+//                    if(SET1_DEB_VAL) PBfsm = CT1_ON_LAST;
+//                }
+//                
+//                if((PBfsm == CT2_ON_LAST)||(PBfsm == CT1_ON_LAST))
+//                {
+//                    ScaleCfgTimer = CT_SET_CFG_T_set;
+//                    DefCfgTimer = CT_SET_CFG_T_set+CT_NEWPOS_TOUT_set;
+//                }
+//                break;
+//                
+//            case CT2_ON_LAST:
+//            case CT1_ON_LAST:
+//                if(PBfsm == CT2_ON_LAST)
+//                {
+//                    if(ScaleCfgTimer != 1)
+//                    {
+//                        //Green led solid, Yellow led blink
+//                        SCALE_MODE_WR(SCALE_SET1);
+//                        if(!SET2_DEB_VAL) PBfsm = CT1_OFF_FIRST;
+//                    }
+//                    else
+//                    {
+//                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_CT;
+//                        else if(EXCHG_FLAG_NEWPOS)
+//                        {
+//                            DefCfgTimer = PB_NEWPOS_TOUT_set;
+//                            //both leds solid
+//                            SCALE_MODE_WR(PB_SCALE_SOLID);
+//                            if(!SET2_DEB_VAL)
+//                            {
+//                                CopyPosition (CommonVars.pPosition, CommonVars.pPosHighOut);
+//                                if (CheckUserScaling())
+//                                {
+//                                    //Store new user scaling in RWWEEprom
+//                                    ScaleCfgTimer = CT_SET_CFG_T_set;
+//                                    PBfsm = CT2_OFF_LAST;
+//                                }
+//                                else
+//                                    PBfsm = RESTORE_DEF_CT;
+//                            }
+//                        }
+//                    }
+//                }
+//                else
+//                {
+//                    if(ScaleCfgTimer != 1)
+//                    {
+//                        //Green led blink, Yellow led solid
+//                        SCALE_MODE_WR(SCALE_SET2);
+//                        if(!SET1_DEB_VAL) PBfsm = CT2_OFF_FIRST;
+//                    }
+//                    else
+//                    {
+//                        if(DefCfgTimer == 1) PBfsm = RESTORE_DEF_CT;
+//                        else if(EXCHG_FLAG_NEWPOS)
+//                        {
+//                            DefCfgTimer = PB_NEWPOS_TOUT_set;
+//                            //both leds solid
+//                            SCALE_MODE_WR(PB_SCALE_SOLID);
+//                            if(!SET1_DEB_VAL)
+//                            {
+//                                CopyPosition (CommonVars.pPosition, CommonVars.pPosLowOut);
+//                                if (CheckUserScaling())
+//                                {
+//                                    //Store new user scaling in RWWEEprom
+//                                    ScaleCfgTimer = CT_SET_CFG_T_set;
+//                                    PBfsm = CT1_OFF_LAST;
+//                                }
+//                                else
+//                                    PBfsm = RESTORE_DEF_CT;
+//                            }
+//                        }
+//                    }
+//                }
+//                EXCHG_FLAG_NEWPOS_CLR;
+//                break;
+//            
+//            case CT2_OFF_LAST:
+//            case CT1_OFF_LAST:
+//                //both leds solid
+//                SCALE_MODE_WR(PB_SCALE_SOLID);
+//                if(ScaleCfgTimer == 1) PBfsm = WAIT_BOTH_CTS_OFF;
+//                break;
+//
+//            case BOTH_CTS_ON:
+//                if(DefCfgTimer != 1)
+//                {
+//                    if(!SET1_DEB_VAL || !SET2_DEB_VAL) PBfsm = WAIT_BOTH_CTS_OFF;
+//                }
+//                else
+//                {
+//                    if(!SET1_DEB_VAL && !SET2_DEB_VAL) PBfsm = RESTORE_DEF_CT;
+//                }
+//                break;
+//
+//            case WAIT_BOTH_CTS_OFF:
+//                SCALE_MODE_WR(NO_SCALE);
+//                if(!SET1_DEB_VAL && !SET2_DEB_VAL) PBfsm = WAIT_PB_CT;
+//                break;
+//
+//            case RESTORE_DEF_PB:
+//            case RESTORE_DEF_CT:
+//                SCALE_MODE_WR(PB_SCALE_BLINK);
+//                if(((PBfsm == RESTORE_DEF_PB) && PB1_DEB_VAL && PB2_DEB_VAL)||((PBfsm == RESTORE_DEF_CT) && !SET1_DEB_VAL && !SET2_DEB_VAL))
+//                {
+//                    SetScale(FACTORY_SCALE);
+//                    PBfsm = WAIT_PB_CT;
+//                }
+//                break;
+//        }
+//    }
+//    //Encoder not scalable, use SET1 as DIR input and SET2 as preset
+//    else
+//    {
+//        SCALE_MODE_WR(NO_SCALE);
+//        PBfsm = WAIT_PB_CT;
+//    }
 }
 
 void PBDebTimerTask()

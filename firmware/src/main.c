@@ -24,6 +24,7 @@
 
 #include <stddef.h>                     // Defines NULL
 #include <stdbool.h>                    // Defines true
+#include <string.h>
 #include <stdlib.h>                     // Defines EXIT_FAILURE
 #include "definitions.h"                // SYS function prototypes
 #include "push_buttons.h"
@@ -40,30 +41,31 @@ int main ( void )
     /* Initialize all modules */
     SYS_Initialize ( NULL );
     PBInit (&pPushButtons , NUMBER_PUSH_BUTTONS);
-    
     MHMTimer = 0;
     SYSTICK_TimerPeriodSet (SYSTYCK_PERIOD);
     SYSTICK_TimerRestart();
     ExtDACInit();
     UART3RxInit();
-    //WDT_Enable();
+    memset(&CommonVars,0x00,sizeof(CommonVarsType));
+    memset(&EncCfg,0x00,sizeof(EEConfigType));
+    WDT_Enable();
     while (true)
     {
         /* Maintain state machines of all polled MPLAB Harmony modules. */
         SYS_Tasks ( );
-        //WDT_Clear();
+        WDT_Clear();
         if(BISS_MASTER_Get())
         {
-            //IC_MHM_BISS_Detection();
+            IC_MHM_BISS_Detection();
             //PB_BISS_Detection();
         }
         else
         {
-            //PushButtonsTask();
+            PushButtonsTask();
             IC_MHM_Task();
         }
 //        UART3Task();
-//        ExtDACTask();
+        ExtDACTask();
     }
 
     /* Execution should not come here during normal operation */

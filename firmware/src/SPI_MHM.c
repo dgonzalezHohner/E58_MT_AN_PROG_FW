@@ -1335,7 +1335,6 @@ void SetScale(UsedScaleType Scaling)
                 *((uint64_t*)(CommonVars.pROverRange)) = (*((uint64_t*)(CommonVars.pPosHighOut)));
                 *((uint64_t*)(CommonVars.pTransition)) = (*((uint64_t*)(CommonVars.pPosHighOut)));
             }
-            
             break;
             
         default:
@@ -1462,30 +1461,30 @@ void IC_MHM_Task(void)
             break;
 
         case READ_CFG:
-            pTemp = calloc(1,sizeof(EEConfigType));
-            NVMCTRL_RWWEEPROM_Read(((uint32_t*)(pTemp)), sizeof(EEConfigType), RWWEE_ENC_CFG_ADDR);
-            if(((EEConfigType*)pTemp)->CRC == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, (uint8_t*)pTemp, sizeof(EEConfigType)-1))
-            {    
-                memcpy((uint8_t*)(&EncCfg),(uint8_t*)pTemp,sizeof(EEConfigType));
-                if((USR_SCL_EN_RD == SCALABLE)&&(USR_SCL_AVAIL_RD == ENC_CFG_AVAIL)&&(EncCfg.UserResoAndDir == CommonVars.ResoAndDir))
-                {
-                    SetScale(USR_SCALE);
-                    memcpy(CommonVars.pPosLowOut, EncCfg.PosL,CommonVars.PosByteLen);
-                    memcpy(CommonVars.pPosHighOut, EncCfg.PosH,CommonVars.PosByteLen);
-                    CalcPosRange(CalcMTResCode(RESDIR_RESO_MT), USR_SCL_UF_OF_RD);
-                    CalcROverRange(CalcMTResCode(RESDIR_RESO_MT));
-                    CalcPosTransition(RESDIR_RESO_MT);
-                }
-                else
-                {
-                    SetScale(FACTORY_SCALE);
-                }
-            }
-            else
-            {
+//            pTemp = calloc(1,sizeof(EEConfigType));
+//            NVMCTRL_RWWEEPROM_Read(((uint32_t*)(pTemp)), sizeof(EEConfigType), RWWEE_ENC_CFG_ADDR);
+//            if(((EEConfigType*)pTemp)->CRC == CalcCRC (IC_MHM_CRC_POLY, IC_MHM_CRC_START_VALUE, (uint8_t*)pTemp, sizeof(EEConfigType)-1))
+//            {    
+//                memcpy((uint8_t*)(&EncCfg),(uint8_t*)pTemp,sizeof(EEConfigType));
+//                if((USR_SCL_EN_RD == SCALABLE)&&(USR_SCL_AVAIL_RD == ENC_CFG_AVAIL)&&(EncCfg.UserResoAndDir == CommonVars.ResoAndDir))
+//                {
+//                    SetScale(USR_SCALE);
+//                    memcpy(CommonVars.pPosLowOut, EncCfg.PosL,CommonVars.PosByteLen);
+//                    memcpy(CommonVars.pPosHighOut, EncCfg.PosH,CommonVars.PosByteLen);
+//                    CalcPosRange(CalcMTResCode(RESDIR_RESO_MT), USR_SCL_UF_OF_RD);
+//                    CalcROverRange(CalcMTResCode(RESDIR_RESO_MT));
+//                    CalcPosTransition(RESDIR_RESO_MT);
+//                }
+//                else
+//                {
+//                    SetScale(FACTORY_SCALE);
+//                }
+//            }
+//            else
+//            {
                 SetScale(DEFAULT_SCALE);
-            }
-            free(pTemp);
+//            }
+//            free(pTemp);
             IC_MHMfsm = READ_POS_1;
             break;
 
