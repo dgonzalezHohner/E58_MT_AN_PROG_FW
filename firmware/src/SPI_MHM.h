@@ -234,6 +234,24 @@ typedef struct
 }EEConfigType;
 EEConfigType EncCfg;
 
+typedef struct
+{
+	uint8_t UserProgEN;
+	uint8_t FractRangeEN;
+	uint8_t RollOverEN;
+	uint8_t LimitSWEN;
+	uint16_t FractRange;
+	uint8_t FactMTRes;
+	uint8_t FactOffset;
+	uint16_t IntDACLowLS;
+	uint16_t IntDACLow;
+	uint16_t ExtDACMax;
+	uint16_t IntDACHighLS;
+	uint8_t UserResoAndDir;
+}RAMConfigType;
+RAMConfigType RAMCfg;
+
+
 bool IC_MHMAccessFree;
 //User Scaling configuration definitions
 //UserSclCfg[0]
