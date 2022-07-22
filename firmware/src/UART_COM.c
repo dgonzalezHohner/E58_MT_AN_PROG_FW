@@ -444,8 +444,8 @@ void UART3Task(void)
                     case 0:
                         if(USR_SCL_EN_RD == SCALABLE)
                         {
-                            TxCmdLen = (uint8_t)snprintf(NULL, 0, "\2%s%s\3",RxMsg.MsgData[i],"ON");
-                            pTxCmd = calloc(TxCmdLen+1,sizeof(char));
+                            TxCmdLen = RxMsg.MsgLen[TxCmdCnt]+5;
+                            pTxCmd = calloc(TxCmdLen,sizeof(char));
                             if(pTxCmd != NULL)
                             {
                                 sprintf(pTxCmd,"\2%s%s\3",RxMsg.MsgData[TxCmdCnt],"ON");
@@ -455,8 +455,8 @@ void UART3Task(void)
                         }
                         else
                         {
-                            TxCmdLen = (uint8_t)snprintf(NULL, 0, "\2%s%s\3",RxMsg.MsgData[i],"OFF");
-                            pTxCmd = calloc(TxCmdLen+1,sizeof(char));
+                            TxCmdLen = RxMsg.MsgLen[TxCmdCnt]+6;
+                            pTxCmd = calloc(TxCmdLen,sizeof(char));
                             if(pTxCmd != NULL)
                             {
                                 sprintf(pTxCmd,"\2%s%s\3",RxMsg.MsgData[TxCmdCnt],"OFF");
@@ -466,8 +466,32 @@ void UART3Task(void)
                         }
                         break;
                     case 1:
-                        
+                        if(USR_SCL_FRACT_RNG_RD == USR_SCL_FRACT_RNG_USED)
+                        {
+                            TxCmdLen = RxMsg.MsgLen[TxCmdCnt]+5;
+                            pTxCmd = calloc(TxCmdLen,sizeof(char));
+                            if(pTxCmd != NULL)
+                            {
+                                sprintf(pTxCmd,"\2%s%s\3",RxMsg.MsgData[TxCmdCnt],"ON");
+                                UARTTxCmdBufferAdd (pTxCmd);
+                                TxCmdCnt++;
+                                TxCmdCnt = 11;
+                            }
+                        }
+                        else
+                        {
+                            TxCmdLen = RxMsg.MsgLen[TxCmdCnt]+6;
+                            pTxCmd = calloc(TxCmdLen,sizeof(char));
+                            if(pTxCmd != NULL)
+                            {
+                                sprintf(pTxCmd,"\2%s%s\3",RxMsg.MsgData[TxCmdCnt],"OFF");
+                                UARTTxCmdBufferAdd (pTxCmd);
+                                TxCmdCnt++;
+                                TxCmdCnt = 11;
+                            }
+                        }
                         break;
+
                     case 10:
                         
                         break;

@@ -60,9 +60,9 @@ int main ( void )
         else
         {
             //PushButtonsTask();
-            IC_MHM_Task();
+//            IC_MHM_Task();
         }
-//        UART3Task();
+        UART3Task();
 //        ExtDACTask();
     }
 
